@@ -45,31 +45,31 @@ Supported sources are `weather`, `user-input`, and `system-time`. Supported chan
 
 Response `202`: `{ "accepted": true, "evaluationQueued": false, "reason": "no_relevant_threshold_crossed", "sequence": 1, "crossedThresholds": [] }`
 
-The detector compares the accumulated current state with the last evaluated snapshot. It triggers at temperature change >= 10 F, wind change >= 5 mph, rain-probability change >= 0.15, remaining-daylight change >= 10 minutes, relative pace change >= 15%, or any fatigue change. A triggering response sets `evaluationQueued: true`, lists the crossed fields, and includes `decision` when that request remains the newest sequence. Evaluation currently completes synchronously inside the request; the field name preserves the future queued-worker contract.
+The detector compares the accumulated current state with the last evaluated snapshot. It triggers at temperature change >= 10 F, wind change >= 5 mph, rain-probability change >= 0.15, remaining-daylight change >= 10 minutes, relative pace change >= 15%, or any fatigue change. A triggering response sets `evaluationQueued: true`, lists the crossed fields, and includes `decision` when that request remains the newest sequence. Evaluation completes synchronously inside the request. `evaluationQueued` is retained for response compatibility and means that a threshold evaluation was requested; a current-sequence response also carries the completed `decision`.
 
 Unknown sessions return `404 session_not_found`, invalid updates return `422 invalid_state_update`, observations not newer than the current snapshot return `409 stale_state_update`, and a concurrent compare-and-swap failure returns `409 state_update_conflict`. The endpoint is protected by the configured adapter bearer credential. This shared-secret boundary authenticates adapters, not end users; rotate and distribute it through deployment secret management.
 
-### Planned: `POST /sessions/{sessionId}/evaluations`
+### Evaluation execution boundary
 
-A future internal service endpoint will run or queue an evaluation from durable current state. The prototype instead calls `evaluateRoutes` in process at session creation and after a relevant threshold crossing. No path is connected to a user-facing evaluation button. The future request will support an idempotency key header and return `202` with `evaluationId` and `status`.
+There is no callable evaluation endpoint in this release. Initial and threshold-crossing evaluations are internal application operations, so users cannot manually trigger or simulate them. A future asynchronous worker would require a separately reviewed contract rather than an undocumented route.
 
 ### `GET /sessions/{sessionId}/evaluations/latest`
 
-Returns the typed route evaluation and deterministic recommendation, including its concise explanation and display factors. Constraint details will be added when those inputs are implemented.
+Returns the typed route evaluation and deterministic recommendation, including its concise explanation, display factors, hard-constraint exclusions, policy version, and explicit unavailable outcome when every route is ineligible.
 
 ### `GET /sessions/{sessionId}/events?after={cursor}`
 
 Returns `{ "items": DecisionEvent[], "nextCursor": 2, "state": HikingState, "environmentalStatus": EnvironmentalStatus }`. Omitting `after` reads from the start; otherwise only events with a greater event sequence are returned. Event sequence is independent from accepted state-update sequence, starts at one, and advances only when a decision is published.
 
-Each event includes its ID, session ID, type (`session_started` or `recommendation_updated`), occurrence time, exact hiking-state snapshot, typed decision, and crossed thresholds. Invalid cursors return `422 invalid_cursor` and unknown sessions return `404 session_not_found`. The feed is durable when PostgreSQL is configured and process-local in the development/test fallback. Every read also returns the latest state and environmental status, even when no new decision event exists, so below-threshold observations and refresh failures reach the HUD without creating false recommendation events. The client polls every five seconds; streaming transport remains a future option.
+Each event includes its ID, session ID, type (`session_started` or `recommendation_updated`), occurrence time, exact hiking-state snapshot, typed decision, and crossed thresholds. Invalid cursors return `422 invalid_cursor` and unknown sessions return `404 session_not_found`. The feed is durable when PostgreSQL is configured and process-local in the development/test fallback. Every read also returns the latest state and environmental status, even when no new decision event exists, so below-threshold observations and refresh failures reach the HUD without creating false recommendation events. The client polls every five seconds. Streaming transport is outside the release boundary.
 
 ## Status Codes
 
 Use `400` invalid input, `401` missing or invalid credentials, `404` unknown resource, `409` stale/conflicting state, `422` valid JSON with unusable domain data, `429` rate limited, and `5xx` service/integration failure.
 
-## Pending Contracts
+## Release API Boundary
 
-Schemas for the internal evaluation endpoint, end-user authentication, and real-time transport are TBD. Decision-event polling accepts `after` and an optional `limit` from 1 to 100; the configured default is 50.
+The release exposes only the endpoints documented above. Sessions are anonymous capability URLs and contain no account profile or live GPS history. End-user accounts, streaming transport, and a manually callable evaluation endpoint are outside the MVP; adding any of them requires a new security/privacy and API review. Decision-event polling accepts `after` and an optional `limit` from 1 to 100; the configured default is 50.
 
 ## Implemented Route Evaluation Contract
 

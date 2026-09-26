@@ -10,7 +10,7 @@ The prototype currently supports a Cesium terrain view, three typed route altern
 
 - Use authoritative geospatial data for production trails and routes.
 - Keep final route selection deterministic and auditable.
-- Treat LLM assistance as optional and outside the critical decision loop.
+- Use the versioned deterministic question catalog and evidence copy; no LLM is required.
 - Do not present recommendations as safety guarantees.
 - Do not include simulated-condition controls.
 
@@ -46,17 +46,19 @@ See [`docs/environment-config-reference.md`](docs/environment-config-reference.m
 ## Verification
 
 ```bash
+npm run quality
 npm test
 npm run check
 npm run build
 npm run test:e2e
 ```
 
-`npm test` builds shared contracts and runs the API tests. `npm run check` type-checks all workspaces. `npm run build` produces the API and web production builds. `npm run test:e2e` runs the desktop and mobile Chromium product flows. GitHub Actions runs all four commands for pull requests targeting `main` and pushes to `main`.
+`npm run quality` enforces ESLint and Prettier. `npm test` builds shared contracts and runs the API tests. `npm run check` type-checks all workspaces. `npm run build` produces the API and web production builds. `npm run test:e2e` runs the desktop and mobile Chromium product flows. GitHub Actions also verifies PostgreSQL migrations/retention and smoke-tests the production container topology for pull requests targeting `main` and pushes to `main`.
 
 ## Production containers
 
 The repository includes pinned API and web images plus `compose.yaml`. Copy the required values from `.env.example` into an untracked `.env`, then run `docker compose config --quiet`, `docker compose build`, and `docker compose up -d`. Migrations complete before the API starts, and the web service waits for API readiness. See [`docs/deployment.md`](docs/deployment.md) for secrets, verification, update, rollback, and provider handoff guidance.
+
 ## Live Weather
 
 Set `WEATHER_API_BASE_URL=https://api.open-meteo.com/v1/forecast` in the API environment; paid endpoints may also use server-only `WEATHER_API_KEY` to initialize new sessions with current temperature, wind, precipitation probability, day/night status, and UTC sunset data. Responses are validated and time out after four seconds. Active sessions refresh automatically every five minutes by default; set WEATHER_REFRESH_INTERVAL_MS to an integer of at least 60000 to change the interval. Each provider snapshot records observation and server receipt times, and threshold-crossing refreshes publish through the existing decision feed. Conditions become stale immediately after a refresh failure or once the observation exceeds WEATHER_FRESHNESS_MAX_AGE_MS (30 minutes by default); the HUD keeps the last valid values visible with an explicit warning. Development and tests fall back to the visibly labeled prototype-static snapshot; production requires the provider and fails closed when it is unavailable. Live weather includes Open-Meteo/CC BY 4.0 attribution in the HUD.

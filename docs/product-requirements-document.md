@@ -36,8 +36,9 @@ A user can open a supported hiking area, inspect multiple valid routes and curre
 
 The product is decision support, not an emergency or navigation guarantee. UI copy must encourage users to consider official trail guidance and their own judgment.
 
-## Open Decisions
+## Release Boundaries
 
 - Launch area: Wachusett Mountain State Reservation. The MVP uses the Massachusetts DCR Roads and Trails layer for Pine Hill, Mountain House, and Harrington summit corridors, plus the official DCR trail map for published metrics.
 - Live position data is post-MVP. Until it exists, route progress is omitted or marked unavailable rather than inferred from fabricated location data.
-- Hosting, end-user authentication, and analytics requirements: TBD. Server-to-server state adapters use the implemented bearer credential.
+- The repository is provider-neutral and supports one API replica behind the shipped Nginx proxy. Cloud, DNS, TLS, registry, secret-manager, backup, alerting, and metrics products are operator choices.
+- MVP sessions are anonymous capability URLs and contain no user account or live GPS history. Server-to-server state adapters use the implemented bearer credential. Account authentication and product analytics are outside the MVP.

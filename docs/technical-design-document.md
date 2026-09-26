@@ -4,8 +4,8 @@
 
 1. Client requests supported hikes and selects one.
 2. API loads trail geometry, terrain references, and candidate routes.
-3. At session start, the question service loads a deterministic approved Jev question set. If the optional LLM integration is enabled, it may select a bounded subset; unavailable or invalid LLM output falls back to the approved default set.
-4. The state service requests and validates configured live weather/daylight, or produces a visibly labeled static fallback when the provider is absent or unavailable.
+3. At session start, the evaluation service loads the versioned deterministic Jev question set.
+4. The state service requests and validates configured live weather/daylight. Outside production only, provider absence/failure produces a visibly labeled static fallback.
 5. Jev evaluates each candidate route using the same snapshot and questions.
 6. Policy rejects hard-constraint violations, ranks remaining routes, and selects one or returns an explicit unavailable decision.
 7. API persists the evaluation and emits a decision event.
@@ -15,13 +15,13 @@
 
 `PATCH /api/v1/sessions/{sessionId}/state` validates supported source-specific changes and rejects observations whose timestamp is not newer than the session's current state. The detector compares the accumulated state with the last evaluated snapshot, not merely the preceding update. Thresholds are 10 F temperature, 5 mph wind, 0.15 rain probability, 10 minutes remaining daylight, 15% relative pace, and any fatigue-level change.
 
-Every accepted update, including an automatic weather refresh, increments a session-scoped sequence. With live weather configured, a serialized background refresher lists durable active sessions every five minutes by default, deduplicates provider reads per hike, rejects duplicate/older observations, and preserves user state while replacing environmental fields. Provider failures retain the last valid state and decision. A threshold crossing runs evaluation synchronously in the current process. The complete state/decision/event transition is then saved with an expected prior sequence; PostgreSQL applies that comparison and the event writes in one transaction. A mismatch returns `409 state_update_conflict`, so an older concurrent request cannot overwrite newer state. A future worker can preserve the same contract while making evaluation asynchronous. This process is automatic and has no user-facing evaluation control.
+Every accepted update, including an automatic weather refresh, increments a session-scoped sequence. With live weather configured, a serialized background refresher lists durable active sessions every five minutes by default, deduplicates provider reads per hike, rejects duplicate/older observations, and preserves user state while replacing environmental fields. Provider failures retain the last valid state and decision. A threshold crossing runs evaluation synchronously in the current process. The complete state/decision/event transition is then saved with an expected prior sequence; PostgreSQL applies that comparison and the event writes in one transaction. A mismatch returns `409 state_update_conflict`, so an older concurrent request cannot overwrite newer state. Evaluation is deliberately synchronous in the supported single-replica topology. This process is automatic and has no user-facing evaluation control.
 
 ## Reliability
 
 - Validate all external data at adapter boundaries.
-- Make evaluation writes idempotent with a request key.
-- Time out external Jev and LLM calls explicitly.
+- Make state/evaluation transitions atomic and compare-and-swap guarded so stale concurrent work cannot overwrite newer state.
+- Time out external weather and Jev calls explicitly.
 - Retain the last valid recommendation when a refresh fails, atomically mark environmental status stale, and expose that state on every event-feed poll. Expire otherwise successful Open-Meteo observations after the configured 30-minute default ceiling.
 - Never silently convert missing safety-relevant input into a favorable score.
 
@@ -44,9 +44,9 @@ The API applies a validated per-process/IP request budget to non-health routes, 
 - Golden scenarios for stable route-policy outcomes.
 - Pull-request CI installs from `package-lock.json`, then runs the complete test, type-check, and production-build commands on Node.js 22.
 
-## TBD
+## Release Boundaries
 
-Queue mechanism, distributed cache/rate-limit strategy, end-user authentication, PostGIS route persistence, calibrated scoring policy, and operational SLO targets.
+The supported topology is one API replica. Evaluation remains synchronous and bounded by provider timeouts; route geometry remains the reviewed source snapshot; sessions are anonymous capability URLs; and client updates use cursor polling. A queue, distributed scheduler/rate limiter, end-user accounts, PostGIS, and streaming transport are not incomplete MVP work—they are new designs required only before adding horizontal scale, personal data, broad spatial search, or real-time push. The deterministic baseline is a versioned prototype policy and must not be represented as safety-calibrated. Initial service objectives and operator alerts are defined in `deployment.md`.
 
 ## Production Packaging
 

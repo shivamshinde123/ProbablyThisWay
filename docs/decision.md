@@ -308,3 +308,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** A reproducible code-quality gate catches JavaScript, TypeScript, and React correctness issues while keeping generated authoritative data byte-stable.
 - **Consequences:** Supported source and configuration files are normalized once and all later pull requests must pass lint and formatting checks in addition to tests, types, builds, containers, and browser flows.
 - **Supersedes:** The unspecified lint/format tooling in the coding conventions.
+## DEC-036 — Close the MVP release boundary
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Several documents still described optional scaling or roadmap ideas as unresolved implementation work, creating contradictions with the completed single-instance MVP.
+- **Decision:** Support one API replica with synchronous bounded evaluation, anonymous capability sessions, cursor polling, an immutable reviewed route snapshot, deterministic questions/explanations, and PostgreSQL session/event persistence. Do not require an LLM, queue, PostGIS, account system, streaming transport, or distributed coordination for this release. Define initial availability, latency, backup, recovery, retention, and alert targets in the deployment runbook. Require the complete CI signal, current-base checks, review, conversation resolution, and linear history on `main`.
+- **Reasoning:** These boundaries satisfy every MVP acceptance criterion without pretending that multi-instance scale, personal accounts, or broad spatial search are already product requirements.
+- **Consequences:** Cloud products and secrets remain operator inputs. Any horizontal scaling, personal data, accounts, broad-catalog search, or server push is a separately scoped feature with its own security, privacy, storage, and operational design.
+- **Supersedes:** Unresolved MVP wording for an evaluation endpoint, LLM provider, PostGIS migration, end-user authentication, queue, distributed limiter/scheduler, streaming, breakpoints, and operational targets.
