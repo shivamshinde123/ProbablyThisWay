@@ -57,7 +57,9 @@ Returns the typed route evaluation and deterministic recommendation, including i
 
 ### `GET /sessions/{sessionId}/events?after={cursor}`
 
-Returns ordered decision-feed events. Streaming transport may be added later; TBD.
+Returns `{ "items": DecisionEvent[], "nextCursor": 2 }`. Omitting `after` reads from the start; otherwise only events with a greater event sequence are returned. Event sequence is independent from accepted state-update sequence, starts at one, and advances only when a decision is published.
+
+Each event includes its ID, session ID, type (`session_started` or `recommendation_updated`), occurrence time, exact hiking-state snapshot, typed decision, and crossed thresholds. Invalid cursors return `422 invalid_cursor` and unknown sessions return `404 session_not_found`. The current feed is process-memory only. The client polls every five seconds; streaming transport remains a future option.
 
 ## Status Codes
 
@@ -65,7 +67,7 @@ Use `400` invalid input, `404` unknown resource, `409` stale/conflicting state, 
 
 ## Pending Contracts
 
-Schemas for the internal evaluation and events endpoints, authentication, pagination limits, and real-time transport are TBD.
+Schemas for the internal evaluation endpoint, authentication, pagination limits, and real-time transport are TBD.
 
 ## Implemented Route Evaluation Contract
 

@@ -63,3 +63,12 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 | `app.ts` session store | Retain current session, latest decision, sequence, and last evaluated snapshot for the process lifetime | Shared contracts |
 | `PATCH /sessions/:sessionId/state` | Validate ordering and merge supported observations | Session store, threshold detector |
 | `thresholds.ts` | Report material field changes against explicit deterministic thresholds | Two typed hiking-state snapshots |
+
+## Implemented Decision Feed Components
+
+| Component | Responsibility | Depends on |
+|---|---|---|
+| In-memory event log | Append contiguous typed decision events per session | Session record and latest decision |
+| `GET /sessions/:sessionId/events` | Return events strictly after a validated cursor | Event log and shared response schema |
+| `DecisionFeed.tsx` | Render the latest four chronological decision signals and connection state | Typed decision events |
+| `App.tsx` event poller | Poll every five seconds and atomically update state, scores, and recommendation | Events endpoint |

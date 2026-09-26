@@ -166,3 +166,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Compare the current accumulated state with the last successfully evaluated snapshot. Trigger at 10 F temperature, 5 mph wind, 0.15 rain probability, 10 minutes remaining daylight, 15% relative pace, or any fatigue change. Increment a session sequence for every accepted update and publish a result only when its sequence is still current.
 - **Reasoning:** Explicit thresholds make evaluation frequency testable and auditable; the last-evaluated baseline allows small changes to accumulate without evaluating every observation.
 - **Consequences:** The current process-memory implementation evaluates synchronously and loses sessions on restart. Threshold calibration, durable persistence, adapter authentication, and a queued worker remain production work.
+
+## DEC-021 — Publish typed decisions through an independent event cursor
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** Automatic re-evaluation must become visible to the active client, while below-threshold state updates should not create empty positions in the decision feed.
+- **Decision:** Append `session_started` and `recommendation_updated` events with their own contiguous sequence. Include the exact state snapshot and typed decision in each event. Poll the cursor endpoint every five seconds in the MVP and retry passively after failures.
+- **Reasoning:** A separate event cursor produces simple, lossless incremental reads and lets the HUD, map, scores, and explanation update from one coherent record.
+- **Consequences:** The browser can observe external supported updates without a manual control. Events remain process-memory only; durable storage, retention, pagination limits, authentication, and streaming are future work.

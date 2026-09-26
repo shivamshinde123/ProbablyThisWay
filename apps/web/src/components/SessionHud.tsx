@@ -1,6 +1,14 @@
 import type { Session } from "@probably-this-way/contracts";
 
 type SessionHudProps = { session: Session };
+
+const sourceLabels: Record<Session["state"]["source"], string> = {
+  "prototype-static": "Prototype-static baseline",
+  weather: "Weather update",
+  "user-input": "User-entered update",
+  "system-time": "System-time update",
+};
+
 export function SessionHud({ session }: SessionHudProps) {
   const state = session.state;
   return <section className="session-hud" aria-label="Current hiking state">
@@ -13,6 +21,6 @@ export function SessionHud({ session }: SessionHudProps) {
       <div><dt>Pace</dt><dd>{state.user.paceMph} mph</dd></div>
       <div><dt>Fatigue</dt><dd>{state.user.fatigue}</dd></div>
     </dl>
-    <p>Prototype-static baseline · observed {new Date(state.observedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+    <p>{sourceLabels[state.source]} · observed {new Date(state.observedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
   </section>;
 }

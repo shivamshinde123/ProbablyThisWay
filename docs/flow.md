@@ -17,9 +17,9 @@ The `ProbablyThisWay` repository is an npm-workspaces monorepo. The React/Vite c
 | `apps/api/src/app.ts` | HTTP request | Configure Fastify and serve health/hike routes |
 | `packages/contracts/src/index.ts` | API or web import | Validate and type shared request/response data |
 | Session creation API | User starts a hike session | Load hike data, initialize questions/state, and run the first evaluation |
-| State update API | Authorized live input arrives | Normalize/persist state and invoke threshold detection |
+| State update API | Supported input arrives; authentication pending | Normalize/persist state and invoke threshold detection |
 | Evaluation worker/service (planned) | Future queued threshold evaluation | Score routes, apply policy, persist and publish the decision |
-| Events endpoint (planned) | Future client update request | Return ordered decision-feed events |
+| `GET /sessions/:sessionId/events` | Client cursor poll | Return ordered typed decision events after a cursor |
 
 ## Primary Flow
 
@@ -59,6 +59,7 @@ PATCH /api/v1/sessions/{sessionId}/state
           -> apply deterministic route policy
           -> replace latest decision only if request sequence is still current
           -> advance lastEvaluatedState
+          -> append recommendation_updated event
           -> return 202 with crossed fields and decision
 ```
 
@@ -152,3 +153,21 @@ Start field session
 ```
 
 Responsive breakpoints keep the map dominant, collapse recommendation evidence to one column on narrow screens, and preserve readable HUD telemetry.
+
+## Implemented Decision Feed Flow
+
+```text
+session created
+  -> append session_started event at cursor 1
+  -> client polls GET /sessions/{sessionId}/events?after={cursor}
+  -> validate typed event batch
+  -> deduplicate by event ID
+  -> apply newest event atomically to:
+      -> hiking-state HUD
+      -> route scores and recommendation
+      -> chronological decision feed
+  -> wait five seconds and request after nextCursor
+      -> request failure: mark feed retrying and continue polling
+```
+
+Event cursors are independent from accepted state-update sequences. This keeps feed pagination contiguous even when below-threshold updates do not publish a decision.
