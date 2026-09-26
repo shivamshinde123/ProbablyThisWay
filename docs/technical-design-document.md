@@ -4,9 +4,9 @@
 
 1. Client requests supported hikes and selects one.
 2. API loads trail geometry, terrain references, and candidate routes.
-3. At session start, the evaluation service loads the versioned deterministic Jev question set.
+3. At session start, the evaluation service loads the versioned route-suitability prompt and output schema.
 4. The state service requests and validates configured live weather/daylight. Outside production only, provider absence/failure produces a visibly labeled static fallback.
-5. Jev evaluates each candidate route using the same snapshot and questions.
+5. OpenRouter evaluates every candidate route from the same snapshot and reviewed metadata.
 6. Policy rejects hard-constraint violations, ranks remaining routes, and selects one or returns an explicit unavailable decision.
 7. API persists the evaluation and emits a decision event.
 8. Client updates route styling, cards, HUD, and feed.
@@ -21,7 +21,7 @@ Every accepted update, including an automatic weather refresh, increments a sess
 
 - Validate all external data at adapter boundaries.
 - Make state/evaluation transitions atomic and compare-and-swap guarded so stale concurrent work cannot overwrite newer state.
-- Time out external weather and Jev calls explicitly.
+- Time out external weather and OpenRouter calls explicitly.
 - Retain the last valid recommendation when a refresh fails, atomically mark environmental status stale, and expose that state on every event-feed poll. Expire otherwise successful Open-Meteo observations after the configured 30-minute default ceiling.
 - Never silently convert missing safety-relevant input into a favorable score.
 
@@ -51,13 +51,13 @@ The supported topology is one API replica. Evaluation remains synchronous and bo
 ## Production Packaging
 
 The API and web workspaces build independently into pinned Node 22.23.3/Alpine 3.24 and Nginx 1.30.5/Alpine 3.24 images. Compose gates the API on a successful tracked migration and gates Nginx on API readiness. Browser requests use same-origin `/api/v1`; the controlled Nginx hop enables `TRUST_PROXY=true`, while direct deployments default it off. CI validates the topology and builds both images on every pull request.
-## Implemented Jev Adapter
+## Implemented OpenRouter Adapter
 
-The API owns Jev credentials and calls the configured decision endpoint with a four-second timeout. Each route maps to one Noul question, and the response must provide a probability in `[0, 1]` for every returned answer. The application contract records provider provenance as `jev` or `deterministic-baseline`. Network or validation failures do not block session startup; they degrade visibly to the baseline. Recommendation policy remains separate and is not implemented by this adapter.
+The API owns the OpenRouter credential and calls the configurable chat-completions endpoint with a ten-second timeout. `OPENROUTER_MODEL` defaults to `openrouter/auto` and may be pinned to any compatible OpenRouter model ID. The request uses a bounded system prompt, temperature zero, provider parameter enforcement, and strict JSON Schema requiring every reviewed route exactly once with a suitability number in `[0, 1]`. Zod and route-set validation reject malformed, duplicate, missing, or unknown results. New evaluations record provider provenance as `openrouter` or `deterministic-baseline`; the shared reader also accepts legacy `jev` records created before DEC-043. Network, timeout, HTTP, JSON, or validation failures do not block session startup; they degrade visibly to the baseline. Recommendation policy remains separate and is not implemented by this adapter.
 
 ## Implemented Recommendation Policy
 
-`selectRouteRecommendation` is pure application policy. It validates route membership, removes hard-excluded routes, and selects the greatest remaining suitability with stable route-order ties. New results record `hard-constraints-v2`, audited exclusions, and a decision timestamp; when no route remains, the result is explicitly unavailable. Jev and the deterministic baseline only supply scores; neither controls the final route directly.
+`selectRouteRecommendation` is pure application policy. It validates route membership, removes hard-excluded routes, and selects the greatest remaining suitability with stable route-order ties. New results record `hard-constraints-v2`, audited exclusions, and a decision timestamp; when no route remains, the result is explicitly unavailable. OpenRouter and the deterministic baseline only supply scores; neither controls the final route directly.
 
 ## Deterministic Explanation and Camera Behavior
 

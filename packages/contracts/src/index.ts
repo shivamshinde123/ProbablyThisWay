@@ -167,7 +167,7 @@ export const routeEvaluationSchema = z.object({
   status: z.literal("completed"),
   createdAt: z.string().datetime(),
   questionSetVersion: z.literal("route-suitability-v1"),
-  provider: z.enum(["jev", "deterministic-baseline"]),
+  provider: z.enum(["openrouter", "jev", "deterministic-baseline"]),
   scores: z.array(routeSuitabilitySchema).min(2),
 });
 export type RouteEvaluation = z.infer<typeof routeEvaluationSchema>;

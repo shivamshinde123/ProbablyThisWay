@@ -2,7 +2,7 @@
 
 ## Product
 
-ProbablyThisWay is a map-first hiking decision-support prototype. It displays a real trail and valid route alternatives on 3D terrain, evaluates those alternatives against current conditions with Jev, and highlights the most suitable route.
+ProbablyThisWay is a map-first hiking decision-support prototype. It displays a real trail and valid route alternatives on 3D terrain, evaluates those alternatives against current conditions through a bounded OpenRouter model call, and highlights the most suitable route.
 
 ## Goal
 
@@ -17,7 +17,7 @@ A hiker discovering a named trail anywhere OpenStreetMap has searchable line geo
 - Search the internet trail index by trail name and location, preview attributed line geometry, and select a predefined evaluated hike.
 - Render its terrain, trail, and route alternatives.
 - Display weather, time, pace, fatigue, elevation, distance, daylight, and route progress when available. Hide or clearly mark unavailable values; live GPS is not required for the MVP.
-- Evaluate every candidate route through a defined Jev question set.
+- Evaluate every candidate route through a defined, schema-constrained route-suitability request.
 - Apply deterministic application policy to the results, excluding official illegal/closed/restricted routes before ranking and returning no route when every candidate is ineligible.
 - Highlight the current recommendation and show suitability values.
 - Explain the factors behind the recommendation without presenting it as a safety guarantee.

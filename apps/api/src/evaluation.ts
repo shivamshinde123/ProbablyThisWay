@@ -7,11 +7,29 @@ import {
   type RouteFeature,
 } from "@probably-this-way/contracts";
 
-const jevResponseSchema = z.object({
-  code: z.number().optional(),
-  data: z.object({
-    answers: z.record(z.string(), z.object({ noul: z.number().min(0).max(1) })),
-  }),
+const DEFAULT_OPENROUTER_API_URL =
+  "https://openrouter.ai/api/v1/chat/completions";
+const DEFAULT_OPENROUTER_MODEL = "openrouter/auto";
+const DEFAULT_OPENROUTER_TIMEOUT_MS = 10_000;
+
+const openRouterResponseSchema = z.object({
+  choices: z
+    .array(
+      z.object({
+        message: z.object({ content: z.string().min(1) }),
+      }),
+    )
+    .min(1),
+});
+const openRouterScoresSchema = z.object({
+  scores: z
+    .array(
+      z.object({
+        routeId: z.string().min(1),
+        suitability: z.number().min(0).max(1),
+      }),
+    )
+    .min(2),
 });
 
 type EvaluationInput = {
@@ -19,6 +37,17 @@ type EvaluationInput = {
   state: HikingState;
   routes: RouteFeature[];
 };
+
+type OpenRouterOptions = {
+  apiKey: string;
+  apiUrl?: string;
+  model?: string;
+  siteUrl?: string;
+  appName?: string;
+  fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+};
+
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 
 export function evaluateDeterministicBaseline({
@@ -64,72 +93,148 @@ export function evaluateDeterministicBaseline({
   });
 }
 
-async function evaluateWithJev(
-  { sessionId, state, routes }: EvaluationInput,
-  apiKey: string,
+function resolveOpenRouterApiUrl(value: string | undefined): string {
+  const parsed = new URL(value?.trim() || DEFAULT_OPENROUTER_API_URL);
+  if (parsed.protocol !== "https:")
+    throw new Error("OPENROUTER_API_URL must use HTTPS");
+  return parsed.toString();
+}
+
+function validateScores(
+  input: EvaluationInput,
+  content: string,
+): Array<{ routeId: string; suitability: number }> {
+  const parsed = openRouterScoresSchema.parse(JSON.parse(content));
+  const expectedIds = new Set(input.routes.map((route) => route.properties.id));
+  const receivedIds = new Set(parsed.scores.map((score) => score.routeId));
+  if (
+    receivedIds.size !== parsed.scores.length ||
+    receivedIds.size !== expectedIds.size ||
+    [...expectedIds].some((routeId) => !receivedIds.has(routeId)) ||
+    [...receivedIds].some((routeId) => !expectedIds.has(routeId))
+  ) {
+    throw new Error("OpenRouter returned incomplete or unknown route scores");
+  }
+  const byRoute = new Map(
+    parsed.scores.map((score) => [score.routeId, score.suitability]),
+  );
+  return input.routes.map((route) => ({
+    routeId: route.properties.id,
+    suitability: byRoute.get(route.properties.id)!,
+  }));
+}
+
+export async function evaluateWithOpenRouter(
+  input: EvaluationInput,
+  {
+    apiKey,
+    apiUrl,
+    model = DEFAULT_OPENROUTER_MODEL,
+    siteUrl,
+    appName = "ProbablyThisWay",
+    fetchImpl = fetch,
+    timeoutMs = DEFAULT_OPENROUTER_TIMEOUT_MS,
+  }: OpenRouterOptions,
 ): Promise<RouteEvaluation> {
-  const questionEntries = routes.map((route, index) => [
-    `route_${index}`,
-    {
-      type: "noul",
-      instructions: `Is route ${route.properties.name} appropriate for the current hiking state?`,
-    },
-  ]);
-  const routeIds = Object.fromEntries(
-    routes.map((route, index) => [`route_${index}`, route.properties.id]),
-  );
-  const response = await fetch(
-    process.env.JEV_API_URL ?? "https://www.jevai.org/api/v1/decisions",
-    {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${apiKey}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        state: {
-          hikingState: state,
-          routes: routes.map(({ properties }) => properties),
-          safetyBoundary:
-            "Decision support only. Do not assume route safety or invent missing facts.",
+  const routeIds = input.routes.map((route) => route.properties.id);
+  const headers: Record<string, string> = {
+    authorization: `Bearer ${apiKey}`,
+    "content-type": "application/json",
+    "X-OpenRouter-Title": appName.trim() || "ProbablyThisWay",
+  };
+  if (siteUrl?.trim()) headers["HTTP-Referer"] = siteUrl.trim();
+
+  const response = await fetchImpl(resolveOpenRouterApiUrl(apiUrl), {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      model: model.trim() || DEFAULT_OPENROUTER_MODEL,
+      temperature: 0,
+      max_tokens: 600,
+      provider: { require_parameters: true },
+      messages: [
+        {
+          role: "system",
+          content:
+            "Score only the supplied hiking routes from 0 to 1 for suitability under the supplied state. Do not invent routes, facts, closures, or safety guarantees. Return every route exactly once. Application code applies hard constraints and makes the final selection.",
         },
-        questions: Object.fromEntries(questionEntries),
-      }),
-      signal: AbortSignal.timeout(4_000),
-    },
-  );
-  if (!response.ok) throw new Error(`Jev returned ${response.status}`);
-  const parsed = jevResponseSchema.parse(await response.json());
-  if (parsed.code !== undefined && parsed.code !== 0)
-    throw new Error(`Jev returned code ${parsed.code}`);
-  const scores = routes.map((route, index) => {
-    const answer = parsed.data.answers[`route_${index}`];
-    if (!answer) throw new Error(`Jev omitted route_${index}`);
-    return {
-      routeId: routeIds[`route_${index}`] ?? route.properties.id,
-      suitability: answer.noul,
-    };
+        {
+          role: "user",
+          content: JSON.stringify({
+            hikingState: input.state,
+            routes: input.routes.map(({ properties }) => properties),
+          }),
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "route_suitability",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              scores: {
+                type: "array",
+                minItems: routeIds.length,
+                maxItems: routeIds.length,
+                items: {
+                  type: "object",
+                  properties: {
+                    routeId: { type: "string", enum: routeIds },
+                    suitability: { type: "number", minimum: 0, maximum: 1 },
+                  },
+                  required: ["routeId", "suitability"],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ["scores"],
+            additionalProperties: false,
+          },
+        },
+      },
+    }),
+    signal: AbortSignal.timeout(timeoutMs),
   });
+  if (!response.ok) throw new Error(`OpenRouter returned ${response.status}`);
+  const parsed = openRouterResponseSchema.parse(await response.json());
+  const content = parsed.choices[0]?.message.content;
+  if (!content) throw new Error("OpenRouter returned no structured content");
+  const scores = validateScores(input, content);
+
   return routeEvaluationSchema.parse({
     id: randomUUID(),
-    sessionId,
+    sessionId: input.sessionId,
     status: "completed",
     createdAt: new Date().toISOString(),
     questionSetVersion: "route-suitability-v1",
-    provider: "jev",
+    provider: "openrouter",
     scores,
   });
 }
 
 export async function evaluateRoutes(
   input: EvaluationInput,
+  env: NodeJS.ProcessEnv = process.env,
+  fetchImpl: typeof fetch = fetch,
 ): Promise<RouteEvaluation> {
-  const apiKey = process.env.JEV_API_KEY?.trim();
+  const apiKey = env.OPENROUTER_API_KEY?.trim();
   if (!apiKey) return evaluateDeterministicBaseline(input);
   try {
-    return await evaluateWithJev(input, apiKey);
+    return await evaluateWithOpenRouter(input, {
+      apiKey,
+      apiUrl: env.OPENROUTER_API_URL,
+      model: env.OPENROUTER_MODEL,
+      siteUrl: env.OPENROUTER_SITE_URL,
+      appName: env.OPENROUTER_APP_NAME,
+      fetchImpl,
+    });
   } catch (error) {
-    console.error("Jev evaluation failed; using deterministic baseline", error);
+    console.error(
+      "OpenRouter evaluation failed; using deterministic baseline",
+      error,
+    );
     return evaluateDeterministicBaseline(input);
   }
 }
