@@ -73,7 +73,10 @@ npm workspaces manage the monorepo. Add planned domain, database, and test direc
 
 ### Persistence Files
 
-- `apps/api/migrations/001_session_persistence.sql` — durable session and decision-event tables, constraints, and index.
+- pps/api/migrations/001_session_persistence.sql — durable session and decision-event tables, constraints, and index.
+- pps/api/migrations/002_retention_index.sql — indexed timestamp support for bounded retention.
+- pps/api/src/migration-runner.ts — advisory-locked discovery, checksum validation, and migration tracking.
+- pps/api/src/postgres.integration.test.ts — real PostgreSQL first-apply/repeat migration verification.
 - `apps/api/src/session-store.ts` — store contract plus PostgreSQL and in-memory implementations.
 - `apps/api/src/session-store.test.ts` — isolation, compare-and-swap, and production configuration tests.
 - `apps/api/src/migrate.ts` — migration command entry point.

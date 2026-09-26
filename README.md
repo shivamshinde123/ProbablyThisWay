@@ -32,7 +32,7 @@ npm run dev
 
 The web client runs at `http://localhost:5173` and the API at `http://localhost:3001`.
 
-The app runs without provider credentials in local development. Without a Cesium token, the map uses an ellipsoid preview. Without a Jev key, route scores use the visibly labeled deterministic baseline. To exercise hosted Jev evaluation, set `JEV_API_KEY` in the API process environment; `JEV_API_URL` is optional. Set `STATE_ADAPTER_TOKEN` to a secret of at least 32 characters to protect state updates. Set `DATABASE_URL` to use durable PostgreSQL session/event storage, then run `npm run db:migrate -w @probably-this-way/api`. Both variables are mandatory when `NODE_ENV=production`; local development and tests use the in-memory store when `DATABASE_URL` is absent. Never commit credentials.
+The app runs without provider credentials in local development. Without a Cesium token, the map uses an ellipsoid preview. Without a Jev key, route scores use the visibly labeled deterministic baseline. To exercise hosted Jev evaluation, set `JEV_API_KEY` in the API process environment; `JEV_API_URL` is optional. Set `STATE_ADAPTER_TOKEN` to a secret of at least 32 characters to protect state updates. Set `DATABASE_URL` to use durable PostgreSQL session/event storage, then run `npm run db:migrate -w @probably-this-way/api`; the command is version-tracked and safe to repeat. Both variables are mandatory when `NODE_ENV=production`; local development and tests use the in-memory store when `DATABASE_URL` is absent. Never commit credentials.
 
 Browser-only Vite settings can be placed in `apps/web/.env.local`:
 

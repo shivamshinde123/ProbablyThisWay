@@ -15,6 +15,7 @@
     "dev:web": "npm run dev -w @probably-this-way/web",
     "data:refresh:dcr": "node scripts/import-dcr-trails.mjs",
     "test": "npm run build -w @probably-this-way/contracts && npm run test -w @probably-this-way/api",
+    "test:postgres": "npm run build -w @probably-this-way/contracts && npm run test:postgres -w @probably-this-way/api",
     "test:e2e": "npm run build && playwright test"
   },
   "devDependencies": {
