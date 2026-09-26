@@ -77,3 +77,10 @@ npm workspaces manage the monorepo. Add planned domain, database, and test direc
 - `apps/api/src/session-store.ts` — store contract plus PostgreSQL and in-memory implementations.
 - `apps/api/src/session-store.test.ts` — isolation, compare-and-swap, and production configuration tests.
 - `apps/api/src/migrate.ts` — migration command entry point.
+
+### Weather Adapter Files
+
+- `apps/api/src/weather-adapter.ts` — validated Open-Meteo normalization and configuration boundary.
+- `apps/api/src/weather-adapter.test.ts` — request, normalization, error, and endpoint-security tests.
+- `apps/api/src/weather-session.test.ts` — live initialization and explicit fallback integration tests.
+- `apps/web/src/components/SessionHud.tsx` — source, observation time, and provider attribution display.

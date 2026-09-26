@@ -4,7 +4,7 @@ ProbablyThisWay is a map-first hiking decision-support prototype. It renders pre
 
 ## Status
 
-The prototype currently supports a Cesium terrain view, three typed route alternatives, session startup, typed state updates, cumulative threshold-driven re-evaluation, stale-update rejection, a cursor-based live decision feed, per-route suitability scores, deterministic recommendation highlighting, evidence-backed explanations, and responsive recommendation-focused camera behavior. Route geometry and conditions are prototype data and are not valid for navigation. Product, architecture, API, data, and UI specifications are maintained in [`docs/`](docs/).
+The prototype currently supports a Cesium terrain view, three typed route alternatives, session startup with optional live weather/daylight, typed state updates, cumulative threshold-driven re-evaluation, stale-update rejection, a cursor-based live decision feed, per-route suitability scores, deterministic recommendation highlighting, evidence-backed explanations, and responsive recommendation-focused camera behavior. Route geometry and conditions are prototype data and are not valid for navigation. Product, architecture, API, data, and UI specifications are maintained in [`docs/`](docs/).
 
 ## Core Principles
 
@@ -52,3 +52,7 @@ npm run build
 ```
 
 `npm test` builds shared contracts and runs the API tests. `npm run check` type-checks all workspaces. `npm run build` produces the API and web production builds.
+
+## Live Weather
+
+Set `WEATHER_API_BASE_URL=https://api.open-meteo.com/v1/forecast` in the API environment; paid endpoints may also use server-only `WEATHER_API_KEY` to initialize new sessions with current temperature, wind, precipitation probability, day/night status, and UTC sunset data. Responses are validated and time out after four seconds. Development and tests fall back to the visibly labeled prototype-static snapshot; production requires the provider and fails closed when it is unavailable. Live weather includes Open-Meteo/CC BY 4.0 attribution in the HUD.

@@ -94,7 +94,9 @@ selected hike + selected route
   -> POST /api/v1/sessions
   -> validate createSessionRequestSchema
   -> verify route belongs to hike
-  -> create typed prototype-static HikingState snapshot
+  -> request validated live weather/daylight when configured
+      -> success: create attributed weather HikingState snapshot
+      -> unavailable/invalid: create prototype-static fallback snapshot
   -> validate sessionSchema on API and client
   -> lock route selection
   -> render SessionHud over the map
@@ -105,7 +107,7 @@ selected hike + selected route
 ```text
 POST /api/v1/sessions
   -> validate hike and selected route
-  -> create prototype-static hiking-state snapshot
+  -> initialize attributed weather state or explicit prototype-static fallback
   -> evaluateRoutes
       -> JEV_API_KEY configured
           -> send one shared state + one Noul question per valid route
@@ -197,3 +199,25 @@ state transition
 ```
 
 `apps/api/src/migrate.ts` applies `001_session_persistence.sql` before a new database is used.
+
+## Implemented Weather Initialization Flow
+
+```text
+POST /api/v1/sessions
+  -> resolve supported hike coordinates
+  -> WEATHER_API_BASE_URL configured
+      -> request current temperature, wind, precipitation probability + day/night status + daily sunset
+      -> enforce HTTPS, explicit units, UTC, schema validation, and four-second timeout
+      -> normalize probability and daylight remaining
+      -> attach Open-Meteo / CC BY 4.0 provenance
+  -> provider absent at production startup
+      -> fail configuration validation
+  -> request fails in production
+      -> return 503 weather_unavailable
+  -> provider absent or request fails outside production
+      -> log a warning when applicable
+      -> use visibly labeled prototype-static state
+  -> evaluate every route from the resulting immutable snapshot
+```
+
+No browser control can manufacture or override environmental conditions.

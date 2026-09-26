@@ -6,8 +6,8 @@
 |---|---|---|
 | Trail geometry | Authoritative trail/geospatial dataset; TBD | Validated GeoJSON LineString/MultiLineString |
 | Terrain/elevation | Cesium-compatible terrain provider; TBD | Terrain reference plus sampled elevations |
-| Weather | Weather provider; TBD | Normalized conditions with observation time |
-| Time/daylight | Server time plus astronomical calculation | UTC/local time and sunset margin |
+| Weather | Configured Open-Meteo forecast endpoint | Temperature (F), wind (mph), precipitation probability, observation time, provider provenance |
+| Time/daylight | Open-Meteo daily sunset when configured; static development fallback otherwise | UTC sunset and non-negative remaining minutes |
 | Position/progress | Post-MVP GPS adapter | Point, accuracy, route progress; unavailable in the MVP unless a real supported source is added |
 | User state | User-entered/session-derived facts | Pace, fatigue, experience, goal |
 
@@ -24,7 +24,7 @@
 
 ## Freshness
 
-Production adapters must preserve `observedAt`, `receivedAt`, source, and freshness metadata; provider-specific freshness windows remain TBD. The current session contract stores snapshot-level `observedAt` and source, rejects out-of-order observations, and re-evaluates at the documented deterministic thresholds. Stale values must not be labeled current.
+Production adapters must preserve `observedAt`, source, provider, license, and attribution URL; adding stored `receivedAt` and a provider-specific freshness ceiling remains TBD. The Open-Meteo adapter requests UTC timestamps plus explicit Fahrenheit and mph units, converts precipitation percentage to a 0-1 probability, and uses the day/night signal to clamp overnight daylight to zero. The session contract rejects out-of-order observations and re-evaluates at the documented deterministic thresholds. Stale values must not be labeled current.
 
 Without a real position source, the MVP does not calculate route progress. The UI omits it or labels it unavailable.
 

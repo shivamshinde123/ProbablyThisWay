@@ -11,8 +11,8 @@ Implemented variables and planned integrations are listed below. Planned entries
 | `VITE_API_BASE_URL` | No | No | Browser API base URL; defaults to `http://localhost:3001/api/v1` |
 | `DATABASE_URL` | Yes in production | Yes | PostgreSQL connection used by the durable session/event store; omission selects the in-memory store only outside production |
 | `VITE_CESIUM_ION_ACCESS_TOKEN` | No | No | Scoped browser token enabling Cesium World Terrain; without it the map uses an ellipsoid preview |
-| `WEATHER_API_BASE_URL` | TBD | No | Weather provider endpoint |
-| `WEATHER_API_KEY` | TBD | Yes | Weather provider credential |
+| `WEATHER_API_BASE_URL` | Yes in production | No | HTTPS Open-Meteo Forecast endpoint; setting it enables live weather/daylight at session start |
+| `WEATHER_API_KEY` | No | Yes | Optional Open-Meteo commercial subscription key, sent only by the server |
 | `JEV_API_URL` | No | No | Server-side Jev endpoint; defaults to `https://www.jevai.org/api/v1/decisions` |
 | `JEV_API_KEY` | No | Yes | Server-side Jev bearer credential; absence enables the labeled deterministic baseline |
 | `STATE_ADAPTER_TOKEN` | Yes in production | Yes | Bearer credential for `PATCH /sessions/{sessionId}/state`; minimum 32 characters when configured |

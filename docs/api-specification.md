@@ -27,7 +27,7 @@ Response `200` includes `routes[].properties` with `id`, `name`, `source`, `data
 
 Request: `{ "hikeId": "wachusett-summit", "selectedRouteId": "balanced-traverse" }`
 
-Response `201` is `{ "session": Session, "evaluation": RouteEvaluation, "recommendation": RouteRecommendation }`. The session contains its ID, selected route, status, timestamps, and typed hiking-state snapshot. The current implementation returns `source: "prototype-static"`; it must not be presented as live observed data.
+Response `201` is `{ "session": Session, "evaluation": RouteEvaluation, "recommendation": RouteRecommendation }`. The session contains its ID, selected route, status, timestamps, and typed hiking-state snapshot. When `WEATHER_API_BASE_URL` is configured, the API requests and validates current Open-Meteo temperature, wind, precipitation probability, day/night status, and sunset data and returns `source: "weather"` with provider/license attribution. Outside production, timeout, transport, HTTP, or validation failure falls back to `source: "prototype-static"`, which must not be presented as live observed data. Production startup requires weather configuration, and a runtime provider failure returns `503 weather_unavailable`.
 
 ### `GET /sessions/{sessionId}`
 

@@ -24,6 +24,11 @@ export type HikeDetail = z.infer<typeof hikeDetailSchema>;
 export const hikingStateSchema = z.object({
   observedAt: z.string().datetime(),
   source: z.enum(["prototype-static", "weather", "user-input", "system-time"]),
+  provenance: z.object({
+    provider: z.string().min(1),
+    license: z.string().min(1),
+    attributionUrl: z.string().url(),
+  }).optional(),
   weather: z.object({ temperatureF: z.number(), windMph: z.number().nonnegative(), rainProbability: z.number().min(0).max(1) }),
   daylight: z.object({ sunsetAt: z.string().datetime(), remainingMinutes: z.number().int().nonnegative() }),
   user: z.object({ paceMph: z.number().positive(), fatigue: z.enum(["low", "moderate", "high"]) }),

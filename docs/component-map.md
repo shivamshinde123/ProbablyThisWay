@@ -79,3 +79,11 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 |---|---|---|
 | `adapter-auth.ts` | Validate startup configuration and compare bearer credentials in constant time | Node crypto and server environment |
 | State-update auth gate | Reject unauthorized mutation before session lookup or body validation | Adapter auth config |
+
+## Implemented Weather Components
+
+| Component | Responsibility | Depends on |
+|---|---|---|
+| `weather-adapter.ts` | Fetch, validate, normalize, and attribute current weather/daylight | Configured HTTPS Open-Meteo endpoint |
+| Session weather initializer | Use live environmental state when available and explicitly fall back otherwise | Weather provider and hike coordinates |
+| `SessionHud` provenance | Display provider and license attribution for live environmental data | Optional state provenance contract |
