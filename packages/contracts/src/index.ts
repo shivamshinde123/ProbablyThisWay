@@ -21,3 +21,15 @@ export const routeFeatureSchema = z.object({
 export type RouteFeature = z.infer<typeof routeFeatureSchema>;
 export const hikeDetailSchema = hikeSummarySchema.extend({ routes: z.array(routeFeatureSchema).min(2) });
 export type HikeDetail = z.infer<typeof hikeDetailSchema>;
+export const hikingStateSchema = z.object({
+  observedAt: z.string().datetime(),
+  source: z.literal("prototype-static"),
+  weather: z.object({ temperatureF: z.number(), windMph: z.number().nonnegative(), rainProbability: z.number().min(0).max(1) }),
+  daylight: z.object({ sunsetAt: z.string().datetime(), remainingMinutes: z.number().int().nonnegative() }),
+  user: z.object({ paceMph: z.number().positive(), fatigue: z.enum(["low", "moderate", "high"]) }),
+});
+export type HikingState = z.infer<typeof hikingStateSchema>;
+export const createSessionRequestSchema = z.object({ hikeId: z.string().min(1), selectedRouteId: z.string().min(1) });
+export type CreateSessionRequest = z.infer<typeof createSessionRequestSchema>;
+export const sessionSchema = z.object({ id: z.string().uuid(), hikeId: z.string(), selectedRouteId: z.string(), status: z.literal("active"), createdAt: z.string().datetime(), state: hikingStateSchema });
+export type Session = z.infer<typeof sessionSchema>;
