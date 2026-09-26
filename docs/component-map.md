@@ -95,3 +95,12 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 | `weather-refresh.ts` | Schedule serialized active-session refresh cycles and deduplicate provider calls per hike | `SessionStore`, weather provider, hike locations |
 | `session-state.ts` | Apply stale checks, threshold detection, evaluation, event creation, and compare-and-swap persistence for every state source | Session record, hike catalog, evaluation and policy |
 | `SessionStore.listActiveSessionIds` | Discover durable active sessions after startup or across API instances | In-memory map or PostgreSQL `sessions.status` |
+
+## Implemented Freshness Status Components
+
+| Component | Responsibility | Depends on |
+|---|---|---|
+| `environmental-status.ts` | Validate freshness configuration and derive current, expired, failed, or prototype status | Observation/receipt timestamps and refresh cadence |
+| Freshness status persistence | Atomically record successful duplicate checks and failures without publishing recommendation events | `SessionStore` compare-and-swap |
+| `SessionHud.tsx` freshness signal | Show current, stale/failure, unknown, or prototype state and label retained stale values | Session environmental status and observation time |
+| Event-feed snapshot fields | Deliver latest state/status on every cursor poll, including empty event batches | Durable session record |

@@ -14,6 +14,7 @@ Implemented variables and planned integrations are listed below. Planned entries
 | `WEATHER_API_BASE_URL` | Yes in production | No | HTTPS Open-Meteo Forecast endpoint; setting it enables live weather/daylight at session start |
 | `WEATHER_API_KEY` | No | Yes | Optional Open-Meteo commercial subscription key, sent only by the server |
 | `WEATHER_REFRESH_INTERVAL_MS` | No | No | Active-session weather refresh cadence; defaults to `300000` (five minutes) and must be at least `60000` |
+| `WEATHER_FRESHNESS_MAX_AGE_MS` | No | No | Maximum weather observation age; defaults to `1800000` (30 minutes), must be at least `900000`, and cannot be shorter than the refresh interval |
 | `JEV_API_URL` | No | No | Server-side Jev endpoint; defaults to `https://www.jevai.org/api/v1/decisions` |
 | `JEV_API_KEY` | No | Yes | Server-side Jev bearer credential; absence enables the labeled deterministic baseline |
 | `STATE_ADAPTER_TOKEN` | Yes in production | Yes | Bearer credential for `PATCH /sessions/{sessionId}/state`; minimum 32 characters when configured |

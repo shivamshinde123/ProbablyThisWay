@@ -33,7 +33,7 @@ The 3D map is primary. Conditions and recommendations must be glanceable, route 
 - **Ready:** all alternatives visible; recommendation has color plus pattern/weight, not color alone.
 - **Updating:** retain the last valid route and show evaluation progress.
 - **Stale/offline:** display data age and affected inputs.
-- **Error:** actionable retry and provider-specific failure summary.
+- **Error:** provider refresh failures appear as an orange `Refresh failed` HUD signal with `showing last valid observation`; the observational UI contains no manual retry control.
 - **No viable route:** neutral route styling and explicit guidance to stop/reassess; never invent a recommendation.
 
 ## Responsive Behavior

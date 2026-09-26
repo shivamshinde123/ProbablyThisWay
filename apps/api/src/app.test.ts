@@ -31,6 +31,7 @@ test("POST /api/v1/sessions creates a typed static-state session", async () => {
   const body = sessionStartResponseSchema.parse(response.json());
   assert.equal(body.session.selectedRouteId, "balanced-traverse");
   assert.equal(body.session.state.source, "prototype-static");
+  assert.equal(body.session.environmentalStatus?.status, "prototype");
   assert.equal(body.session.state.daylight.remainingMinutes, 159);
   assert.equal(body.evaluation.provider, "deterministic-baseline");
   assert.equal(body.evaluation.scores.length, 3);
@@ -163,6 +164,8 @@ test("decision events expose an ordered cursor feed for session start and re-eva
   assert.equal(initialResponse.statusCode, 200);
   const initial = decisionEventsResponseSchema.parse(initialResponse.json());
   assert.equal(initial.nextCursor, 1);
+  assert.equal(initial.environmentalStatus.status, "prototype");
+  assert.deepEqual(initial.state, created.session.state);
   assert.equal(initial.items.length, 1);
   assert.equal(initial.items[0]?.type, "session_started");
   assert.deepEqual(initial.items[0]?.crossedThresholds, []);
@@ -182,6 +185,8 @@ test("decision events expose an ordered cursor feed for session start and re-eva
   assert.equal(nextResponse.statusCode, 200);
   const next = decisionEventsResponseSchema.parse(nextResponse.json());
   assert.equal(next.nextCursor, 2);
+  assert.equal(next.environmentalStatus.status, "current");
+  assert.equal(next.state.weather.windMph, 13);
   assert.equal(next.items.length, 1);
   assert.equal(next.items[0]?.type, "recommendation_updated");
   assert.deepEqual(next.items[0]?.crossedThresholds, ["windMph"]);

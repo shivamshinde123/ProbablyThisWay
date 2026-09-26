@@ -22,7 +22,7 @@ Every accepted update, including an automatic weather refresh, increments a sess
 - Validate all external data at adapter boundaries.
 - Make evaluation writes idempotent with a request key.
 - Time out external Jev and LLM calls explicitly.
-- Retain the last valid recommendation when a refresh fails, but visibly mark its age/error state.
+- Retain the last valid recommendation when a refresh fails, atomically mark environmental status stale, and expose that state on every event-feed poll. Expire otherwise successful Open-Meteo observations after the configured 30-minute default ceiling.
 - Never silently convert missing safety-relevant input into a favorable score.
 
 ## Security and Privacy
@@ -67,6 +67,6 @@ A session publishes `session_started` after the initial decision and `recommenda
 
 ## Implemented Weather Adapter
 
-`OpenMeteoWeatherProvider` accepts only HTTPS remote endpoints (with HTTP allowed for localhost tests), adds supported-hike coordinates and explicit Fahrenheit/mph/UTC query parameters, and aborts after four seconds. Zod validates the provider payload before normalization. Precipitation percentage becomes a 0-1 probability; UTC sunset becomes a non-negative remaining-minute value. The session preserves provider, license, and attribution URL in the shared state contract, and the HUD renders that credit.
+`OpenMeteoWeatherProvider` accepts only HTTPS remote endpoints (with HTTP allowed for localhost tests), adds supported-hike coordinates and explicit Fahrenheit/mph/UTC query parameters, and aborts after four seconds. Zod validates the provider payload before normalization. Precipitation percentage becomes a 0-1 probability; UTC sunset becomes a non-negative remaining-minute value. The session preserves provider, license, attribution URL, observation time, receipt time, and typed environmental status in the shared contract. The HUD renders provider credit plus current, stale/failure, or prototype state.
 
 Weather is opt-in outside production and required in production through `WEATHER_API_BASE_URL`; `WEATHER_API_KEY` is forwarded only when configured for a paid endpoint. Development/test missing configuration or provider failure uses the explicit prototype-static snapshot. Production missing configuration fails startup, while fetch, status, timeout, timestamp, or schema failure returns `503 weather_unavailable` so fabricated conditions cannot drive a production recommendation.

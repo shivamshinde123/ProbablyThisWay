@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { hikeDetailSchema, sessionStartResponseSchema } from "@probably-this-way/contracts";
+import { decisionEventsResponseSchema, hikeDetailSchema, sessionStartResponseSchema } from "@probably-this-way/contracts";
 import { buildApp } from "./app.js";
 import { InMemorySessionStore } from "./session-store.js";
-import { transitionSessionState } from "./session-state.js";
+import { failedEnvironmentalStatus } from "./environmental-status.js";
+import { transitionSessionState, updateEnvironmentalStatus } from "./session-state.js";
 import type { WeatherProvider } from "./weather-adapter.js";
 import {
   DEFAULT_WEATHER_REFRESH_INTERVAL_MS,
@@ -75,6 +76,41 @@ test("weather refresh fetches once per hike and re-evaluates active sessions", a
     assert.equal(record.session.state.receivedAt, "2026-09-25T20:05:01.000Z");
     assert.deepEqual(record.events[1]?.crossedThresholds, ["windMph"]);
   }
+
+  const failingRefresher = new WeatherRefresher({
+    sessionStore,
+    weatherProvider: { async getCurrent() { throw new Error("provider unavailable"); } },
+    locations: { "wachusett-summit": { latitude: 42.4898, longitude: -71.8976 } },
+    intervalMs: 60_000,
+    applySnapshot: async () => "accepted",
+    onSessionError: async (record) => {
+      const environmentalStatus = failedEnvironmentalStatus(
+        record.session.environmentalStatus,
+        "2026-09-25T20:10:00.000Z",
+      );
+      const result = await updateEnvironmentalStatus({ record, environmentalStatus, sessionStore });
+      assert.equal(result, "accepted");
+    },
+  });
+  await failingRefresher.refreshNow();
+
+  for (const session of [first, second]) {
+    const record = await sessionStore.get(session.id);
+    assert.ok(record);
+    assert.equal(record.sequence, 2);
+    assert.equal(record.eventSequence, 2);
+    assert.equal(record.session.environmentalStatus?.status, "stale");
+    assert.equal(record.session.environmentalStatus?.reason, "refresh_failed");
+  }
+  const statusResponse = await app.inject({
+    method: "GET",
+    url: "/api/v1/sessions/" + first.id + "/events?after=2",
+  });
+  const status = decisionEventsResponseSchema.parse(statusResponse.json());
+  assert.deepEqual(status.items, []);
+  assert.equal(status.environmentalStatus.status, "stale");
+  assert.equal(status.environmentalStatus.reason, "refresh_failed");
+  assert.equal(status.state.weather.windMph, 14);
   await app.close();
 });
 

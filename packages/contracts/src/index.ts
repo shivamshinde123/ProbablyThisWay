@@ -35,9 +35,20 @@ export const hikingStateSchema = z.object({
   user: z.object({ paceMph: z.number().positive(), fatigue: z.enum(["low", "moderate", "high"]) }),
 });
 export type HikingState = z.infer<typeof hikingStateSchema>;
+export const environmentalStatusSchema = z.object({
+  status: z.enum(["current", "stale", "prototype"]),
+  reason: z.enum(["observation_current", "observation_expired", "refresh_failed", "prototype_static"]),
+  checkedAt: z.string().datetime(),
+  staleAfter: z.string().datetime().optional(),
+});
+export type EnvironmentalStatus = z.infer<typeof environmentalStatusSchema>;
 export const createSessionRequestSchema = z.object({ hikeId: z.string().min(1), selectedRouteId: z.string().min(1) });
 export type CreateSessionRequest = z.infer<typeof createSessionRequestSchema>;
-export const sessionSchema = z.object({ id: z.string().uuid(), hikeId: z.string(), selectedRouteId: z.string(), status: z.literal("active"), createdAt: z.string().datetime(), state: hikingStateSchema });
+export const sessionSchema = z.object({
+  id: z.string().uuid(), hikeId: z.string(), selectedRouteId: z.string(), status: z.literal("active"),
+  createdAt: z.string().datetime(), state: hikingStateSchema,
+  environmentalStatus: environmentalStatusSchema.optional(),
+});
 export type Session = z.infer<typeof sessionSchema>;
 export const routeSuitabilitySchema = z.object({ routeId: z.string().min(1), suitability: z.number().min(0).max(1) });
 export type RouteSuitability = z.infer<typeof routeSuitabilitySchema>;
@@ -96,5 +107,7 @@ export type DecisionEvent = z.infer<typeof decisionEventSchema>;
 export const decisionEventsResponseSchema = z.object({
   items: z.array(decisionEventSchema),
   nextCursor: z.number().int().nonnegative(),
+  state: hikingStateSchema,
+  environmentalStatus: environmentalStatusSchema,
 });
 export type DecisionEventsResponse = z.infer<typeof decisionEventsResponseSchema>;

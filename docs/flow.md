@@ -262,3 +262,28 @@ API shutdown
 ```
 
 The background path and authenticated PATCH path share the same transition function. Neither path exposes a browser simulation control.
+
+## Implemented Freshness and Refresh-Failure Flow
+
+```text
+validated provider observation
+  -> record observedAt and receivedAt
+  -> staleAfter = observedAt + WEATHER_FRESHNESS_MAX_AGE_MS
+  -> persist current status with the state transition
+
+scheduled provider failure
+  -> retain last valid state and recommendation
+  -> increment session sequence
+  -> compare-and-swap stale / refresh_failed status
+  -> do not append a recommendation event
+
+GET /sessions/{sessionId}/events
+  -> resolve current status against staleAfter
+  -> return decision events + latest state + environmental status
+  -> client updates HUD even when event items are empty
+  -> current: signal green
+  -> failed/expired/unknown: warning orange + last-valid-observation copy
+  -> prototype-static: amber prototype label
+```
+
+This is an observational flow. It adds no refresh, evaluation, or simulation control.

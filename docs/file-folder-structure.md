@@ -94,3 +94,9 @@ npm workspaces manage the monorepo. Add planned domain, database, and test direc
 - `apps/api/src/weather-refresh.ts` — serialized active-session scheduler, per-hike request deduplication, and interval validation.
 - `apps/api/src/session-state.ts` — shared state-transition/evaluation/persistence path for internal refreshes and authenticated adapter updates.
 - `apps/api/src/weather-refresh.test.ts` — refresh integration and interval-configuration coverage.
+
+### Environmental Freshness Status
+
+- `apps/api/src/environmental-status.ts` — freshness policy, expiry resolution, and configuration validation.
+- `apps/api/src/environmental-status.test.ts` — expiry, failure, and configuration-boundary tests.
+- `apps/web/src/components/SessionHud.tsx` — accessible field-instrument freshness signal and stale-value warning.

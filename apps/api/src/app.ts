@@ -19,7 +19,15 @@ import { isAuthorizedAdapter, resolveAdapterAuthConfig } from "./adapter-auth.js
 import { evaluateRoutes } from "./evaluation.js";
 import { selectRouteRecommendation } from "./policy.js";
 import { createSessionStore, type SessionStore } from "./session-store.js";
-import { transitionSessionState } from "./session-state.js";
+import { transitionSessionState, updateEnvironmentalStatus } from "./session-state.js";
+import {
+  DEFAULT_WEATHER_FRESHNESS_MAX_AGE_MS,
+  currentEnvironmentalStatus,
+  failedEnvironmentalStatus,
+  prototypeEnvironmentalStatus,
+  resolveEnvironmentalStatus,
+  resolveWeatherFreshnessMaxAge,
+} from "./environmental-status.js";
 import { createWeatherProvider, type WeatherLocation, type WeatherProvider } from "./weather-adapter.js";
 import { WeatherRefresher, resolveWeatherRefreshInterval } from "./weather-refresh.js";
 
@@ -75,6 +83,10 @@ export async function buildApp(options: {
     ? undefined
     : options.weatherProvider ?? createWeatherProvider(weatherEnv);
   const liveWeatherRequired = weatherEnv.NODE_ENV === "production";
+  const weatherRefreshInterval = weatherProvider ? resolveWeatherRefreshInterval(weatherEnv) : undefined;
+  const weatherFreshnessMaxAge = weatherProvider
+    ? resolveWeatherFreshnessMaxAge(weatherEnv, weatherRefreshInterval)
+    : DEFAULT_WEATHER_FRESHNESS_MAX_AGE_MS;
   const app = Fastify({ logger: true });
   await app.register(cors, { origin: process.env.WEB_ORIGIN ?? "http://localhost:5173" });
 
@@ -83,12 +95,25 @@ export async function buildApp(options: {
         sessionStore,
         weatherProvider,
         locations: hikeWeatherLocations,
-        intervalMs: resolveWeatherRefreshInterval(weatherEnv),
+        intervalMs: weatherRefreshInterval!,
         applySnapshot: async (record, nextState) => {
           const hike = hikeDetails[record.session.hikeId];
           if (!hike) throw new Error("Session references an unavailable hike");
+          const environmentalStatus = currentEnvironmentalStatus(nextState, weatherFreshnessMaxAge);
+          record.session = { ...record.session, environmentalStatus };
           const result = await transitionSessionState({ record, nextState, hike, sessionStore });
-          return result.status;
+          if (result.status !== "stale") return result.status;
+          return updateEnvironmentalStatus({
+            record, environmentalStatus, sessionStore, receivedAt: nextState.receivedAt,
+          });
+        },
+        onSessionError: async (record) => {
+          const environmentalStatus = failedEnvironmentalStatus(
+            record.session.environmentalStatus,
+            new Date().toISOString(),
+          );
+          const result = await updateEnvironmentalStatus({ record, environmentalStatus, sessionStore });
+          if (result === "conflict") throw new Error("Environmental status changed concurrently");
         },
         onError: (error, context) => {
           app.log.warn({ err: error, ...context }, "Automatic weather refresh failed");
@@ -118,17 +143,19 @@ export async function buildApp(options: {
 
     const now = new Date();
     let state: HikingState = {
-      observedAt: now.toISOString(), source: "prototype-static",
+      observedAt: now.toISOString(), receivedAt: now.toISOString(), source: "prototype-static",
       weather: { temperatureF: 54, windMph: 8, rainProbability: 0.18 },
       daylight: { sunsetAt: new Date(now.getTime() + 159 * 60_000).toISOString(), remainingMinutes: 159 },
       user: { paceMph: 2.1, fatigue: "low" },
     };
+    let environmentalStatus = prototypeEnvironmentalStatus(now.toISOString());
     if (weatherProvider) {
       try {
         const location = hikeWeatherLocations[hike.id];
         if (!location) throw new Error(`Hike ${hike.id} has no weather location`);
         const environmental = await weatherProvider.getCurrent(location);
         state = { ...environmental, user: state.user };
+        environmentalStatus = currentEnvironmentalStatus(state, weatherFreshnessMaxAge);
       } catch (error) {
         request.log.warn({ error, hikeId: hike.id }, "Weather lookup failed");
         if (liveWeatherRequired) {
@@ -139,7 +166,7 @@ export async function buildApp(options: {
     }
     const session: Session = {
       id: randomUUID(), hikeId: hike.id, selectedRouteId: route.properties.id, status: "active", createdAt: now.toISOString(),
-      state,
+      state, environmentalStatus,
     };
     const evaluation = await evaluateRoutes({ sessionId: session.id, state: session.state, routes: hike.routes });
     const recommendation = selectRouteRecommendation(evaluation, hike.routes, session.state);
@@ -158,7 +185,10 @@ export async function buildApp(options: {
   app.get<{ Params: { sessionId: string } }>("/api/v1/sessions/:sessionId", async (request, reply) => {
     const record = await sessionStore.get(request.params.sessionId);
     if (!record) return reply.code(404).send({ error: { code: "session_not_found", message: "Session not found", details: {} } });
-    return { session: record.session, hike: hikeDetails[record.session.hikeId], decision: record.decision, sequence: record.sequence };
+    const environmentalStatus = resolveEnvironmentalStatus(
+      record.session.environmentalStatus, record.session.state, weatherFreshnessMaxAge,
+    );
+    return { session: { ...record.session, environmentalStatus }, hike: hikeDetails[record.session.hikeId], decision: record.decision, sequence: record.sequence };
   });
 
   app.patch<{ Params: { sessionId: string } }>("/api/v1/sessions/:sessionId/state", async (request, reply) => {
@@ -175,6 +205,12 @@ export async function buildApp(options: {
     const parsed = updateSessionStateRequestSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(422).send({ error: { code: "invalid_state_update", message: "Invalid state update", details: parsed.error.flatten() } });
     const nextState = applyStateUpdate(record.session.state, parsed.data);
+    if (parsed.data.source === "weather") {
+      record.session = {
+        ...record.session,
+        environmentalStatus: currentEnvironmentalStatus(nextState, weatherFreshnessMaxAge),
+      };
+    }
     const hike = hikeDetails[record.session.hikeId];
     if (!hike) throw new Error("Session references an unavailable hike");
     const result = await transitionSessionState({ record, nextState, hike, sessionStore });
@@ -198,7 +234,12 @@ export async function buildApp(options: {
 
     const items = record.events.filter((event) => event.sequence > after);
     const nextCursor = items.at(-1)?.sequence ?? after;
-    return decisionEventsResponseSchema.parse({ items, nextCursor });
+    const environmentalStatus = resolveEnvironmentalStatus(
+      record.session.environmentalStatus, record.session.state, weatherFreshnessMaxAge,
+    );
+    return decisionEventsResponseSchema.parse({
+      items, nextCursor, state: record.session.state, environmentalStatus,
+    });
   });
   app.get<{ Params: { sessionId: string } }>("/api/v1/sessions/:sessionId/evaluations/latest", async (request, reply) => {
     const record = await sessionStore.get(request.params.sessionId);
