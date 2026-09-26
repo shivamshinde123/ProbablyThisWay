@@ -8,6 +8,7 @@ The repository is initialized as `ProbablyThisWay`. The web, API, and shared-con
 ├── apps/
 │   ├── web/                    # React/TypeScript client
 │   │   └── src/
+│   │       ├── components/SessionHud.tsx
 │   │       ├── components/TerrainMap.tsx
 │   │       ├── App.tsx
 │   │       ├── main.tsx

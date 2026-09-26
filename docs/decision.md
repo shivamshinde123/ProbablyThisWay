@@ -109,6 +109,15 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** Keeping metrics beside geometry makes every displayed alternative self-describing and provides a stable input shape for the next decision-evaluation stage.
 - **Consequences:** All current alternatives remain preview-only until authoritative route generation replaces the prototype seed.
 
+## DEC-016 — Start sessions with an explicitly static hiking-state snapshot
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** Jev evaluation needs a structured state boundary before live providers are connected.
+- **Decision:** `POST /api/v1/sessions` validates the selected hike and route, creates an active session, and returns weather, daylight, pace, and fatigue under `source: prototype-static`.
+- **Reasoning:** This establishes the end-to-end state contract and HUD without implying the fixture is live or introducing a simulation control.
+- **Consequences:** Route selection locks after session start. Live adapters will replace the static source in a later stage without changing the session-state shape.
+
 ## Entry Template
 
 ```text

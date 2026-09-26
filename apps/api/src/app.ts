@@ -1,6 +1,7 @@
 import cors from "@fastify/cors";
 import Fastify from "fastify";
-import { hikeDetailSchema, hikeSummarySchema, type HikeDetail } from "@probably-this-way/contracts";
+import { randomUUID } from "node:crypto";
+import { createSessionRequestSchema, hikeDetailSchema, hikeSummarySchema, sessionSchema, type HikeDetail, type Session } from "@probably-this-way/contracts";
 
 const shared = { source: "prototype-seed", dataQuality: "preview" } as const;
 const hikeDetails: Record<string, HikeDetail> = {
@@ -25,5 +26,19 @@ export async function buildApp() {
     if (!hike) return reply.code(404).send({ error: { code: "hike_not_found", message: "Hike not found", details: {} } });
     return hikeDetailSchema.parse(hike);
   });
+  app.post("/api/v1/sessions", async (request, reply) => {
+    const parsed = createSessionRequestSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(422).send({ error: { code: "invalid_session", message: "Invalid session request", details: parsed.error.flatten() } });
+    const hike = hikeDetails[parsed.data.hikeId];
+    const route = hike?.routes.find((candidate) => candidate.properties.id === parsed.data.selectedRouteId);
+    if (!hike || !route) return reply.code(422).send({ error: { code: "invalid_route", message: "Selected route is not available for this hike", details: {} } });
+    const now = new Date();
+    const session: Session = {
+      id: randomUUID(), hikeId: hike.id, selectedRouteId: route.properties.id, status: "active", createdAt: now.toISOString(),
+      state: { observedAt: now.toISOString(), source: "prototype-static", weather: { temperatureF: 54, windMph: 8, rainProbability: 0.18 }, daylight: { sunsetAt: new Date(now.getTime() + 159 * 60_000).toISOString(), remainingMinutes: 159 }, user: { paceMph: 2.1, fatigue: "low" } },
+    };
+    return reply.code(201).send(sessionSchema.parse(session));
+  });
+
   return app;
 }

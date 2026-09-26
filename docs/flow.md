@@ -83,3 +83,15 @@ When code is added, replace planned labels with real file paths and record:
 - important function-to-function call paths;
 - state ownership and event propagation;
 - external dependencies and failure paths.
+## Implemented Session Start Flow
+
+```text
+selected hike + selected route
+  -> POST /api/v1/sessions
+  -> validate createSessionRequestSchema
+  -> verify route belongs to hike
+  -> create typed prototype-static HikingState snapshot
+  -> validate sessionSchema on API and client
+  -> lock route selection
+  -> render SessionHud over the map
+```

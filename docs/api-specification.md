@@ -25,9 +25,9 @@ Response `200` includes `routes[].properties` with `id`, `name`, `source`, `data
 
 ### `POST /sessions`
 
-Request: `{ "hikeId": "hike_1", "userProfile": { "experience": "intermediate" } }`
+Request: `{ "hikeId": "wachusett-summit", "selectedRouteId": "balanced-traverse" }`
 
-Response `201`: `{ "id": "session_1", "hikeId": "hike_1", "status": "active", "state": {}, "routes": [] }`
+Response `201` contains the session ID, selected route, status, timestamps, and a typed hiking-state snapshot. The current implementation returns `source: "prototype-static"`; it must not be presented as live observed data.
 
 ### `GET /sessions/{sessionId}`
 
