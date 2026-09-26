@@ -5,6 +5,7 @@ import {
   stateUpdateResponseSchema,
   type HikeDetail,
   type HikingState,
+  type EnvironmentalStatus,
   type StateUpdateResponse,
 } from "@probably-this-way/contracts";
 import { evaluateRoutes } from "./evaluation.js";
@@ -16,6 +17,23 @@ export type SessionStateTransition =
   | { status: "accepted"; response: StateUpdateResponse }
   | { status: "conflict" }
   | { status: "stale" };
+
+export async function updateEnvironmentalStatus(options: {
+  record: SessionRecord;
+  environmentalStatus: EnvironmentalStatus;
+  sessionStore: SessionStore;
+  receivedAt?: string;
+}): Promise<"accepted" | "conflict"> {
+  const { record, environmentalStatus, sessionStore, receivedAt } = options;
+  const expectedSequence = record.sequence;
+  record.sequence = expectedSequence + 1;
+  record.session = {
+    ...record.session,
+    environmentalStatus,
+    state: receivedAt ? { ...record.session.state, receivedAt } : record.session.state,
+  };
+  return (await sessionStore.save(record, expectedSequence)) ? "accepted" : "conflict";
+}
 
 export async function transitionSessionState(options: {
   record: SessionRecord;

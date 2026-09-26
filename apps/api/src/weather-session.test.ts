@@ -30,6 +30,7 @@ test("session creation uses a configured live environmental snapshot", async () 
   const body = sessionStartResponseSchema.parse(response.json());
   assert.deepEqual(requestedLocation, { latitude: 42.4898, longitude: -71.8976 });
   assert.equal(body.session.state.source, "weather");
+  assert.equal(body.session.environmentalStatus?.status, "current");
   assert.equal(body.session.state.receivedAt, "2026-09-25T20:00:01.000Z");
   assert.equal(body.session.state.provenance?.provider, "Open-Meteo");
   assert.deepEqual(body.session.state.weather, { temperatureF: 51.4, windMph: 12.5, rainProbability: 0.35 });

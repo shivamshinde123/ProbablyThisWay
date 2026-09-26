@@ -69,6 +69,21 @@ export function App() {
         if (!response.ok) throw new Error("Events returned " + response.status);
         const batch = decisionEventsResponseSchema.parse(await response.json());
         cursor = batch.nextCursor;
+        setSession((current) => {
+          if (!current || current.id !== sessionId) return current;
+          const currentStatus = current.environmentalStatus;
+          const unchanged = current.state.observedAt === batch.state.observedAt
+            && current.state.receivedAt === batch.state.receivedAt
+            && currentStatus?.status === batch.environmentalStatus.status
+            && currentStatus?.reason === batch.environmentalStatus.reason
+            && currentStatus?.checkedAt === batch.environmentalStatus.checkedAt;
+          if (unchanged) return current;
+          return {
+            ...current,
+            state: batch.state,
+            environmentalStatus: batch.environmentalStatus,
+          };
+        });
 
         if (batch.items.length > 0) {
           setEvents((current) => {
@@ -77,10 +92,6 @@ export function App() {
           });
           const latest = batch.items.at(-1);
           if (latest) {
-            setSession((current) => {
-              if (!current || current.id !== sessionId) return current;
-              return { ...current, state: latest.state };
-            });
             setEvaluation(latest.decision.evaluation);
             setRecommendation(latest.decision.recommendation);
           }

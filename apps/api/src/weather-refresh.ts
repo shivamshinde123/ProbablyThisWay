@@ -23,6 +23,7 @@ type WeatherRefresherOptions = {
   locations: Readonly<Record<string, WeatherLocation>>;
   intervalMs: number;
   applySnapshot: (record: SessionRecord, state: HikingState) => Promise<WeatherRefreshResult>;
+  onSessionError?: (record: SessionRecord, error: unknown) => Promise<void>;
   onError?: (error: unknown, context: { hikeId?: string; sessionId?: string }) => void;
 };
 
@@ -55,8 +56,9 @@ export class WeatherRefresher {
       const snapshots = new Map<string, Promise<EnvironmentalSnapshot>>();
 
       for (const sessionId of sessionIds) {
+        let record: SessionRecord | undefined;
         try {
-          const record = await this.#options.sessionStore.get(sessionId);
+          record = await this.#options.sessionStore.get(sessionId);
           if (!record) continue;
           const location = this.#options.locations[record.session.hikeId];
           if (!location) throw new Error(`Hike ${record.session.hikeId} has no weather location`);
@@ -69,7 +71,15 @@ export class WeatherRefresher {
           const nextState = hikingStateSchema.parse({ ...environmental, user: record.session.state.user });
           await this.#options.applySnapshot(record, nextState);
         } catch (error) {
-          this.#options.onError?.(error, { sessionId });
+          const context = { sessionId, hikeId: record?.session.hikeId };
+          if (record && this.#options.onSessionError) {
+            try {
+              await this.#options.onSessionError(record, error);
+            } catch (statusError) {
+              this.#options.onError?.(statusError, context);
+            }
+          }
+          this.#options.onError?.(error, context);
         }
       }
     } catch (error) {

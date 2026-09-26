@@ -222,3 +222,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** A server-owned refresh closes the live-input loop without adding browser controls, while shared transition logic keeps pushed and pulled observations behaviorally identical. Per-hike request deduplication limits provider traffic.
 - **Consequences:** Active sessions can now produce automatic recommendation events as weather changes, including after an API restart when PostgreSQL is configured. Each API replica currently runs a refresher; compare-and-swap prevents lost updates, but distributed scheduling/leases, provider-specific freshness ceilings, backoff, and caching remain future operational work.
 - **Supersedes:** The automatic-periodic-refresh and stored-receive-time follow-ups in DEC-024.
+
+## DEC-027 — Expose freshness without fabricating decision events
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** Automatic refresh retained the last valid recommendation after provider failure, but the active UI could continue presenting those conditions as current. Below-threshold updates also changed durable state without producing a decision event for the client.
+- **Decision:** Add typed environmental status with current, stale, and prototype states plus explicit reasons. Use a 30-minute default Open-Meteo observation ceiling, configurable no lower than the provider's 15-minute current-condition timestep and never shorter than the refresh interval. Persist refresh failures through compare-and-swap without appending a recommendation event. Return latest state/status on every event-feed read so the HUD updates even when the event batch is empty.
+- **Reasoning:** Freshness is session state, not a decision. Keeping it beside the cursor response preserves the contiguous decision log while making failure and age visible within the existing polling path. A 30-minute ceiling allows two documented provider timesteps before expiry.
+- **Consequences:** The HUD clearly distinguishes current, failed/expired, unknown legacy, and prototype conditions while retaining last valid values. Existing persisted sessions remain readable because stored status is optional and derived when absent. Provider-specific ceilings for additional adapters must be defined when those adapters are added.
+- **Supersedes:** The provider-specific freshness-ceiling follow-ups in DEC-024 and DEC-026.

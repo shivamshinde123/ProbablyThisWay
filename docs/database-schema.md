@@ -15,7 +15,7 @@ PostgreSQL is the implemented durable store for sessions and decision events. Po
 | `selected_route_id` | `text` | Selected route identifier |
 | `status` | `text` | Constrained to `active` |
 | `created_at` | `timestamptz` | Session creation time |
-| `session_payload` | `jsonb` | Contract-valid current `Session` |
+| `session_payload` | `jsonb` | Contract-valid current `Session`, including optional environmental freshness status for legacy-row compatibility |
 | `last_evaluated_state` | `jsonb` | Baseline for cumulative threshold detection |
 | `latest_decision` | `jsonb` | Contract-valid latest evaluation and recommendation |
 | `state_sequence` | `integer` | Non-negative optimistic-concurrency version |
@@ -37,7 +37,7 @@ An index on `(session_id, occurred_at)` supports chronological event reads.
 
 ## Write Consistency
 
-Session state, the latest decision, and new events are written in one transaction. Updates use `WHERE state_sequence = expectedSequence`; a mismatch returns an application-level conflict rather than overwriting a concurrent observation. Event uniqueness makes repeated event insertion harmless within a successful state transition.
+Session state, environmental status, the latest decision, and new events are written through the same transaction boundary. Status-only freshness checks increment `state_sequence` without incrementing the independent decision-event cursor. Updates use `WHERE state_sequence = expectedSequence`; a mismatch returns an application-level conflict rather than overwriting a concurrent observation. Event uniqueness makes repeated event insertion harmless within a successful state transition.
 
 ## Runtime Modes
 
