@@ -39,6 +39,7 @@ The API applies a validated per-process/IP request budget to non-health routes, 
 - Unit tests for thresholds, score normalization, and policy.
 - Contract tests for adapters and API schemas.
 - Integration tests from state snapshot through persisted decision.
+- PostgreSQL 17 CI integration verifies ordered migration application, tracking, checksums, repeat execution, and retention-index presence.
 - Playwright browser tests for authoritative catalog loading, trail selection, recommendation rendering, responsive stacking, stale-weather warnings, and absence of simulation controls.
 - Golden scenarios for stable route-policy outcomes.
 - Pull-request CI installs from `package-lock.json`, then runs the complete test, type-check, and production-build commands on Node.js 22.

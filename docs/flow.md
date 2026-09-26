@@ -198,7 +198,19 @@ state transition
   -> application shutdown closes the connection pool
 ```
 
-`apps/api/src/migrate.ts` applies `001_session_persistence.sql` before a new database is used.
+Migration lifecycle:
+
+```text
+npm run db:migrate -w @probably-this-way/api
+  -> acquire schema advisory lock
+  -> bootstrap schema_migrations
+  -> discover ordered NNN_name.sql files
+  -> verify checksums for applied versions
+  -> apply and record each pending migration
+  -> release lock
+```
+
+CI provisions PostgreSQL 17, applies every migration, reruns the migration set as a no-op, and verifies tracked versions plus the retention index.
 
 ## Implemented Weather Initialization Flow
 

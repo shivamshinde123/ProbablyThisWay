@@ -193,7 +193,7 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Context:** Process-local sessions and events disappear on restart and cannot safely coordinate state writes across multiple API instances.
 - **Decision:** Introduce a `SessionStore` interface with PostgreSQL and in-memory implementations. Use `node-postgres`, parameterized queries, and one transaction for each session/event write. Require `DATABASE_URL` in production, retain the in-memory implementation for local development and tests, and reject updates whose expected `state_sequence` is no longer current.
 - **Reasoning:** A narrow persistence boundary keeps the HTTP and policy layers independent of the driver, while database compare-and-swap semantics prevent lost updates across processes.
-- **Consequences:** Deployments must provision PostgreSQL and apply `001_session_persistence.sql` before API startup. The first migration stores contract-valid JSON payloads beside queryable identity, status, sequence, and time columns. PostGIS-backed normalized route data, migration version tracking, retention policy, and live PostgreSQL integration coverage remain follow-up work.
+- **Consequences:** Deployments must provision PostgreSQL and apply `001_session_persistence.sql` before API startup. The first migration stores contract-valid JSON payloads beside queryable identity, status, sequence, and time columns. PostGIS-backed normalized route data and retention execution remain follow-up work. Migration tracking and live PostgreSQL coverage are resolved by DEC-032.
 - **Supersedes:** The process-memory-only consequences recorded in DEC-020 and DEC-021.
 
 ## DEC-024 — Initialize sessions from validated live weather when configured
@@ -272,3 +272,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Validate configurable structured-log levels and CORS allowlists; apply the security-fixed `@fastify/rate-limit` 11.2.0 plugin to non-health routes; cap event pages at 100; and expose separate process liveness and store-backed readiness routes.
 - **Reasoning:** These controls make a single API instance safer to deploy and give an orchestrator truthful probes without requiring a hosting provider or secrets.
 - **Consequences:** Rate counters remain process-local and must move to a shared store before horizontal scaling. Production must declare at least one browser origin. Existing `/api/v1/health` remains compatible.
+
+## DEC-032 — Track immutable migrations and verify them against PostgreSQL
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** The migration command executed one hard-coded file and CI never exercised PostgreSQL, leaving upgrade ordering and driver/SQL behavior unverified.
+- **Decision:** Discover ordered `NNN_name.sql` files, serialize runners with a PostgreSQL advisory lock, record version/filename/SHA-256 checksum in `schema_migrations`, reject changed applied files, and run first-apply plus no-op-repeat integration coverage against the pinned PostgreSQL 17.11 service in CI.
+- **Reasoning:** Explicit immutable history and a real database check make deploy-time schema changes repeatable without introducing an ORM.
+- **Consequences:** Migration files are append-only after application. Local PostgreSQL integration tests skip when `TEST_DATABASE_URL` is absent; CI always runs them. Migration `002` adds the index required for a later retention sweep.
+- **Supersedes:** The migration-version-tracking and live-PostgreSQL-testing follow-ups in DEC-023.

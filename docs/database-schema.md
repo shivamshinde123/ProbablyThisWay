@@ -2,9 +2,9 @@
 
 PostgreSQL is the implemented durable store for sessions and decision events. PostGIS remains the planned extension for authoritative route geometry; the current persistence migration does not require it.
 
-## Implemented Migration
+## Implemented Migrations
 
-`apps/api/migrations/001_session_persistence.sql` creates:
+`apps/api/migrations/001_session_persistence.sql` creates the durable domain tables:
 
 ### `sessions`
 
@@ -33,7 +33,11 @@ PostgreSQL is the implemented durable store for sessions and decision events. Po
 | `occurred_at` | `timestamptz` | Event time |
 | `payload` | `jsonb` | Contract-valid `DecisionEvent` |
 
-An index on `(session_id, occurred_at)` supports chronological event reads.
+An index on `(session_id, occurred_at)` supports chronological event reads. `002_retention_index.sql` adds `sessions_updated_at_idx` for bounded retention sweeps.
+
+### `schema_migrations`
+
+The migration runner bootstraps this table with version, filename, SHA-256 checksum, and application time. It serializes runners with a PostgreSQL advisory lock, skips previously applied files, and fails if an applied file's checksum changes.
 
 ## Write Consistency
 
@@ -43,11 +47,11 @@ Session state, environmental status, the latest decision, and new events are wri
 
 When `DATABASE_URL` is set, the API uses `PostgresSessionStore`. Production startup fails without that variable. Local development and tests may omit it and use `InMemorySessionStore`, which implements the same compare-and-swap contract but is cleared on restart.
 
-Run `npm run db:migrate -w @probably-this-way/api` before starting an API process against a new database.
+Run `npm run db:migrate -w @probably-this-way/api` before starting an API process. The command discovers ordered migration files, applies only pending versions, and verifies immutable checksums. CI runs the same migrations twice against PostgreSQL 17 to prove first-apply and repeat behavior.
 
 ## Planned Geospatial Tables
 
-Authoritative production route ingestion will add normalized `hikes`, `trails`, `routes`, `hiking_state_snapshots`, `evaluations`, and `route_scores` tables plus PostGIS geometry/geography columns and GiST indexes. Their exact migration and retention policy remain TBD.
+Authoritative production route ingestion will add normalized `hikes`, `trails`, `routes`, `hiking_state_snapshots`, `evaluations`, and `route_scores` tables plus PostGIS geometry/geography columns and GiST indexes. Their exact migration remains TBD. Session/event deletion is still governed by the retention policy described in the technical design.
 
 ## Route Snapshot Storage
 
