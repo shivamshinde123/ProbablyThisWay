@@ -41,3 +41,11 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 | `evaluation.ts` | Invoke Jev with typed route questions or produce the labeled deterministic baseline | Hiking state, valid route alternatives, server environment |
 | Evaluation store | Retain the latest result for the current process | Session ID |
 | Route score display | Render bounded suitability and provider provenance without selecting a recommendation | Typed route evaluation |
+
+## Implemented Recommendation Components
+
+| Component | Responsibility | Depends on |
+|---|---|---|
+| `policy.ts` | Select the highest-scoring valid route with deterministic tie-breaking | Typed evaluation and hike routes |
+| `RecommendationBanner` | Show the chosen route, suitability, policy version, and judgment reminder | Typed recommendation |
+| Recommendation-aware `TerrainMap` | Render recommended, originally selected, and alternative route states | Route IDs and recommendation score |

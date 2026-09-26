@@ -139,3 +139,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Send the normalized state and one typed Noul question per valid route from the API when `JEV_API_KEY` is configured. Validate the response and fall back after four seconds or any invalid response to a deterministic, locally calculated score labeled `deterministic-baseline`.
 - **Reasoning:** This preserves the real integration boundary without exposing credentials to the browser or falsely presenting local arithmetic as Jev output.
 - **Consequences:** Local scores are suitable for development only. Provider provenance must remain visible, and production deployment requires a Jev key plus contract verification against the configured endpoint.
+
+## DEC-018 — Rank by suitability with stable route-order ties
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** Phase 6 needs an auditable recommendation from model-produced route scores, while current route data has no closure or hard-constraint fields.
+- **Decision:** Application policy selects the valid route with the highest suitability. Exact ties preserve the validated hike's existing route order. The policy emits a separate typed recommendation using version `highest-suitability-v1`.
+- **Reasoning:** A pure deterministic step keeps final control outside Jev, makes outcomes repeatable, and creates a versioned boundary for adding hard constraints later.
+- **Consequences:** Signal green denotes the recommendation, orange preserves the user's original choice, and the UI continues to display all scores. Closure and restriction overrides remain required future policy inputs.

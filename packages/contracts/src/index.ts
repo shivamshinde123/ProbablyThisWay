@@ -41,5 +41,12 @@ export const routeEvaluationSchema = z.object({
   scores: z.array(routeSuitabilitySchema).min(2),
 });
 export type RouteEvaluation = z.infer<typeof routeEvaluationSchema>;
-export const sessionStartResponseSchema = z.object({ session: sessionSchema, evaluation: routeEvaluationSchema });
+export const routeRecommendationSchema = z.object({
+  routeId: z.string().min(1), suitability: z.number().min(0).max(1),
+  policyVersion: z.literal("highest-suitability-v1"), decidedAt: z.string().datetime(),
+});
+export type RouteRecommendation = z.infer<typeof routeRecommendationSchema>;
+export const latestDecisionSchema = z.object({ evaluation: routeEvaluationSchema, recommendation: routeRecommendationSchema });
+export type LatestDecision = z.infer<typeof latestDecisionSchema>;
+export const sessionStartResponseSchema = latestDecisionSchema.extend({ session: sessionSchema });
 export type SessionStartResponse = z.infer<typeof sessionStartResponseSchema>;

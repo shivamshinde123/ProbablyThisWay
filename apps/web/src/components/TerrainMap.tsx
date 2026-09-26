@@ -4,9 +4,9 @@ import { Cartesian2, Cartesian3, Color, Ion, LabelStyle, Math as CesiumMath, Ter
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
 type MapStatus = "starting" | "ready" | "fallback" | "error";
-type TerrainMapProps = { routes: RouteFeature[]; selectedRouteId?: string };
+type TerrainMapProps = { routes: RouteFeature[]; selectedRouteId?: string; recommendedRouteId?: string; recommendationSuitability?: number };
 
-export function TerrainMap({ routes, selectedRouteId }: TerrainMapProps) {
+export function TerrainMap({ routes, selectedRouteId, recommendedRouteId, recommendationSuitability }: TerrainMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
   const routeEntityIdsRef = useRef<string[]>([]);
@@ -32,14 +32,23 @@ export function TerrainMap({ routes, selectedRouteId }: TerrainMapProps) {
     const viewer=viewerRef.current;if(!viewer||viewer.isDestroyed()||status==="starting")return;
     routeEntityIdsRef.current.forEach((id)=>viewer.entities.removeById(id));routeEntityIdsRef.current=[];
     routes.forEach((route)=>{
-      const active=route.properties.id===selectedRouteId;const id=`route-${route.properties.id}`;routeEntityIdsRef.current.push(id);
-      viewer.entities.add({id,name:route.properties.name,polyline:{positions:Cartesian3.fromDegreesArrayHeights(route.geometry.coordinates.flat()),width:active?6:3,material:Color.fromCssColorString(active?"#ff5c35":"#8c9b75").withAlpha(active?1:.68),clampToGround:usesWorldTerrainRef.current}});
+      const active=route.properties.id===selectedRouteId;
+      const recommended=route.properties.id===recommendedRouteId;
+      const id=`route-${route.properties.id}`;routeEntityIdsRef.current.push(id);
+      const color=recommended?"#b7ff6a":active?"#ff5c35":"#8c9b75";
+      viewer.entities.add({id,name:route.properties.name,polyline:{positions:Cartesian3.fromDegreesArrayHeights(route.geometry.coordinates.flat()),width:recommended?7:active?5:3,material:Color.fromCssColorString(color).withAlpha(recommended||active?1:.62),clampToGround:usesWorldTerrainRef.current,zIndex:recommended?2:active?1:0}});
     });
-    const selected=routes.find((route)=>route.properties.id===selectedRouteId);const summit=selected?.geometry.coordinates.at(-1);
-    if(selected&&summit){const id="selected-route-label";routeEntityIdsRef.current.push(id);viewer.entities.add({id,position:Cartesian3.fromDegrees(summit[0],summit[1],usesWorldTerrainRef.current?0:summit[2]),label:{text:`${selected.properties.name.toUpperCase()}  ·  ${selected.properties.estimatedMinutes} MIN`,font:"500 12px DM Mono",fillColor:Color.fromCssColorString("#e7eadf"),outlineColor:Color.fromCssColorString("#07110e"),outlineWidth:4,style:LabelStyle.FILL_AND_OUTLINE,verticalOrigin:VerticalOrigin.BOTTOM,pixelOffset:new Cartesian2(0,-14)},point:{color:Color.fromCssColorString("#ff5c35"),outlineColor:Color.fromCssColorString("#e7eadf"),outlineWidth:2,pixelSize:11}});}
+    const focusRoute=routes.find((route)=>route.properties.id===(recommendedRouteId??selectedRouteId));
+    const endpoint=focusRoute?.geometry.coordinates.at(-1);
+    if(focusRoute&&endpoint){
+      const recommended=focusRoute.properties.id===recommendedRouteId;
+      const scoreText=recommended&&recommendationSuitability!==undefined?`  ·  ${Math.round(recommendationSuitability*100)}% FIT`:"";
+      const id="focus-route-label";routeEntityIdsRef.current.push(id);
+      viewer.entities.add({id,position:Cartesian3.fromDegrees(endpoint[0],endpoint[1],usesWorldTerrainRef.current?0:endpoint[2]),label:{text:`${recommended?"RECOMMENDED  ·  ":""}${focusRoute.properties.name.toUpperCase()}${scoreText}`,font:"500 12px DM Mono",fillColor:Color.fromCssColorString("#e7eadf"),outlineColor:Color.fromCssColorString("#07110e"),outlineWidth:4,style:LabelStyle.FILL_AND_OUTLINE,verticalOrigin:VerticalOrigin.BOTTOM,pixelOffset:new Cartesian2(0,-14)},point:{color:Color.fromCssColorString(recommended?"#b7ff6a":"#ff5c35"),outlineColor:Color.fromCssColorString("#e7eadf"),outlineWidth:2,pixelSize:recommended?13:11}});
+    }
     viewer.scene.requestRender();
-  },[routes,selectedRouteId,status]);
+  },[routes,selectedRouteId,recommendedRouteId,recommendationSuitability,status]);
 
-  const selectedName=routes.find((route)=>route.properties.id===selectedRouteId)?.properties.name;
-  return <div className="terrain-map"><div ref={containerRef} className="cesium-host" aria-label="Interactive 3D route alternatives map"/><div className="map-meta"><span>42.49° N</span><span>71.89° W</span></div><div className="map-mode" data-status={status}><span/>{status==="starting"&&"Initializing terrain"}{status==="ready"&&"World Terrain online"}{status==="fallback"&&"Ellipsoid preview · add ion token for terrain"}{status==="error"&&"Map unavailable"}</div><div className="map-caption">{selectedName??"Loading route alternatives"}<span>Orange selected · moss alternatives</span></div></div>;
+  const selectedName=routes.find((route)=>route.properties.id===(recommendedRouteId??selectedRouteId))?.properties.name;
+  return <div className="terrain-map"><div ref={containerRef} className="cesium-host" aria-label="Interactive 3D route alternatives map"/><div className="map-meta"><span>42.49° N</span><span>71.89° W</span></div><div className="map-mode" data-status={status}><span/>{status==="starting"&&"Initializing terrain"}{status==="ready"&&"World Terrain online"}{status==="fallback"&&"Ellipsoid preview · add ion token for terrain"}{status==="error"&&"Map unavailable"}</div><div className="map-caption">{selectedName??"Loading route alternatives"}<span>{recommendedRouteId?"Signal green recommended · orange original":"Orange selected · moss alternatives"}</span></div></div>;
 }
