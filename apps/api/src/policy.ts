@@ -8,8 +8,8 @@ import {
 
 function exclusionReasons(route: RouteFeature): string[] {
   const reasons: string[] = [];
-  if (route.properties.legalStatus !== "legal")
-    reasons.push("Route is not confirmed as a legal trail");
+  if (route.properties.legalStatus === "illegal")
+    reasons.push("Route is marked as an illegal trail");
   if (route.properties.accessStatus === "closed")
     reasons.push("Route is officially closed");
   if (route.properties.accessStatus === "restricted")

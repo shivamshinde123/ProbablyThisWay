@@ -8,7 +8,7 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "test": "tsx --test src/adapter-auth.test.ts src/app.test.ts src/environmental-status.test.ts src/evaluation.test.ts src/operational-config.test.ts src/policy.test.ts src/retention.test.ts src/route-catalog.test.ts src/session-store.test.ts src/thresholds.test.ts src/trail-search.test.ts src/weather-adapter.test.ts src/weather-refresh.test.ts src/weather-session.test.ts",
+    "test": "tsx --test src/adapter-auth.test.ts src/app.test.ts src/environmental-status.test.ts src/evaluation.test.ts src/internet-hike.test.ts src/operational-config.test.ts src/policy.test.ts src/retention.test.ts src/route-catalog.test.ts src/session-store.test.ts src/thresholds.test.ts src/trail-search.test.ts src/weather-adapter.test.ts src/weather-refresh.test.ts src/weather-session.test.ts",
     "test:postgres": "tsx --test src/postgres.integration.test.ts",
     "db:migrate": "tsx src/migrate.ts"
   },

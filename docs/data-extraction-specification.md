@@ -2,14 +2,14 @@
 
 ## Sources
 
-| Data | Expected source | Output |
-|---|---|---|
-| Trail geometry | Massachusetts DCR Roads and Trails ArcGIS layer | Validated WGS84 GeoJSON LineString with dataset timestamp and feature IDs |
-| Terrain/elevation | Cesium World Terrain when a token is configured; official DCR trail-map ascent metrics | Terrain-clamped geometry plus published route ascent |
-| Weather | Configured Open-Meteo forecast endpoint | Temperature (F), wind (mph), precipitation probability, observation time, provider provenance |
-| Time/daylight | Open-Meteo daily sunset when configured; static development fallback otherwise | UTC sunset and non-negative remaining minutes |
-| Position/progress | Post-MVP GPS adapter | Point, accuracy, route progress; unavailable in the MVP unless a real supported source is added |
-| User state | User-entered/session-derived facts | Pace, fatigue, experience, goal |
+| Data              | Expected source                                                                        | Output                                                                                          |
+| ----------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Trail geometry    | Massachusetts DCR Roads and Trails ArcGIS layer                                        | Validated WGS84 GeoJSON LineString with dataset timestamp and feature IDs                       |
+| Terrain/elevation | Cesium World Terrain when a token is configured; official DCR trail-map ascent metrics | Terrain-clamped geometry plus published route ascent                                            |
+| Weather           | Configured Open-Meteo forecast endpoint                                                | Temperature (F), wind (mph), precipitation probability, observation time, provider provenance   |
+| Time/daylight     | Open-Meteo daily sunset when configured; static development fallback otherwise         | UTC sunset and non-negative remaining minutes                                                   |
+| Position/progress | Post-MVP GPS adapter                                                                   | Point, accuracy, route progress; unavailable in the MVP unless a real supported source is added |
+| User state        | User-entered/session-derived facts                                                     | Pace, fatigue, experience, goal                                                                 |
 
 ## Pipeline
 
@@ -35,13 +35,14 @@ No UI action or data pipeline generates artificial condition changes for the pro
 ## Data Quality Checks
 
 Geometry continuity, route/trail proximity, elevation outliers, unit consistency, timestamp ordering, duplicate observations, and impossible speeds must be checked.
+
 ## Authoritative Wachusett Snapshot
 
 Run `npm run data:refresh:dcr` to query the explicit reviewed DCR feature IDs. Generation fails if a segment is missing, marked illegal, malformed, or separated from the next segment by more than 20 meters. The committed snapshot preserves source URL, April 2024 dataset timestamp, feature IDs, condition, legal status, access status, and typed restrictions. DCR linework contains no elevation or exposure field; coordinates use zero for terrain clamping, official trail-map metrics supply ascent and duration, and exposure remains explicitly unknown.
 
 ## Runtime Internet Trail Search
 
-Submitted trail searches first use OpenStreetMap Nominatim with full GeoJSON geometry and a simplification tolerance. Direct trail-like LineString and MultiLineString objects are retained. When the match is a point or non-linear place, the adapter centers a small OSM map extract on it, excludes private/no-access ways and sidewalk/crossing footways, ranks trail-like ways by tags, surface, distance, and length, and returns a place-labeled nearby network plus named paths. Dense extracts retry with a smaller bound. Mapped length is computed locally with the haversine formula, direct OSM object URLs and mandatory attribution are preserved, and all provider payloads are validated. Search results remain discovery previews without reviewed DCR legal, condition, restriction, elevation, or alternative-route guarantees.
+Submitted trail searches first use OpenStreetMap Nominatim with full GeoJSON geometry and a simplification tolerance. Direct trail-like LineString and MultiLineString objects are retained. When the match is a point or non-linear place, the adapter centers a small OSM map extract on it, excludes private/no-access ways and sidewalk/crossing footways, ranks trail-like ways by tags, surface, distance, and length, and returns a place-labeled nearby network plus named paths. Dense extracts retry with a smaller bound. Mapped length is computed locally with the haversine formula, direct OSM object URLs and mandatory attribution are preserved, and all provider payloads are validated. Search results remain unreviewed discovery data. When a user starts one, each LineString (or each branch of a MultiLineString) is converted into a session-scoped candidate with locally calculated distance and time estimate; legal status, access, condition, exposure, and elevation stay `unknown` rather than being invented.
 
 ## Rendered Elevation Terrain
 

@@ -44,7 +44,7 @@ The API combines session orchestration, live weather initialization and periodic
 
 ## Internet Discovery Boundary
 
-The browser submits a search to the Fastify API; it never calls public OpenStreetMap services directly. The API serializes and caches searches, validates Nominatim GeoJSON, returns direct line matches, or uses a bounded OSM map extract to find nearby trail-like ways for point/area matches. Shared contracts validate every attributed preview. This discovery path does not write to PostgreSQL and does not enter the OpenRouter/policy pipeline. Reviewed route snapshots remain the only source for field-session alternatives and recommendations.
+The browser submits a search to the Fastify API; it never calls public OpenStreetMap services directly. The API serializes and caches searches, validates Nominatim GeoJSON, returns direct line matches, or uses a bounded OSM map extract to find nearby trail-like ways for point/area matches. Search itself is stateless. On explicit session start, the API converts the selected geometry into a session-scoped `HikeDetail`, persists that exact route set, obtains weather for its first coordinate when configured, and sends up to the eight longest candidate branches through the same OpenRouter/baseline and deterministic-policy pipeline. Unknown source facts stay unknown and do not become safety claims.
 
 ## Terrain Provider Boundary
 

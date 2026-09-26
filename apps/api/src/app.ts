@@ -12,6 +12,7 @@ import {
   latestDecisionSchema,
   sessionStartResponseSchema,
   updateSessionStateRequestSchema,
+  type HikeDetail,
   type HikingState,
   type Session,
   type UpdateSessionStateRequest,
@@ -40,6 +41,7 @@ import {
   type WeatherProvider,
 } from "./weather-adapter.js";
 import { hikeDetails, hikeWeatherLocations } from "./route-catalog.js";
+import { createInternetHike, hikeWeatherLocation } from "./internet-hike.js";
 import {
   WeatherRefresher,
   resolveWeatherRefreshInterval,
@@ -131,7 +133,7 @@ export async function buildApp(
         locations: hikeWeatherLocations,
         intervalMs: weatherRefreshInterval!,
         applySnapshot: async (record, nextState) => {
-          const hike = hikeDetails[record.session.hikeId];
+          const hike = record.hike ?? hikeDetails[record.session.hikeId];
           if (!hike) throw new Error("Session references an unavailable hike");
           const environmentalStatus = currentEnvironmentalStatus(
             nextState,
@@ -267,10 +269,20 @@ export async function buildApp(
           details: parsed.error.flatten(),
         },
       });
-    const hike = hikeDetails[parsed.data.hikeId];
-    const route = hike?.routes.find(
-      (candidate) => candidate.properties.id === parsed.data.selectedRouteId,
-    );
+    const hike: HikeDetail | undefined =
+      "internetTrail" in parsed.data
+        ? createInternetHike(parsed.data.internetTrail)
+        : hikeDetails[parsed.data.hikeId];
+    const route =
+      hike && "internetTrail" in parsed.data
+        ? hike.routes[0]
+        : hike?.routes.find(
+            (candidate) =>
+              candidate.properties.id ===
+              ("selectedRouteId" in parsed.data
+                ? parsed.data.selectedRouteId
+                : undefined),
+          );
     if (!hike || !route)
       return reply.code(422).send({
         error: {
@@ -295,7 +307,8 @@ export async function buildApp(
     let environmentalStatus = prototypeEnvironmentalStatus(now.toISOString());
     if (weatherProvider) {
       try {
-        const location = hikeWeatherLocations[hike.id];
+        const location =
+          hikeWeatherLocations[hike.id] ?? hikeWeatherLocation(hike);
         if (!location)
           throw new Error(`Hike ${hike.id} has no weather location`);
         const environmental = await weatherProvider.getCurrent(location);
@@ -353,6 +366,7 @@ export async function buildApp(
     });
     await sessionStore.create({
       session,
+      hike,
       decision,
       sequence: 0,
       lastEvaluatedState: session.state,
@@ -362,6 +376,7 @@ export async function buildApp(
     return reply.code(201).send(
       sessionStartResponseSchema.parse({
         session,
+        hike,
         evaluation,
         recommendation,
       }),
@@ -420,7 +435,7 @@ export async function buildApp(
       );
       return {
         session: { ...record.session, environmentalStatus },
-        hike: hikeDetails[record.session.hikeId],
+        hike: record.hike ?? hikeDetails[record.session.hikeId],
         decision: record.decision,
         sequence: record.sequence,
       };
@@ -481,7 +496,7 @@ export async function buildApp(
           ),
         };
       }
-      const hike = hikeDetails[record.session.hikeId];
+      const hike = record.hike ?? hikeDetails[record.session.hikeId];
       if (!hike) throw new Error("Session references an unavailable hike");
       const result = await transitionSessionState({
         record,

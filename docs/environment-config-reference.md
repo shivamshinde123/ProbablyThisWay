@@ -8,6 +8,7 @@ These are the implemented runtime and build-time variables. Provider and server 
 | `PORT` | No | No | API listen port; defaults to `3001` |
 | `HOST` | No | No | API bind host; defaults to `127.0.0.1` |
 | `WEB_ORIGIN` | No | No | Browser origin allowed by API CORS; defaults to `http://localhost:5173` |
+| `LOAD_ENV_FILE` | No | No | Set to `false` only for isolated test processes; otherwise the API entry point loads the repository-root `.env` when present |
 | `VITE_API_BASE_URL` | No | No | Browser API base URL; defaults to `http://localhost:3001/api/v1` |
 | `DATABASE_URL` | Yes in production | Yes | PostgreSQL connection used by the durable session/event store; omission selects the in-memory store only outside production |
 | `VITE_CESIUM_ION_ACCESS_TOKEN` | No | No | Optional scoped browser token selecting Cesium World Terrain; without it the map uses the public ArcGIS World Elevation terrain service |
@@ -33,6 +34,8 @@ These are the implemented runtime and build-time variables. Provider and server 
 | `RETENTION_SWEEP_INTERVAL_MS` | No | No | Retention sweep cadence; defaults to `21600000` (six hours); integer 60000-86400000 |
 
 ## Rules
+
+- Local API startup automatically loads the repository-root `.env` when present. Existing process/deployment environment values take precedence. Browser-only Vite settings remain in `apps/web/.env.local`.
 
 - Commit `.env.example` with names and safe placeholders only.
 - Never expose server credentials to browser bundles.

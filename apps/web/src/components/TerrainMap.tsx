@@ -6,21 +6,48 @@ import type {
 import {
   ArcGISTiledElevationTerrainProvider,
   BoundingSphere,
-  Cartesian2,
   Cartesian3,
+  Cartographic,
   Color,
   HeadingPitchRange,
   HeightReference,
   Ion,
-  LabelStyle,
   Material,
   Math as CesiumMath,
   Terrain,
-  VerticalOrigin,
   Viewer,
 } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
+type MapCoordinate = readonly [number, number, number?];
+
+function frameTerrainCoordinates(
+  viewer: Viewer,
+  coordinates: readonly MapCoordinate[],
+  duration: number,
+): void {
+  if (coordinates.length === 0) return;
+  const positions = coordinates.map(([longitude, latitude, suppliedHeight]) => {
+    const sampledHeight = viewer.scene.globe.getHeight(
+      Cartographic.fromDegrees(longitude, latitude),
+    );
+    const surfaceHeight =
+      sampledHeight !== undefined
+        ? sampledHeight + 45
+        : Math.max(suppliedHeight ?? 0, 800);
+    return Cartesian3.fromDegrees(longitude, latitude, surfaceHeight);
+  });
+  const sphere = BoundingSphere.fromPoints(positions);
+  viewer.camera.flyToBoundingSphere(sphere, {
+    duration,
+    offset: new HeadingPitchRange(
+      CesiumMath.toRadians(16),
+      CesiumMath.toRadians(-34),
+      Math.max(2_800, sphere.radius * 5.2),
+    ),
+    complete: () => viewer.scene.requestRender(),
+  });
+}
 type MapStatus = "starting" | "cesium" | "global" | "error";
 type TerrainMapProps = {
   routes: RouteFeature[];
@@ -200,10 +227,6 @@ export function TerrainMap({
     const endpoint = focusRoute?.geometry.coordinates.at(-1);
     if (focusRoute && endpoint) {
       const recommended = focusRoute.properties.id === recommendedRouteId;
-      const scoreText =
-        recommended && recommendationSuitability !== undefined
-          ? `  ·  ${Math.round(recommendationSuitability * 100)}% FIT`
-          : "";
       const id = "focus-route-label";
       routeEntityIdsRef.current.push(id);
       viewer.entities.add({
@@ -213,17 +236,6 @@ export function TerrainMap({
           endpoint[1],
           usesElevationTerrainRef.current ? 0 : endpoint[2],
         ),
-        label: {
-          text: `${recommended ? "RECOMMENDED  ·  " : ""}${focusRoute.properties.name.toUpperCase()}${scoreText}`,
-          font: "500 15px DM Mono",
-          fillColor: Color.fromCssColorString("#e7eadf"),
-          outlineColor: Color.fromCssColorString("#07110e"),
-          outlineWidth: 4,
-          style: LabelStyle.FILL_AND_OUTLINE,
-          verticalOrigin: VerticalOrigin.BOTTOM,
-          heightReference: HeightReference.CLAMP_TO_GROUND,
-          pixelOffset: new Cartesian2(0, -14),
-        },
         point: {
           color: Color.fromCssColorString(recommended ? "#b7ff6a" : "#ff5c35"),
           outlineColor: Color.fromCssColorString("#e7eadf"),
@@ -245,17 +257,6 @@ export function TerrainMap({
           internetEndpoint[0],
           internetEndpoint[1],
         ),
-        label: {
-          text: "INTERNET PREVIEW  ·  " + internetTrail.name.toUpperCase(),
-          font: "500 15px DM Mono",
-          fillColor: Color.fromCssColorString("#e7eadf"),
-          outlineColor: Color.fromCssColorString("#07110e"),
-          outlineWidth: 4,
-          style: LabelStyle.FILL_AND_OUTLINE,
-          verticalOrigin: VerticalOrigin.BOTTOM,
-          heightReference: HeightReference.CLAMP_TO_GROUND,
-          pixelOffset: new Cartesian2(0, -14),
-        },
         point: {
           color: Color.fromCssColorString("#ff5c35"),
           outlineColor: Color.fromCssColorString("#e7eadf"),
@@ -266,22 +267,14 @@ export function TerrainMap({
       });
       if (focusedInternetTrailRef.current !== internetTrail.id) {
         focusedInternetTrailRef.current = internetTrail.id;
-        const sphere = BoundingSphere.fromPoints(
-          internetCoordinates.map(([longitude, latitude]) =>
-            Cartesian3.fromDegrees(longitude, latitude),
-          ),
-        );
         const reduceMotion = window.matchMedia(
           "(prefers-reduced-motion: reduce)",
         ).matches;
-        viewer.camera.flyToBoundingSphere(sphere, {
-          duration: reduceMotion ? 0 : 1.6,
-          offset: new HeadingPitchRange(
-            CesiumMath.toRadians(8),
-            CesiumMath.toRadians(-28),
-            Math.max(1_000, sphere.radius * 3.2),
-          ),
-        });
+        frameTerrainCoordinates(
+          viewer,
+          internetCoordinates,
+          reduceMotion ? 0 : 1.2,
+        );
       }
     }
     if (
@@ -290,22 +283,14 @@ export function TerrainMap({
       focusedRecommendationRef.current !== recommendedRouteId
     ) {
       focusedRecommendationRef.current = recommendedRouteId;
-      const positions = focusRoute.geometry.coordinates.map(
-        ([longitude, latitude, height]) =>
-          Cartesian3.fromDegrees(longitude, latitude, height),
-      );
-      const sphere = BoundingSphere.fromPoints(positions);
       const reduceMotion = window.matchMedia(
         "(prefers-reduced-motion: reduce)",
       ).matches;
-      viewer.camera.flyToBoundingSphere(sphere, {
-        duration: reduceMotion ? 0 : 1.6,
-        offset: new HeadingPitchRange(
-          CesiumMath.toRadians(8),
-          CesiumMath.toRadians(-28),
-          Math.max(1_500, sphere.radius * 3.2),
-        ),
-      });
+      frameTerrainCoordinates(
+        viewer,
+        focusRoute.geometry.coordinates,
+        reduceMotion ? 0 : 1.2,
+      );
     }
     viewer.scene.requestRender();
   }, [
@@ -329,39 +314,25 @@ export function TerrainMap({
       (route) =>
         route.properties.id === (recommendedRouteId ?? selectedRouteId),
     );
-    const positions =
+    const coordinates =
       internetCoordinates.length > 0
-        ? internetCoordinates.map(([longitude, latitude]) =>
-            Cartesian3.fromDegrees(longitude, latitude),
-          )
-        : (focusRoute?.geometry.coordinates.map(
-            ([longitude, latitude, height]) =>
-              Cartesian3.fromDegrees(longitude, latitude, height),
-          ) ?? []);
-    if (positions.length === 0) return;
-    const sphere = BoundingSphere.fromPoints(positions);
+        ? internetCoordinates
+        : (focusRoute?.geometry.coordinates ?? []);
+    if (coordinates.length === 0) return;
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    viewer.camera.flyToBoundingSphere(sphere, {
-      duration: reduceMotion ? 0 : 1.2,
-      offset: new HeadingPitchRange(
-        CesiumMath.toRadians(18),
-        CesiumMath.toRadians(-24),
-        Math.max(1_200, sphere.radius * 4.6),
-      ),
-    });
+    frameTerrainCoordinates(viewer, coordinates, reduceMotion ? 0 : 1.2);
   }
-  const focusedName =
-    internetTrail?.name ??
-    routes.find(
-      (route) =>
-        route.properties.id === (recommendedRouteId ?? selectedRouteId),
-    )?.properties.name;
-  const internetFirstCoordinate =
+  const focusedRoute = routes.find(
+    (route) => route.properties.id === (recommendedRouteId ?? selectedRouteId),
+  );
+  const focusedName = internetTrail?.name ?? focusedRoute?.properties.name;
+  const mapFirstCoordinate =
     internetTrail?.geometry.type === "LineString"
       ? internetTrail.geometry.coordinates[0]
-      : internetTrail?.geometry.coordinates[0]?.[0];
+      : (internetTrail?.geometry.coordinates[0]?.[0] ??
+        focusedRoute?.geometry.coordinates[0]);
   return (
     <div className="terrain-map">
       <div
@@ -379,17 +350,17 @@ export function TerrainMap({
       />
       <div className="map-meta">
         <span>
-          {internetFirstCoordinate
-            ? Math.abs(internetFirstCoordinate[1]).toFixed(2) +
+          {mapFirstCoordinate
+            ? Math.abs(mapFirstCoordinate[1]).toFixed(2) +
               "° " +
-              (internetFirstCoordinate[1] >= 0 ? "N" : "S")
+              (mapFirstCoordinate[1] >= 0 ? "N" : "S")
             : "42.49° N"}
         </span>
         <span>
-          {internetFirstCoordinate
-            ? Math.abs(internetFirstCoordinate[0]).toFixed(2) +
+          {mapFirstCoordinate
+            ? Math.abs(mapFirstCoordinate[0]).toFixed(2) +
               "° " +
-              (internetFirstCoordinate[0] >= 0 ? "E" : "W")
+              (mapFirstCoordinate[0] >= 0 ? "E" : "W")
             : "71.89° W"}
         </span>
       </div>
@@ -411,12 +382,18 @@ export function TerrainMap({
         <span>Drag to orbit · wheel to zoom</span>
       </div>
       <div className="map-caption">
-        {focusedName ?? "Loading route alternatives"}
+        <strong>
+          {internetTrail
+            ? `Preview · ${focusedName}`
+            : recommendedRouteId
+              ? `Recommended · ${focusedName}`
+              : (focusedName ?? "Search for a trail")}
+        </strong>
         <span>
           {internetTrail
-            ? "Orange internet preview · not yet evaluated"
+            ? "Orange geometry · not yet evaluated"
             : recommendedRouteId
-              ? "Signal green recommended · orange original"
+              ? `${recommendationSuitability === undefined ? "" : `${Math.round(recommendationSuitability * 100)}% fit · `}signal green route`
               : "Orange selected · moss alternatives"}
         </span>
       </div>

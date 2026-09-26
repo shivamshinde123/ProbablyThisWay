@@ -282,6 +282,7 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** Explicit immutable history and a real database check make deploy-time schema changes repeatable without introducing an ORM.
 - **Consequences:** Migration files are append-only after application. Local PostgreSQL integration tests skip when `TEST_DATABASE_URL` is absent; CI always runs them. Migration `002` adds the index required for a later retention sweep.
 - **Supersedes:** The migration-version-tracking and live-PostgreSQL-testing follow-ups in DEC-023.
+
 ## DEC-033 — Retain inactive session data for 30 days
 
 - **Status:** Accepted
@@ -291,6 +292,7 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** The MVP needs short-lived operational continuity, not indefinite behavioral history. Using the last write protects active sessions while limiting stored state.
 - **Consequences:** Expired session URLs return not found and cannot be restored by the application. Every API replica may sweep safely because deletion is idempotent. Personal GPS history remains out of scope.
 - **Supersedes:** The retention-policy follow-ups in DEC-020, DEC-023, and the technical design.
+
 ## DEC-034 — Ship provider-neutral production containers
 
 - **Status:** Accepted
@@ -299,6 +301,7 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Build pinned Node/Alpine API and web-builder stages, serve the web bundle through pinned Nginx, proxy same-origin `/api` traffic, and provide Compose orchestration for PostgreSQL, one-shot migrations, API readiness, and web startup. Build both images in pull-request CI.
 - **Reasoning:** Containers make the tested runtime portable without prematurely selecting a cloud provider, registry, DNS service, or secret manager.
 - **Consequences:** Operators must inject required credentials, terminate TLS, manage backups, and translate the topology to their platform. The shipped single-instance process-local rate limit and refresh scheduler require shared coordination before horizontal scaling.
+
 ## DEC-035 — Enforce automated source quality
 
 - **Status:** Accepted
@@ -308,6 +311,7 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** A reproducible code-quality gate catches JavaScript, TypeScript, and React correctness issues while keeping generated authoritative data byte-stable.
 - **Consequences:** Supported source and configuration files are normalized once and all later pull requests must pass lint and formatting checks in addition to tests, types, builds, containers, and browser flows.
 - **Supersedes:** The unspecified lint/format tooling in the coding conventions.
+
 ## DEC-036 — Close the MVP release boundary
 
 - **Status:** Accepted
@@ -317,6 +321,7 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** These boundaries satisfy every MVP acceptance criterion without pretending that multi-instance scale, personal accounts, or broad spatial search are already product requirements.
 - **Consequences:** Cloud products and secrets remain operator inputs. Any horizontal scaling, personal data, accounts, broad-catalog search, or server push is a separately scoped feature with its own security, privacy, storage, and operational design.
 - **Supersedes:** Unresolved MVP wording for an evaluation endpoint, LLM provider, PostGIS migration, end-user authentication, queue, distributed limiter/scheduler, streaming, breakpoints, and operational targets.
+
 ## DEC-037 — Search only reviewed supported trails
 
 - **Status:** Superseded by DEC-039
@@ -381,6 +386,7 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** A provider-native adapter prevents sending incompatible payloads, keeps the API key server-side, allows model choice without code changes, and preserves the deterministic safety/policy boundary.
 - **Consequences:** Operators create a key at `https://openrouter.ai/settings/keys` and set `OPENROUTER_API_KEY`. OpenRouter/model usage may incur cost and variable latency. The model supplies scores only; hard constraints and final route selection remain deterministic application code.
 - **Supersedes:** DEC-017's hosted Jev adapter. Earlier Jev references in this chronological log describe superseded design history.
+
 ## DEC-044 — Resolve named places to nearby paths and make terrain relief explicit
 
 - **Status:** Accepted
@@ -390,3 +396,14 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** People commonly search by a hill, reservation, or park name while OSM stores its trails as separate ways. A bounded fallback bridges those data shapes without pretending the paths are reviewed routes. Explicit visual relief and controls make the existing elevation data understandable.
 - **Consequences:** Search now finds Newton Hill and other Worcester places with nearby OSM paths, including unnamed segments under a transparent place-based label. Results still depend on OSM coverage. The map deliberately exaggerates rendered relief for legibility; evaluation continues to use reviewed ascent metrics, not visual tile height. Cesium static assets are copied with an explicit Windows-safe path strip so production requests resolve under /cesiumStatic instead of receiving undecodable fallback HTML.
 - **Refines:** DEC-039 and DEC-041.
+
+## DEC-045 — Make trail selection search-first and evaluate selected internet geometry
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Automatically displaying three Wachusett examples made the application look fixed. Internet results could only be previewed, so Start stayed disabled, OpenRouter never ran, and no model response or chosen route appeared. Cesium also framed zero-height coordinates inside depth-tested terrain, producing a blank view after Frame 3D terrain.
+- **Decision:** Start with no selected hike or visible example route list. Let the user search, select, and explicitly start either reviewed or attributed OpenStreetMap geometry. Convert a LineString to one session candidate and up to the eight longest MultiLineString branches to candidates; preserve unknown access, legality, exposure, condition, and elevation. Persist and return the exact generated hike. Show structured provider/fallback scores in a clearly labeled model-response panel and let deterministic policy make the final choice. Frame Cesium above sampled terrain at a conservative oblique range, place the focused-trail caption in the upper map region, and make the right control panel collapsible.
+- **Reasoning:** This aligns the visible product with the requested search-first workflow while retaining the boundary between model scoring and application policy. Unknown source facts remain honest instead of being fabricated. A terrain-surface target prevents the camera from looking into the globe.
+- **Consequences:** Arbitrary search results can now enter an evaluated session, but they are not authoritative navigation or closure data. A single-line result has one score; a trail network exposes up to eight separately named branch scores. The panel can release map space without losing an accessible expand control. PostgreSQL needs no migration because generated hike details live in the existing JSON session payload.
+- **Supersedes:** DEC-039's preview-only evaluation boundary and DEC-044's preview-only consequence. Historical text remains for chronology.
+- **Refines:** DEC-043 by applying its structured-score contract to validated search-derived candidates as well as reviewed routes.

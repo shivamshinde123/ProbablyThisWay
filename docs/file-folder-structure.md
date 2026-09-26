@@ -15,6 +15,7 @@ The repository is an npm-workspaces monorepo. This map reflects the implemented 
 |   |   |   |-- session-state.ts      # State transition orchestration
 |   |   |   |-- session-store.ts      # PostgreSQL/in-memory persistence boundary
 |   |   |   |-- evaluation.ts         # OpenRouter adapter and deterministic baseline
+|   |   |   |-- internet-hike.ts       # Search geometry to session route conversion
 |   |   |   |-- policy.ts             # Hard constraints and recommendation policy
 |   |   |   |-- weather-adapter.ts    # Open-Meteo normalization
 |   |   |   |-- weather-refresh.ts    # Periodic refresh scheduler

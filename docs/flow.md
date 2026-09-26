@@ -8,41 +8,41 @@ The `ProbablyThisWay` repository is an npm-workspaces monorepo. The React/Vite c
 
 ## Runtime Entry Points
 
-| Entry point | Trigger | Responsibility |
-|---|---|---|
-| `apps/web/src/main.tsx` | Browser loads the product | Mount the React application |
-| `apps/web/src/App.tsx` | React mount | Load supported hikes and render the map-first UI |
-| `apps/web/src/components/TerrainMap.tsx` | Map stage mounts | Create and configure Cesium, draw the route preview, set the camera, and destroy the viewer on unmount |
-| `apps/api/src/server.ts` | API process starts | Build and listen on the configured host and port |
-| `apps/api/src/app.ts` | HTTP request | Configure Fastify and serve health/hike routes |
-| `packages/contracts/src/index.ts` | API or web import | Validate and type shared request/response data |
-| Session creation API | User starts a hike session | Load hike data, initialize questions/state, and run the first evaluation |
-| State update API | Bearer-authenticated supported input arrives | Authenticate, normalize/persist state, and invoke threshold detection |
-| `session-state.ts` evaluation transition | Session start or material state change | Score routes, apply policy, and atomically persist/publish the current decision |`n| `GET /sessions/:sessionId/events` | Client cursor poll | Return ordered typed decision events after a cursor |
+| Entry point                              | Trigger                                      | Responsibility                                                                                         |
+| ---------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `apps/web/src/main.tsx`                  | Browser loads the product                    | Mount the React application                                                                            |
+| `apps/web/src/App.tsx`                   | React mount                                  | Compose search-first selection, collapsible controls, sessions, model output, and the map              |
+| `apps/web/src/components/TerrainMap.tsx` | Map stage mounts                             | Create and configure Cesium, draw the route preview, set the camera, and destroy the viewer on unmount |
+| `apps/api/src/server.ts`                 | API process starts                           | Load root environment configuration, build the API, and listen on the configured host and port                                                       |
+| `apps/api/src/app.ts`                    | HTTP request                                 | Configure Fastify and serve health/hike routes                                                         |
+| `packages/contracts/src/index.ts`        | API or web import                            | Validate and type shared request/response data                                                         |
+| Session creation API                     | User starts a searched or reviewed trail     | Normalize route candidates, initialize state, and run the first evaluation                             |
+| State update API                         | Bearer-authenticated supported input arrives | Authenticate, normalize/persist state, and invoke threshold detection                                  |
+| `session-state.ts` evaluation transition | Session start or material state change       | Score routes, apply policy, and atomically persist/publish the current decision                        |
+| `GET /sessions/:sessionId/events`        | Client cursor poll                           | Return ordered typed decision events after a cursor                                                    |
 
 ## Primary Flow
 
 ```text
-`apps/web/src/main.tsx`
-  -> `App`
-  -> fetch hike catalog
-  -> `GET /api/v1/hikes`
-  -> select the first supported hike
-  -> `GET /api/v1/hikes/{hikeId}`
-  -> validate catalog with `hikesResponseSchema`
-  -> validate detail and trail geometry with `hikeDetailSchema`
-  -> initialize the first route as selected
-  -> optionally search the loaded supported route names/location and select a result
-  -> pass all typed route features and the selected ID to `TerrainMap`
-  -> user chooses hike
-  -> create session
-      -> load trail and candidate routes
-      -> load the versioned OpenRouter scoring prompt and schema
-      -> assemble state snapshot
-      -> evaluate every route
-      -> apply deterministic route policy
-      -> persist session, latest decision, and session_started event through SessionStore
-  -> render terrain, routes, HUD, and recommendation
+Browser mounts App
+  -> load the reviewed catalog only as a searchable source; do not preselect it
+  -> render search-first empty state and collapsible right control panel
+  -> user submits trail name + location
+      -> GET /api/v1/trails/search
+      -> show reviewed matches and attributed internet geometry
+  -> user selects one result
+      -> TerrainMap draws an orange preview
+      -> terrain-aware camera frames above the surface
+  -> user selects Analyze & start trail
+      -> POST /api/v1/sessions with reviewed IDs or InternetTrailResult
+      -> internet-hike converts a LineString or up to eight longest MultiLineString branches to candidates
+      -> obtain weather at the trail coordinate when configured
+      -> OpenRouter or the labeled deterministic baseline scores every candidate
+      -> deterministic policy chooses the highest eligible route
+      -> persist session, generated/reviewed hike, latest decision, and first event
+  -> browser renders the structured model response, policy explanation, HUD, feed,
+     and signal-green recommended geometry
+  -> user may collapse the right panel or end the field session
 ```
 
 ## Implemented State Update Flow
@@ -87,6 +87,7 @@ Keep this map current whenever entry points or call paths change. Record:
 - important function-to-function call paths;
 - state ownership and event propagation;
 - external dependencies and failure paths.
+
 ## Implemented Session Start Flow
 
 ```text
@@ -374,6 +375,7 @@ API process starts
   -> log and retry on the next interval after failure
   -> stop scheduler during graceful shutdown
 ```
+
 ## Production Container Flow
 
 ```text
@@ -399,9 +401,9 @@ Adapter updates and racing weather transitions check lifecycle status and stop w
 
 ## Implemented Internet Trail Search Flow
 
-Browser submit → GET /api/v1/trails/search → trim and collapse query whitespace → check 15-minute cache → serialize public search at one-per-second maximum → request and validate Nominatim GeoJSON → return direct trail-like lines when present; otherwise center a bounded OSM map extract on the point/area match → validate nodes/ways → exclude non-trail/private/sidewalk geometry → rank nearby paths → return the place-labeled trail network plus named paths → select result → render exaggerated relief and an obliquely framed preview in TerrainMap.
+Browser submit → GET `/api/v1/trails/search` → normalize query → check the 15-minute cache → serialize public search at one-per-second maximum → validate Nominatim GeoJSON → return direct trail lines or a bounded ranked path extract around a place result → select one result → render exaggerated relief and a terrain-aware oblique preview.
 
-The preview path stops before session creation. Choosing a reviewed route clears the internet preview and restores the evaluated-session path.
+Explicit start → POST the selected `InternetTrailResult` → convert one line or up to the eight longest branches into session-scoped `RouteFeature` candidates → retain unknown access/elevation/condition/exposure → persist the generated hike → evaluate every candidate → return the exact hike with structured scores and recommendation → replace the preview with highlighted evaluated geometry.
 
 ## Implemented Terrain Initialization Flow
 

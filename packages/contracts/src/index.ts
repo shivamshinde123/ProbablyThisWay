@@ -92,7 +92,7 @@ export type InternetTrailSearchResponse = z.infer<
   typeof internetTrailSearchResponseSchema
 >;
 export const hikeDetailSchema = hikeSummarySchema.extend({
-  routes: z.array(routeFeatureSchema).min(2),
+  routes: z.array(routeFeatureSchema).min(1),
 });
 export type HikeDetail = z.infer<typeof hikeDetailSchema>;
 export const hikingStateSchema = z.object({
@@ -133,10 +133,13 @@ export const environmentalStatusSchema = z.object({
   staleAfter: z.string().datetime().optional(),
 });
 export type EnvironmentalStatus = z.infer<typeof environmentalStatusSchema>;
-export const createSessionRequestSchema = z.object({
-  hikeId: z.string().min(1),
-  selectedRouteId: z.string().min(1),
-});
+export const createSessionRequestSchema = z.union([
+  z.object({
+    hikeId: z.string().min(1),
+    selectedRouteId: z.string().min(1),
+  }),
+  z.object({ internetTrail: internetTrailResultSchema }),
+]);
 export type CreateSessionRequest = z.infer<typeof createSessionRequestSchema>;
 const sessionBaseSchema = z.object({
   id: z.string().uuid(),
@@ -168,7 +171,7 @@ export const routeEvaluationSchema = z.object({
   createdAt: z.string().datetime(),
   questionSetVersion: z.literal("route-suitability-v1"),
   provider: z.enum(["openrouter", "jev", "deterministic-baseline"]),
-  scores: z.array(routeSuitabilitySchema).min(2),
+  scores: z.array(routeSuitabilitySchema).min(1),
 });
 export type RouteEvaluation = z.infer<typeof routeEvaluationSchema>;
 const recommendationFactorSchema = z.object({
@@ -209,6 +212,7 @@ export const latestDecisionSchema = z.object({
 export type LatestDecision = z.infer<typeof latestDecisionSchema>;
 export const sessionStartResponseSchema = latestDecisionSchema.extend({
   session: sessionSchema,
+  hike: hikeDetailSchema,
 });
 export type SessionStartResponse = z.infer<typeof sessionStartResponseSchema>;
 export const stateUpdateSourceSchema = z.enum([

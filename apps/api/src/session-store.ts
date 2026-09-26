@@ -1,10 +1,12 @@
 import {
   decisionEventSchema,
   hikingStateSchema,
+  hikeDetailSchema,
   latestDecisionSchema,
   sessionSchema,
   type DecisionEvent,
   type HikingState,
+  type HikeDetail,
   type LatestDecision,
   type Session,
 } from "@probably-this-way/contracts";
@@ -13,6 +15,7 @@ import { z } from "zod";
 
 const sessionRecordSchema = z.object({
   session: sessionSchema,
+  hike: hikeDetailSchema.optional(),
   decision: latestDecisionSchema,
   sequence: z.number().int().nonnegative(),
   lastEvaluatedState: hikingStateSchema,
@@ -22,6 +25,7 @@ const sessionRecordSchema = z.object({
 
 export type SessionRecord = {
   session: Session;
+  hike?: HikeDetail;
   decision: LatestDecision;
   sequence: number;
   lastEvaluatedState: HikingState;

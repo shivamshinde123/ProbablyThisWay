@@ -1,4 +1,14 @@
+import { fileURLToPath } from "node:url";
+import { loadEnvFile } from "node:process";
 import { buildApp } from "./app.js";
+
+if (process.env.LOAD_ENV_FILE !== "false") {
+  try {
+    loadEnvFile(fileURLToPath(new URL("../../../.env", import.meta.url)));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+}
 
 const app = await buildApp();
 try {

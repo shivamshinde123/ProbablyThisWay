@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import {
   createSessionRequestSchema,
   decisionEventsResponseSchema,
@@ -28,7 +28,7 @@ const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001/api/v1";
 
 const isRouteBlocked = (route: RouteFeature) =>
-  route.properties.legalStatus !== "legal" ||
+  route.properties.legalStatus === "illegal" ||
   route.properties.accessStatus === "closed" ||
   route.properties.accessStatus === "restricted" ||
   route.properties.restrictions.some(
@@ -36,10 +36,11 @@ const isRouteBlocked = (route: RouteFeature) =>
   );
 
 export function App() {
+  const [catalogHike, setCatalogHike] = useState<HikeDetail>();
   const [hike, setHike] = useState<HikeDetail>();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState<string>();
   const [internetTrail, setInternetTrail] = useState<InternetTrailResult>();
-  const internetTrailSelectedRef = useRef(false);
   const [session, setSession] = useState<Session>();
   const [evaluation, setEvaluation] = useState<RouteEvaluation>();
   const [recommendation, setRecommendation] = useState<RouteRecommendation>();
@@ -72,12 +73,7 @@ export function App() {
         if (!detailResponse.ok)
           throw new Error("Hike detail returned " + detailResponse.status);
         const detail = hikeDetailSchema.parse(await detailResponse.json());
-        setHike(detail);
-        if (!internetTrailSelectedRef.current)
-          setSelectedRouteId(
-            detail.routes.find((route) => !isRouteBlocked(route))?.properties
-              .id,
-          );
+        setCatalogHike(detail);
         setStatus("ready");
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError")
@@ -157,13 +153,14 @@ export function App() {
   }, [sessionId]);
 
   async function startSession() {
-    if (!hike || !selectedRouteId || internetTrail) return;
+    if ((!hike || !selectedRouteId) && !internetTrail) return;
     setStatus("starting");
     try {
-      const request = createSessionRequestSchema.parse({
-        hikeId: hike.id,
-        selectedRouteId,
-      });
+      const request = createSessionRequestSchema.parse(
+        internetTrail
+          ? { internetTrail }
+          : { hikeId: hike?.id, selectedRouteId },
+      );
       const response = await fetch(apiBaseUrl + "/sessions", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -174,6 +171,9 @@ export function App() {
       setEvents([]);
       setFeedStatus("syncing");
       setSession(started.session);
+      setHike(started.hike);
+      setSelectedRouteId(started.session.selectedRouteId);
+      setInternetTrail(undefined);
       setEvaluation(started.evaluation);
       setRecommendation(started.recommendation);
       setStatus("ready");
@@ -196,6 +196,9 @@ export function App() {
       setSession(undefined);
       setEvaluation(undefined);
       setRecommendation(undefined);
+      setHike(undefined);
+      setSelectedRouteId(undefined);
+      setInternetTrail(undefined);
       setEvents([]);
       setFeedStatus("idle");
       setStatus("ready");
@@ -238,7 +241,7 @@ export function App() {
           <span /> {sessionLabel}
         </div>
       </header>
-      <section className="hero-grid">
+      <section className="hero-grid" data-panel-collapsed={sidebarCollapsed}>
         <div className="map-stage" aria-busy={isEvaluating}>
           <Suspense
             fallback={
@@ -267,8 +270,23 @@ export function App() {
             </div>
           ) : null}
           {session ? <SessionHud session={session} /> : null}
+          <button
+            className="sidebar-toggle"
+            type="button"
+            aria-expanded={!sidebarCollapsed}
+            aria-controls="trail-control-panel"
+            onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
+          >
+            {sidebarCollapsed ? "Open trail panel" : "Collapse trail panel"}
+            <span aria-hidden="true">{sidebarCollapsed ? "←" : "→"}</span>
+          </button>
         </div>
-        <aside className="mission-panel" aria-busy={isEvaluating}>
+        <aside
+          id="trail-control-panel"
+          className="mission-panel"
+          aria-busy={isEvaluating}
+          aria-hidden={sidebarCollapsed}
+        >
           <p className="eyebrow">Route intelligence / final</p>
           <h1>
             Let the signal
@@ -282,17 +300,17 @@ export function App() {
           </p>
           <TrailSearch
             apiBaseUrl={apiBaseUrl}
-            hike={hike}
+            hike={catalogHike}
             selectedRouteId={selectedRouteId}
             selectedInternetTrailId={internetTrail?.id}
             disabled={isEvaluating}
             onSelectRoute={(routeId) => {
-              internetTrailSelectedRef.current = false;
               setInternetTrail(undefined);
+              setHike(catalogHike);
               setSelectedRouteId(routeId);
             }}
             onSelectInternetTrail={(trail) => {
-              internetTrailSelectedRef.current = true;
+              setHike(undefined);
               setSelectedRouteId(undefined);
               setInternetTrail(trail);
             }}
@@ -329,8 +347,8 @@ export function App() {
                   </span>
                 </p>
                 <p className="internet-preview-note">
-                  Preview geometry only. Choose a reviewed route below to start
-                  an evaluated field session.
+                  Mapped geometry with unverified access and elevation. Start
+                  this trail to request a structured route evaluation.
                 </p>
               </>
             ) : hike ? (
@@ -349,7 +367,9 @@ export function App() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Massachusetts DCR trail geometry
+                    {hike.id.startsWith("internet-")
+                      ? "OpenStreetMap trail geometry"
+                      : "Massachusetts DCR trail geometry"}
                   </a>
                   <span>
                     Dataset updated{" "}
@@ -363,83 +383,108 @@ export function App() {
                   </span>
                 </p>
               </>
+            ) : status === "ready" ? (
+              <div className="search-empty">
+                <span>01</span>
+                <div>
+                  <strong>Search for your trail</strong>
+                  <p>
+                    Enter a trail name plus city and state, then select the
+                    mapped result you want to analyze.
+                  </p>
+                </div>
+              </div>
             ) : null}
           </div>
-          <div className="route-options" aria-label="Route alternatives">
-            {routes.map((route, index) => {
-              const active = route.properties.id === selectedRouteId;
-              const isRecommended = route.properties.id === recommendedRouteId;
-              const isExcluded =
-                excludedRouteIds.has(route.properties.id) ||
-                isRouteBlocked(route);
-              const score = scoresByRoute.get(route.properties.id);
-              return (
-                <button
-                  key={route.properties.id}
-                  type="button"
-                  className="route-option"
-                  data-active={active}
-                  data-recommended={isRecommended}
-                  data-excluded={isExcluded}
-                  aria-pressed={active}
-                  disabled={isExcluded || Boolean(session) || isEvaluating}
-                  onClick={() => {
-                    internetTrailSelectedRef.current = false;
-                    setInternetTrail(undefined);
-                    setSelectedRouteId(route.properties.id);
-                  }}
-                >
-                  <span className="route-index">0{index + 1}</span>
-                  <span className="route-copy">
-                    <strong>
-                      {route.properties.name}
-                      {isRecommended ? (
-                        <small className="recommended-tag">Recommended</small>
-                      ) : null}
-                    </strong>
-                    <small>
-                      {route.properties.distanceMiles} mi · +
-                      {route.properties.elevationGainFeet.toLocaleString(
-                        "en-US",
-                      )}{" "}
-                      ft · {route.properties.estimatedMinutes} min · access{" "}
-                      {route.properties.accessStatus}
-                    </small>
-                  </span>
-                  {isExcluded ? (
-                    <span className="route-excluded">Excluded</span>
-                  ) : score ? (
-                    <span className="suitability">
-                      <b>{Math.round(score.suitability * 100)}</b>
-                      <small>% fit</small>
-                    </span>
-                  ) : (
-                    <span
-                      className={
-                        "exposure exposure-" + route.properties.exposure
-                      }
-                    >
-                      {route.properties.exposure}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          {recommendation ? (
-            <RecommendationBanner
-              routeName={recommendedRoute?.properties.name}
-              recommendation={recommendation}
-            />
-          ) : null}
           {evaluation ? (
-            <p className="evaluation-source">
-              Question set {evaluation.questionSetVersion} ·{" "}
-              {evaluation.provider === "openrouter"
-                ? "OpenRouter evaluation"
-                : evaluation.provider === "jev"
-                  ? "legacy Jev evaluation"
-                  : "deterministic baseline"}
+            <section
+              className="model-response"
+              aria-labelledby="model-response-title"
+            >
+              <div className="model-response-heading">
+                <div>
+                  <span>Model response</span>
+                  <h2 id="model-response-title">
+                    {evaluation.provider === "openrouter"
+                      ? "OpenRouter structured scores"
+                      : evaluation.provider === "jev"
+                        ? "Legacy Jev structured scores"
+                        : "Deterministic fallback scores"}
+                  </h2>
+                </div>
+                <strong>
+                  {evaluation.scores.length} route
+                  {evaluation.scores.length === 1 ? "" : "s"} evaluated
+                </strong>
+              </div>
+              <p className="model-response-note">
+                {evaluation.provider === "openrouter"
+                  ? "OpenRouter scored every mapped candidate. Application policy selected the highest eligible route."
+                  : "OpenRouter was not configured or did not return a valid response, so the local auditable baseline scored these routes."}
+              </p>
+              <div
+                className="route-options"
+                aria-label="Evaluated route scores"
+              >
+                {routes.map((route, index) => {
+                  const active = route.properties.id === selectedRouteId;
+                  const isRecommended =
+                    route.properties.id === recommendedRouteId;
+                  const isExcluded =
+                    excludedRouteIds.has(route.properties.id) ||
+                    isRouteBlocked(route);
+                  const score = scoresByRoute.get(route.properties.id);
+                  return (
+                    <article
+                      key={route.properties.id}
+                      className="route-option"
+                      data-active={active}
+                      data-recommended={isRecommended}
+                      data-excluded={isExcluded}
+                    >
+                      <span className="route-index">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <span className="route-copy">
+                        <strong>
+                          {route.properties.name}
+                          {isRecommended ? (
+                            <small className="recommended-tag">Chosen</small>
+                          ) : null}
+                        </strong>
+                        <small>
+                          {route.properties.distanceMiles} mi ·{" "}
+                          {route.properties.estimatedMinutes} min · access{" "}
+                          {route.properties.accessStatus}
+                        </small>
+                      </span>
+                      {isExcluded ? (
+                        <span className="route-excluded">Excluded</span>
+                      ) : score ? (
+                        <span className="suitability">
+                          <b>{Math.round(score.suitability * 100)}</b>
+                          <small>% fit</small>
+                        </span>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
+              {recommendation ? (
+                <RecommendationBanner
+                  routeName={recommendedRoute?.properties.name}
+                  recommendation={recommendation}
+                />
+              ) : null}
+              <p className="evaluation-source">
+                Question set {evaluation.questionSetVersion} · provider{" "}
+                {evaluation.provider}
+              </p>
+            </section>
+          ) : internetTrail || selectedRouteId ? (
+            <p className="model-awaiting">
+              Start this trail to request structured route scores and a visible
+              recommendation.
             </p>
           ) : null}
           {session ? (
@@ -460,13 +505,15 @@ export function App() {
             <button
               className="primary-action"
               type="button"
-              disabled={
-                !selectedRouteId || isEvaluating || Boolean(internetTrail)
-              }
+              disabled={(!selectedRouteId && !internetTrail) || isEvaluating}
               onClick={() => void startSession()}
               aria-describedby="safety-note"
             >
-              {isEvaluating ? "Evaluating routes…" : "Start field session"}
+              {isEvaluating
+                ? "Evaluating routes…"
+                : internetTrail
+                  ? "Analyze & start this trail"
+                  : "Analyze & start trail"}
               <span>↗</span>
             </button>
           )}
