@@ -34,7 +34,7 @@ Question configuration <──── optional LLM enhancement ──────
 
 ## Deployment
 
-Deployment topology, scaling targets, and cloud provider are TBD.
+GitHub Actions verifies tests, TypeScript checks, and production builds before changes reach `main`. Deployment topology, scaling targets, branch-protection policy, and cloud provider are TBD.
 
 ## Current Prototype Runtime
 

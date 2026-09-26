@@ -51,7 +51,7 @@ npm run check
 npm run build
 ```
 
-`npm test` builds shared contracts and runs the API tests. `npm run check` type-checks all workspaces. `npm run build` produces the API and web production builds.
+`npm test` builds shared contracts and runs the API tests. `npm run check` type-checks all workspaces. `npm run build` produces the API and web production builds. GitHub Actions runs all three commands for pull requests targeting `main` and pushes to `main`.
 
 ## Live Weather
 

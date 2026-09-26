@@ -221,3 +221,19 @@ POST /api/v1/sessions
 ```
 
 No browser control can manufacture or override environmental conditions.
+
+## Continuous Integration Flow
+
+```text
+pull request targeting main or push to main
+  -> cancel any superseded run for the same PR/ref
+  -> check out the triggering commit without persisted credentials
+  -> install Node.js 22 and restore npm download cache
+  -> npm ci from committed package-lock.json
+  -> npm test
+  -> npm run check
+  -> npm run build
+  -> publish one Test, type-check, and build status
+```
+
+The workflow has only `contents: read` permission and receives no application secrets.
