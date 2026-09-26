@@ -21,11 +21,11 @@ Response `200`: `{ "items": [{ "id": "hike_1", "name": "...", "difficulty": "mod
 
 Returns hike metadata and two or more typed route alternatives. Each route is a GeoJSON-compatible `Feature<LineString>` whose coordinates use `[longitude, latitude, elevationMeters]`.
 
-Response `200` includes `routes[].properties` with `id`, `name`, `source`, `dataQuality`, `distanceMiles`, `elevationGainFeet`, `estimatedMinutes`, and `exposure`. Unknown IDs return a structured `404` with code `hike_not_found`.
+Response `200` includes `routes[].properties` with identity, metrics, exposure, data quality, source URL, dataset timestamp, DCR segment IDs, recorded condition, legal status, and elevation source. Unknown IDs return a structured `404` with code `hike_not_found`.
 
 ### `POST /sessions`
 
-Request: `{ "hikeId": "wachusett-summit", "selectedRouteId": "balanced-traverse" }`
+Request: `{ "hikeId": "wachusett-summit", "selectedRouteId": "mountain-house-summit" }`
 
 Response `201` is `{ "session": Session, "evaluation": RouteEvaluation, "recommendation": RouteRecommendation }`. The session contains its ID, selected route, status, timestamps, and typed hiking-state snapshot. Live provider snapshots include both provider `observedAt` and server `receivedAt` timestamps. When `WEATHER_API_BASE_URL` is configured, the API requests and validates current Open-Meteo temperature, wind, precipitation probability, day/night status, and sunset data and returns `source: "weather"` with provider/license attribution. Outside production, timeout, transport, HTTP, or validation failure falls back to `source: "prototype-static"`, which must not be presented as live observed data. Production startup requires weather configuration, and a runtime provider failure returns `503 weather_unavailable`.
 

@@ -100,3 +100,12 @@ npm workspaces manage the monorepo. Add planned domain, database, and test direc
 - `apps/api/src/environmental-status.ts` — freshness policy, expiry resolution, and configuration validation.
 - `apps/api/src/environmental-status.test.ts` — expiry, failure, and configuration-boundary tests.
 - `apps/web/src/components/SessionHud.tsx` — accessible field-instrument freshness signal and stale-value warning.
+
+## Authoritative Route Catalog Additions
+
+```text
+scripts/import-dcr-trails.mjs                 # Reviewed DCR feature manifest and generator
+apps/api/src/route-catalog.ts                 # Typed supported-hike catalog
+apps/api/src/route-catalog.test.ts            # Provenance and geographic-bound checks
+apps/api/src/generated/wachusett-routes.ts    # Generated, reviewed DCR WGS84 snapshot
+```

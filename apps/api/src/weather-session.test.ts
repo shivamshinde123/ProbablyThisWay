@@ -23,12 +23,12 @@ test("session creation uses a configured live environmental snapshot", async () 
   const response = await app.inject({
     method: "POST",
     url: "/api/v1/sessions",
-    payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" },
+    payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" },
   });
 
   assert.equal(response.statusCode, 201);
   const body = sessionStartResponseSchema.parse(response.json());
-  assert.deepEqual(requestedLocation, { latitude: 42.4898, longitude: -71.8976 });
+  assert.deepEqual(requestedLocation, { latitude: 42.4889, longitude: -71.8868 });
   assert.equal(body.session.state.source, "weather");
   assert.equal(body.session.environmentalStatus?.status, "current");
   assert.equal(body.session.state.receivedAt, "2026-09-25T20:00:01.000Z");
@@ -48,7 +48,7 @@ test("session creation falls back explicitly when weather is unavailable", async
   const response = await app.inject({
     method: "POST",
     url: "/api/v1/sessions",
-    payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" },
+    payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" },
   });
 
   assert.equal(response.statusCode, 201);
@@ -68,7 +68,7 @@ test("session creation fails closed when production weather is unavailable", asy
   const response = await app.inject({
     method: "POST",
     url: "/api/v1/sessions",
-    payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" },
+    payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" },
   });
 
   assert.equal(response.statusCode, 503);

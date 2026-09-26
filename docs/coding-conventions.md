@@ -35,3 +35,9 @@
 - Keep third-party GitHub Actions pinned to reviewed immutable commit SHAs.
 - Document material architectural decisions.
 - Never commit credentials or real user location fixtures.
+
+## Generated Geospatial Data
+
+- Never hand-edit `apps/api/src/generated/wachusett-routes.ts`.
+- Update the explicit feature manifest in `scripts/import-dcr-trails.mjs`, run `npm run data:refresh:dcr`, and review geometry plus provenance changes.
+- Treat missing, non-legal, malformed, or discontinuous source segments as generation failures.

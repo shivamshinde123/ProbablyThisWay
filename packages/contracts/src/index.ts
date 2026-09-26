@@ -12,10 +12,13 @@ export const routeFeatureSchema = z.object({
   type: z.literal("Feature"),
   geometry: z.object({ type: z.literal("LineString"), coordinates: z.array(trailCoordinateSchema).min(2) }),
   properties: z.object({
-    id: z.string().min(1), name: z.string().min(1), source: z.string().min(1),
+    id: z.string().min(1), name: z.string().min(1), source: z.string().min(1), sourceUrl: z.string().url(),
+    datasetUpdatedAt: z.string().datetime(), segmentIds: z.array(z.number().int().positive()).min(1),
+    legalStatus: z.enum(["legal", "illegal", "unknown"]), condition: z.enum(["good", "fair", "poor", "mixed", "unknown"]),
     dataQuality: z.enum(["preview", "authoritative"]), distanceMiles: z.number().positive(),
+    elevationSource: z.enum(["official-trail-map", "provider", "terrain", "not-provided"]),
     elevationGainFeet: z.number().nonnegative(), estimatedMinutes: z.number().int().positive(),
-    exposure: z.enum(["low", "moderate", "high"]),
+    exposure: z.enum(["low", "moderate", "high", "unknown"]),
   }),
 });
 export type RouteFeature = z.infer<typeof routeFeatureSchema>;

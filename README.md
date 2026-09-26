@@ -1,10 +1,10 @@
 # ProbablyThisWay
 
-ProbablyThisWay is a map-first hiking decision-support prototype. It renders preview route alternatives on 3D terrain, attaches a typed hiking-state snapshot, and evaluates every valid route through a server-side Jev integration or a clearly labeled deterministic development baseline.
+ProbablyThisWay is a map-first hiking decision-support prototype. It renders authoritative Massachusetts DCR route alternatives on 3D terrain, attaches a typed hiking-state snapshot, and evaluates every valid route through a server-side Jev integration or a clearly labeled deterministic development baseline.
 
 ## Status
 
-The prototype currently supports a Cesium terrain view, three typed route alternatives, session startup and automatic active-session refresh with optional live weather/daylight, visible current/stale/prototype condition status, typed state updates, cumulative threshold-driven re-evaluation, stale-update rejection, a cursor-based live decision feed, per-route suitability scores, deterministic recommendation highlighting, evidence-backed explanations, and responsive recommendation-focused camera behavior. Route geometry and conditions are prototype data and are not valid for navigation. Product, architecture, API, data, and UI specifications are maintained in [`docs/`](docs/).
+The prototype currently supports a Cesium terrain view, three typed route alternatives, session startup and automatic active-session refresh with optional live weather/daylight, visible current/stale/prototype condition status, typed state updates, cumulative threshold-driven re-evaluation, stale-update rejection, a cursor-based live decision feed, per-route suitability scores, deterministic recommendation highlighting, evidence-backed explanations, and responsive recommendation-focused camera behavior. Route geometry is a reviewed snapshot of Massachusetts DCR data with source IDs and timestamps. It is not a live closure feed or a navigation guarantee. Product, architecture, API, data, and UI specifications are maintained in [`docs/`](docs/).
 
 ## Core Principles
 
@@ -56,3 +56,7 @@ npm run build
 ## Live Weather
 
 Set `WEATHER_API_BASE_URL=https://api.open-meteo.com/v1/forecast` in the API environment; paid endpoints may also use server-only `WEATHER_API_KEY` to initialize new sessions with current temperature, wind, precipitation probability, day/night status, and UTC sunset data. Responses are validated and time out after four seconds. Active sessions refresh automatically every five minutes by default; set WEATHER_REFRESH_INTERVAL_MS to an integer of at least 60000 to change the interval. Each provider snapshot records observation and server receipt times, and threshold-crossing refreshes publish through the existing decision feed. Conditions become stale immediately after a refresh failure or once the observation exceeds WEATHER_FRESHNESS_MAX_AGE_MS (30 minutes by default); the HUD keeps the last valid values visible with an explicit warning. Development and tests fall back to the visibly labeled prototype-static snapshot; production requires the provider and fails closed when it is unavailable. Live weather includes Open-Meteo/CC BY 4.0 attribution in the HUD.
+
+## Trail Data
+
+The three supported summit corridors come from the Massachusetts DCR Roads and Trails public feature layer. Run `npm run data:refresh:dcr` to re-query the reviewed source segment IDs and regenerate the checked-in WGS84 snapshot. Generation rejects missing, non-legal, malformed, or materially disconnected segments. The DCR snapshot is not a live closure feed; always check current agency notices and posted signs.

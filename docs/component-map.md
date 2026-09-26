@@ -19,7 +19,7 @@
 
 | Component | Responsibility | Depends on |
 |---|---|---|
-| Hike catalog | Supported-hike metadata | Database |
+| Route catalog | Parses and exposes the reviewed DCR snapshot | Generated WGS84 geometry, DCR provenance, official trail-map metrics |
 | Session service | Session lifecycle | Catalog, state store |
 | State normalizer | Canonical hiking state | Input adapters |
 | Threshold detector | Decide when to re-evaluate | State snapshots |

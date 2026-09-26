@@ -30,3 +30,7 @@
 - Keep route generation and policy deterministic.
 - Treat the approved deterministic Jev question catalog as the required baseline. Use an LLM only as an optional enhancement for bounded question selection, optional question generation, and explanations.
 - Isolate external map, weather, trail, Jev, and LLM integrations behind adapters.
+
+## Authoritative Trail Data
+
+Massachusetts DCR Roads and Trails is the trail-geometry source. The repository transforms reviewed ArcGIS feature IDs into a checked-in WGS84 snapshot, while the official DCR trail map supplies published distance, ascent, and duration values. Cesium World Terrain remains optional for rendered terrain.

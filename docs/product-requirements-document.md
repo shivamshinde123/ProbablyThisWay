@@ -38,6 +38,6 @@ The product is decision support, not an emergency or navigation guarantee. UI co
 
 ## Open Decisions
 
-- Exact launch trail and source datasets: TBD.
+- Launch area: Wachusett Mountain State Reservation. The MVP uses the Massachusetts DCR Roads and Trails layer for Pine Hill, Mountain House, and Harrington summit corridors, plus the official DCR trail map for published metrics.
 - Live position data is post-MVP. Until it exists, route progress is omitted or marked unavailable rather than inferred from fabricated location data.
 - Hosting, end-user authentication, and analytics requirements: TBD. Server-to-server state adapters use the implemented bearer credential.

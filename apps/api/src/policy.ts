@@ -14,7 +14,8 @@ export function selectRouteRecommendation(evaluation: RouteEvaluation, routes: R
   if (!route) throw new Error("Recommended route is not available for this hike");
   const daylightMargin = state.daylight.remainingMinutes - route.properties.estimatedMinutes;
   const daylightValue = daylightMargin >= 0 ? `${daylightMargin} min before sunset` : `${Math.abs(daylightMargin)} min beyond sunset`;
-  const explanation = `${route.properties.name} ranks highest for the current snapshot. Its ${route.properties.estimatedMinutes}-minute estimate leaves ${daylightValue}, with ${route.properties.exposure} exposure.`;
+  const exposureText = route.properties.exposure === "unknown" ? "exposure is not rated" : `${route.properties.exposure} exposure`;
+  const explanation = `${route.properties.name} ranks highest for the current snapshot. Its ${route.properties.estimatedMinutes}-minute estimate leaves ${daylightValue}; ${exposureText}.`;
 
   return routeRecommendationSchema.parse({
     routeId: winner.routeId,

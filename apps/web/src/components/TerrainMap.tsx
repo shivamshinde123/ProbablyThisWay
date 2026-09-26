@@ -23,7 +23,7 @@ export function TerrainMap({ routes, selectedRouteId, recommendedRouteId, recomm
       const viewer = new Viewer(containerRef.current, { animation:false, baseLayer:false, baseLayerPicker:false, fullscreenButton:false, geocoder:false, homeButton:false, infoBox:false, navigationHelpButton:false, sceneModePicker:false, selectionIndicator:false, timeline:false, terrain:token?Terrain.fromWorldTerrain({requestVertexNormals:true}):undefined, requestRenderMode:true, maximumRenderTimeChange:Number.POSITIVE_INFINITY });
       viewerRef.current=viewer;
       viewer.scene.globe.baseColor=Color.fromCssColorString("#10241c"); viewer.scene.globe.enableLighting=Boolean(token); viewer.scene.globe.depthTestAgainstTerrain=Boolean(token); viewer.scene.backgroundColor=Color.fromCssColorString("#07110e"); if(viewer.scene.skyAtmosphere)viewer.scene.skyAtmosphere.show=false;
-      viewer.camera.flyTo({destination:Cartesian3.fromDegrees(-71.8878,42.4905,5_400),orientation:{heading:CesiumMath.toRadians(8),pitch:CesiumMath.toRadians(-38),roll:0},duration:0});
+      viewer.camera.flyTo({destination:Cartesian3.fromDegrees(-71.8880,42.4848,4_500),orientation:{heading:CesiumMath.toRadians(8),pitch:CesiumMath.toRadians(-38),roll:0},duration:0});
       setStatus(token?"ready":"fallback");
     } catch(error){console.error("Unable to initialize Cesium",error);setStatus("error");}
     return()=>{if(viewerRef.current&&!viewerRef.current.isDestroyed())viewerRef.current.destroy();viewerRef.current=null;};

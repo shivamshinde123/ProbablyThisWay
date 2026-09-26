@@ -287,3 +287,18 @@ GET /sessions/{sessionId}/events
 ```
 
 This is an observational flow. It adds no refresh, evaluation, or simulation control.
+
+## Authoritative Trail Refresh Flow
+
+```text
+npm run data:refresh:dcr
+  -> query explicit Massachusetts DCR feature IDs
+  -> require every segment and legal-status N
+  -> order/reverse manifest segments
+  -> reject geometry gaps over 20 m
+  -> convert XY geometry to WGS84 coordinate triples
+  -> write generated Wachusett route snapshot
+  -> API parses snapshot through shared route schema
+  -> hike endpoint exposes geometry plus provenance
+  -> web map renders routes and links to DCR source
+```

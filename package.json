@@ -13,6 +13,7 @@
     "dev": "npm run build -w @probably-this-way/contracts && concurrently -n api,web -c yellow,cyan npm:dev:api npm:dev:web",
     "dev:api": "npm run dev -w @probably-this-way/api",
     "dev:web": "npm run dev -w @probably-this-way/web",
+    "data:refresh:dcr": "node scripts/import-dcr-trails.mjs",
     "test": "npm run build -w @probably-this-way/contracts && npm run test -w @probably-this-way/api"
   },
   "devDependencies": {
