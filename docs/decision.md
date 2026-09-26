@@ -91,6 +91,15 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** The application remains runnable for every contributor while supporting high-resolution terrain through a scoped browser token in configured environments.
 - **Consequences:** Cesium substantially increases the web bundle size, so future work should evaluate route-level lazy loading and chunking.
 
+## DEC-014 — Move trail geometry behind a typed hike-detail API
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** The first Cesium integration embedded coordinates directly in the UI, preventing provenance tracking, validation, and later dataset replacement.
+- **Decision:** Serve GeoJSON-compatible trail features from `GET /api/v1/hikes/{hikeId}`, validate the same Zod contract on server and client, and pass the resulting feature into the map component.
+- **Reasoning:** This establishes the production data boundary early and keeps Cesium focused on visualization rather than owning trail data.
+- **Consequences:** The current feature is explicitly labeled `preview` and cannot be used for navigation or route decisions until replaced by a licensed authoritative source.
+
 ## Entry Template
 
 ```text

@@ -35,3 +35,6 @@ No UI action or data pipeline generates artificial condition changes for the pro
 ## Data Quality Checks
 
 Geometry continuity, route/trail proximity, elevation outliers, unit consistency, timestamp ordering, duplicate observations, and impossible speeds must be checked.
+## Preview Fixtures
+
+Prototype geometry may be used only to exercise contracts and rendering before an authoritative dataset is selected. It must carry `source: prototype-seed` and `dataQuality: preview`, remain visibly labeled as non-navigational, and never enter route recommendations or safety evaluation. Replacing it with licensed authoritative geometry is required before production use.
