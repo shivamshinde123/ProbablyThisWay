@@ -39,6 +39,7 @@ Every accepted update increments a session-scoped sequence. A threshold crossing
 - Integration tests from state snapshot through persisted decision.
 - Browser tests for trail selection and recommendation rendering.
 - Golden scenarios for stable route-policy outcomes.
+- Pull-request CI installs from `package-lock.json`, then runs the complete test, type-check, and production-build commands on Node.js 22.
 
 ## TBD
 

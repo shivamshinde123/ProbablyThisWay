@@ -84,3 +84,7 @@ npm workspaces manage the monorepo. Add planned domain, database, and test direc
 - `apps/api/src/weather-adapter.test.ts` — request, normalization, error, and endpoint-security tests.
 - `apps/api/src/weather-session.test.ts` — live initialization and explicit fallback integration tests.
 - `apps/web/src/components/SessionHud.tsx` — source, observation time, and provider attribution display.
+
+### Continuous Integration
+
+- `.github/workflows/ci.yml` — read-only pull-request and main-branch verification for locked install, tests, type checks, and production build.
