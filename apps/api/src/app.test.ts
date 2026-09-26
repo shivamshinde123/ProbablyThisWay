@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { hikeDetailSchema, routeEvaluationSchema, sessionStartResponseSchema } from "@probably-this-way/contracts";
+import { hikeDetailSchema, latestDecisionSchema, routeEvaluationSchema, sessionStartResponseSchema } from "@probably-this-way/contracts";
 import { buildApp } from "./app.js";
+import { selectRouteRecommendation } from "./policy.js";
 
 delete process.env.JEV_API_KEY;
 
@@ -34,9 +35,11 @@ test("POST /api/v1/sessions creates a typed static-state session", async () => {
   assert.equal(body.evaluation.provider, "deterministic-baseline");
   assert.equal(body.evaluation.scores.length, 3);
   assert.ok(body.evaluation.scores.every((score) => score.suitability >= 0 && score.suitability <= 1));
+  assert.equal(body.recommendation.routeId, "lower-return");
+  assert.equal(body.recommendation.suitability, Math.max(...body.evaluation.scores.map((score) => score.suitability)));
   const latest = await app.inject({ method: "GET", url: `/api/v1/sessions/${body.session.id}/evaluations/latest` });
   assert.equal(latest.statusCode, 200);
-  assert.deepEqual(routeEvaluationSchema.parse(latest.json()), body.evaluation);
+  assert.deepEqual(latestDecisionSchema.parse(latest.json()), { evaluation: body.evaluation, recommendation: body.recommendation });
   await app.close();
 });
 
@@ -52,5 +55,22 @@ test("GET latest evaluation returns a structured 404 for an unknown session", as
   const response = await app.inject({ method: "GET", url: "/api/v1/sessions/00000000-0000-4000-8000-000000000000/evaluations/latest" });
   assert.equal(response.statusCode, 404);
   assert.equal(response.json().error.code, "evaluation_not_found");
+  await app.close();
+});
+test("route policy resolves equal scores by stable route order", async () => {
+  const app = await buildApp();
+  const response = await app.inject({ method: "GET", url: "/api/v1/hikes/wachusett-summit" });
+  const hike = hikeDetailSchema.parse(response.json());
+  const evaluation = routeEvaluationSchema.parse({
+    id: "00000000-0000-4000-8000-000000000001",
+    sessionId: "00000000-0000-4000-8000-000000000002",
+    status: "completed",
+    createdAt: new Date().toISOString(),
+    questionSetVersion: "route-suitability-v1",
+    provider: "deterministic-baseline",
+    scores: hike.routes.map((route) => ({ routeId: route.properties.id, suitability: 0.5 })),
+  });
+  const recommendation = selectRouteRecommendation(evaluation, hike.routes);
+  assert.equal(recommendation.routeId, hike.routes[0]?.properties.id);
   await app.close();
 });

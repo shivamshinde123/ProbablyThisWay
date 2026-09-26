@@ -43,3 +43,8 @@ The repository is initialized as `ProbablyThisWay`. The web, API, and shared-con
 - Add generated artifacts to ignored build directories, not source folders.
 
 npm workspaces manage the monorepo. Add planned domain, database, and test directories only when their implementation begins.
+
+## Phase 6 Additions
+
+- `apps/api/src/policy.ts` — deterministic route recommendation policy.
+- `apps/web/src/components/RecommendationBanner.tsx` — current recommendation readout.

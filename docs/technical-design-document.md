@@ -45,3 +45,7 @@ Queue mechanism, cache strategy, authentication, production persistence, calibra
 ## Implemented Jev Adapter
 
 The API owns Jev credentials and calls the configured decision endpoint with a four-second timeout. Each route maps to one Noul question, and the response must provide a probability in `[0, 1]` for every returned answer. The application contract records provider provenance as `jev` or `deterministic-baseline`. Network or validation failures do not block session startup; they degrade visibly to the baseline. Recommendation policy remains separate and is not implemented by this adapter.
+
+## Implemented Recommendation Policy
+
+`selectRouteRecommendation` is pure application policy. It indexes scores by route ID, considers only routes in the validated hike, and selects the greatest suitability. Exact ties retain the hike's stable route order. The result records `highest-suitability-v1`, the winning score, and a decision timestamp. Jev and the deterministic baseline only supply scores; neither controls the final route directly.

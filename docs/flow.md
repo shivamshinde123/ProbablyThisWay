@@ -116,3 +116,21 @@ POST /api/v1/sessions
 ```
 
 The map selection remains unchanged in this stage. Applying deterministic route policy and highlighting the highest-ranked route is the next flow.
+
+## Implemented Recommendation and Highlight Flow
+
+```text
+validated route scores
+  -> selectRouteRecommendation
+      -> discard scores not belonging to the hike
+      -> choose greatest suitability
+      -> exact tie: preserve stable hike route order
+  -> typed RouteRecommendation
+  -> session response + latest-decision read model
+  -> React derives the recommended route
+      -> recommendation banner and card marker
+      -> TerrainMap receives recommendation ID + score
+      -> Cesium renders signal-green route and recommendation label
+```
+
+The user's pre-session choice remains orange when it differs from the recommendation. Other routes remain moss. Route selection stays locked after session start.

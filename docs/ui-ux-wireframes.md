@@ -43,3 +43,7 @@ Desktop uses map plus side panel. On narrow screens, the map remains dominant an
 ## Accessibility
 
 All controls require labels, keyboard access, visible focus, adequate contrast, text equivalents for route colors, and reduced-motion support. Cesium interactions need non-map alternatives for essential information.
+
+## Implemented Recommendation State
+
+After session evaluation, the highest-ranked valid route changes to signal green on both the map and route list. The original pre-session choice remains orange when different, and other routes remain moss. A compact recommendation panel shows route name, suitability, policy version, and a reminder to compare against official guidance and actual field conditions.
