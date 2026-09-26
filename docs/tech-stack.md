@@ -19,7 +19,7 @@
 - Validation library: Zod, shared through the contracts workspace.
 - Weather integration: Open-Meteo Forecast API through a server-side, provider-shaped adapter.
 - Database query layer: `node-postgres` with parameterized SQL and explicit transactions; no ORM.
-- Test framework: Node test runner through `tsx`, plus TypeScript checks and production builds.
+- Test framework: Node test runner through `tsx`, Playwright desktop/mobile Chromium flows, TypeScript checks, and production builds.
 - CI: GitHub Actions on Ubuntu with Node.js 22 and locked npm installs.
 - Hosting, deployment, logging, and metrics: TBD.
 - LLM provider/model for question selection and explanations: TBD.

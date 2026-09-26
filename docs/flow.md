@@ -317,3 +317,20 @@ typed routes + suitability scores
   -> persist and publish the typed decision
   -> UI disables excluded cards and removes recommendation highlight
 ```
+
+## Browser Verification Flow
+
+```text
+npm run test:e2e
+  -> Playwright starts Fastify on 127.0.0.1:3001
+  -> Playwright starts Vite on 127.0.0.1:5173
+  -> desktop Chromium + Pixel 7 projects
+       -> load DCR route catalog
+       -> verify no simulation control
+       -> select route and start session
+       -> verify recommendation, HUD, feed, and map label
+       -> verify mobile map/panel stacking
+       -> intercept event poll with typed stale status
+       -> verify last-valid-value warning
+  -> retain failure artifacts under output/playwright/
+```

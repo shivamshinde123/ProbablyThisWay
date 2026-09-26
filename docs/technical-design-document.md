@@ -37,7 +37,7 @@ Every accepted update, including an automatic weather refresh, increments a sess
 - Unit tests for thresholds, score normalization, and policy.
 - Contract tests for adapters and API schemas.
 - Integration tests from state snapshot through persisted decision.
-- Browser tests for trail selection and recommendation rendering.
+- Playwright browser tests for authoritative catalog loading, trail selection, recommendation rendering, responsive stacking, stale-weather warnings, and absence of simulation controls.
 - Golden scenarios for stable route-policy outcomes.
 - Pull-request CI installs from `package-lock.json`, then runs the complete test, type-check, and production-build commands on Node.js 22.
 

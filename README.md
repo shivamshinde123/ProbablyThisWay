@@ -49,9 +49,10 @@ See [`docs/environment-config-reference.md`](docs/environment-config-reference.m
 npm test
 npm run check
 npm run build
+npm run test:e2e
 ```
 
-`npm test` builds shared contracts and runs the API tests. `npm run check` type-checks all workspaces. `npm run build` produces the API and web production builds. GitHub Actions runs all three commands for pull requests targeting `main` and pushes to `main`.
+`npm test` builds shared contracts and runs the API tests. `npm run check` type-checks all workspaces. `npm run build` produces the API and web production builds. `npm run test:e2e` runs the desktop and mobile Chromium product flows. GitHub Actions runs all four commands for pull requests targeting `main` and pushes to `main`.
 
 ## Live Weather
 

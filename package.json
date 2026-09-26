@@ -14,9 +14,11 @@
     "dev:api": "npm run dev -w @probably-this-way/api",
     "dev:web": "npm run dev -w @probably-this-way/web",
     "data:refresh:dcr": "node scripts/import-dcr-trails.mjs",
-    "test": "npm run build -w @probably-this-way/contracts && npm run test -w @probably-this-way/api"
+    "test": "npm run build -w @probably-this-way/contracts && npm run test -w @probably-this-way/api",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "1.55.1",
     "concurrently": "^9.2.1",
     "typescript": "^5.9.3"
   },

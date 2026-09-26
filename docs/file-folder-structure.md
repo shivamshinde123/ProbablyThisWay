@@ -109,3 +109,9 @@ apps/api/src/route-catalog.ts                 # Typed supported-hike catalog
 apps/api/src/route-catalog.test.ts            # Provenance and geographic-bound checks
 apps/api/src/generated/wachusett-routes.ts    # Generated, reviewed DCR WGS84 snapshot
 ```
+
+### Browser Verification
+
+- `playwright.config.ts` — isolated API/Vite server orchestration, desktop/mobile projects, and failure-artifact policy.
+- `tests/e2e/core-flow.spec.ts` — authoritative catalog, session/recommendation, responsive layout, freshness, and no-simulation flows.
+- `output/playwright/` — ignored browser traces, screenshots, videos, and HTML reports.

@@ -104,3 +104,10 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 | Freshness status persistence | Atomically record successful duplicate checks and failures without publishing recommendation events | `SessionStore` compare-and-swap |
 | `SessionHud.tsx` freshness signal | Show current, stale/failure, unknown, or prototype state and label retained stale values | Session environmental status and observation time |
 | Event-feed snapshot fields | Deliver latest state/status on every cursor poll, including empty event batches | Durable session record |
+
+## Browser Verification Components
+
+| Component | Responsibility | Depends on |
+|---|---|---|
+| `playwright.config.ts` | Start isolated API and web servers and run deterministic desktop/mobile projects | Chromium, Fastify, Vite |
+| `tests/e2e/core-flow.spec.ts` | Verify the integrated user flow and stale-state behavior at the browser boundary | Public API and rendered UI contracts |
