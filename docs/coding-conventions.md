@@ -43,3 +43,4 @@
 - Never hand-edit `apps/api/src/generated/wachusett-routes.ts`.
 - Update the explicit feature manifest in `scripts/import-dcr-trails.mjs`, run `npm run data:refresh:dcr`, and review geometry plus provenance changes.
 - Treat missing, non-legal, malformed, or discontinuous source segments as generation failures.
+- Playwright may reuse already-running local development servers, but CI must always start clean isolated API and web processes.

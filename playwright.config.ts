@@ -9,11 +9,17 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: process.env.CI
-    ? [["github"], ["html", { outputFolder: "output/playwright/report", open: "never" }]]
-    : [["list"], ["html", { outputFolder: "output/playwright/report", open: "never" }]],
+    ? [
+        ["github"],
+        ["html", { outputFolder: "output/playwright/report", open: "never" }],
+      ]
+    : [
+        ["list"],
+        ["html", { outputFolder: "output/playwright/report", open: "never" }],
+      ],
   outputDir: "output/playwright/artifacts",
   use: {
-    baseURL: "http://127.0.0.1:5173",
+    baseURL: "http://localhost:5173",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -21,15 +27,21 @@ export default defineConfig({
   webServer: [
     {
       command: "node apps/api/dist/server.js",
-      url: "http://127.0.0.1:3001/api/v1/health",
-      reuseExistingServer: false,
+      url: "http://localhost:3001/api/v1/health",
+      reuseExistingServer: !process.env.CI,
       timeout: 120_000,
-      env: { ...process.env, HOST: "127.0.0.1", PORT: "3001", WEB_ORIGIN: "http://127.0.0.1:5173" },
+      env: {
+        ...process.env,
+        HOST: "127.0.0.1",
+        PORT: "3001",
+        WEB_ORIGIN: "http://localhost:5173",
+      },
     },
     {
-      command: "node node_modules/vite/bin/vite.js preview apps/web --host 127.0.0.1 --port 5173",
-      url: "http://127.0.0.1:5173",
-      reuseExistingServer: false,
+      command:
+        "node node_modules/vite/bin/vite.js preview apps/web --host 127.0.0.1 --port 5173",
+      url: "http://localhost:5173",
+      reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
   ],
