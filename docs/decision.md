@@ -65,6 +65,23 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** CesiumJS and its scoped browser token belong to the web client. Server adapters handle weather, Jev, optional LLM calls, and persistence.
 - **Reasoning:** This matches the rendering architecture and avoids treating a browser visualization library as a backend dependency.
 
+## DEC-011 — Use npm workspaces, Vite, Fastify, and Zod for the foundation
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** The first implementation needs a small, typed foundation spanning the web client, API, and shared contracts.
+- **Decision:** Use npm workspaces for the monorepo, Vite for the React client, Fastify for the Node API, and Zod for runtime-valid shared contracts.
+- **Reasoning:** These choices keep setup lightweight, establish strict API boundaries early, and retain the React/TypeScript/Node direction already selected in the project plan.
+- **Consequences:** Shared contracts must build before dependent workspaces. Root scripts enforce that order.
+
+## DEC-012 — Establish an alpine field-instrument visual direction
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** The map-first interface needs a recognizable design language appropriate to outdoor route decisions.
+- **Decision:** Use deep spruce surfaces, topographic linework, high-visibility orange, compact telemetry typography, and editorial route messaging.
+- **Reasoning:** The result feels like purpose-built field equipment and keeps route information visually dominant without resembling a generic dashboard.
+
 ## Entry Template
 
 ```text

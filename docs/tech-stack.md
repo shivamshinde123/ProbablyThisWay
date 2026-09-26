@@ -13,11 +13,12 @@
 
 ## Supporting Choices
 
-- Build framework and package manager: TBD.
-- HTTP framework: TBD.
-- Validation library: TBD.
+- Workspace/package manager: npm workspaces.
+- Web build tooling: Vite.
+- HTTP framework: Fastify.
+- Validation library: Zod, shared through the contracts workspace.
 - ORM/query layer: TBD; it must preserve PostGIS support.
-- Test frameworks: TBD.
+- Test frameworks: TBD; TypeScript checks and production builds are the initial quality gates.
 - Hosting, CI/CD, logging, and metrics: TBD.
 - LLM provider/model for question selection and explanations: TBD.
 

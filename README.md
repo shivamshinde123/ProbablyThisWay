@@ -16,4 +16,16 @@ The repository is in the planning and initial setup phase. Product, architecture
 
 ## Development
 
-Implementation setup and run commands will be added once the application scaffold and package tooling are selected.
+Requires Node.js 22 or newer.
+
+```bash
+npm install
+npm run dev
+```
+
+The web client runs at `http://localhost:5173` and the API at `http://localhost:3001`.
+
+```bash
+npm run check
+npm run build
+```

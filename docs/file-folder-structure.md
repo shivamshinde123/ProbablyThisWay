@@ -1,6 +1,6 @@
 # File and Folder Structure
 
-The repository currently contains planning material only. This is the proposed implementation structure.
+The repository is initialized as `ProbablyThisWay`. The web, API, and shared-contract directories shown below are implemented; later domain and persistence directories remain planned.
 
 ```text
 /
@@ -8,22 +8,15 @@ The repository currently contains planning material only. This is the proposed i
 ├── apps/
 │   ├── web/                    # React/TypeScript client
 │   │   └── src/
-│   │       ├── components/
-│   │       ├── features/
-│   │       ├── map/
-│   │       ├── services/
-│   │       └── styles/
+│   │       ├── App.tsx
+│   │       ├── main.tsx
+│   │       └── styles.css
 │   └── api/                    # Node.js API
 │       └── src/
-│           ├── routes/
-│           ├── application/
-│           ├── domain/
-│           ├── integrations/
-│           └── persistence/
+│           ├── app.ts
+│           └── server.ts
 ├── packages/
-│   ├── contracts/              # Shared API schemas/types
-│   ├── domain/                 # Framework-independent domain logic
-│   └── config/                 # Shared lint/TypeScript configuration
+│   └── contracts/              # Shared Zod schemas and TypeScript types
 ├── database/
 │   ├── migrations/
 │   └── seeds/
@@ -31,6 +24,11 @@ The repository currently contains planning material only. This is the proposed i
 │   ├── integration/
 │   └── e2e/
 ├── .env.example
+├── .gitignore
+├── package.json
+├── package-lock.json
+├── README.md
+├── tsconfig.base.json
 └── idea.md                     # Original project plan
 ```
 
@@ -41,4 +39,4 @@ The repository currently contains planning material only. This is the proposed i
 - Co-locate unit tests with source; keep cross-system tests under `tests`.
 - Add generated artifacts to ignored build directories, not source folders.
 
-The monorepo tool and exact package layout are TBD.
+npm workspaces manage the monorepo. Add planned domain, database, and test directories only when their implementation begins.

@@ -1,0 +1,24 @@
+{
+  "name": "probably-this-way",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @probably-this-way/contracts && npm run build -w @probably-this-way/api && npm run build -w @probably-this-way/web",
+    "check": "npm run build -w @probably-this-way/contracts && npm run check -w @probably-this-way/api && npm run check -w @probably-this-way/web",
+    "dev": "npm run build -w @probably-this-way/contracts && concurrently -n api,web -c yellow,cyan npm:dev:api npm:dev:web",
+    "dev:api": "npm run dev -w @probably-this-way/api",
+    "dev:web": "npm run dev -w @probably-this-way/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
