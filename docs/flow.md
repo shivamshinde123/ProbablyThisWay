@@ -134,3 +134,19 @@ validated route scores
 ```
 
 The user's pre-session choice remains orange when it differs from the recommendation. Other routes remain moss. Route selection stays locked after session start.
+
+## Implemented Phase 7 Polish Flow
+
+```text
+Start field session
+  -> show accessible evaluation-progress instrument
+  -> evaluate + apply policy
+  -> policy derives daylight / exposure / elevation facts
+  -> return typed explanation and factors
+  -> render recommendation panel
+  -> compute recommended-route bounding sphere
+  -> smoothly frame route once
+      -> reduced-motion preference: immediate camera change
+```
+
+Responsive breakpoints keep the map dominant, collapse recommendation evidence to one column on narrow screens, and preserve readable HUD telemetry.

@@ -37,6 +37,8 @@ test("POST /api/v1/sessions creates a typed static-state session", async () => {
   assert.ok(body.evaluation.scores.every((score) => score.suitability >= 0 && score.suitability <= 1));
   assert.equal(body.recommendation.routeId, "lower-return");
   assert.equal(body.recommendation.suitability, Math.max(...body.evaluation.scores.map((score) => score.suitability)));
+  assert.match(body.recommendation.explanation, /Lower Return ranks highest/);
+  assert.deepEqual(body.recommendation.factors.map((factor) => factor.label), ["Daylight", "Exposure", "Elevation"]);
   const latest = await app.inject({ method: "GET", url: `/api/v1/sessions/${body.session.id}/evaluations/latest` });
   assert.equal(latest.statusCode, 200);
   assert.deepEqual(latestDecisionSchema.parse(latest.json()), { evaluation: body.evaluation, recommendation: body.recommendation });
@@ -70,7 +72,12 @@ test("route policy resolves equal scores by stable route order", async () => {
     provider: "deterministic-baseline",
     scores: hike.routes.map((route) => ({ routeId: route.properties.id, suitability: 0.5 })),
   });
-  const recommendation = selectRouteRecommendation(evaluation, hike.routes);
+  const recommendation = selectRouteRecommendation(evaluation, hike.routes, {
+    observedAt: new Date().toISOString(), source: "prototype-static",
+    weather: { temperatureF: 54, windMph: 8, rainProbability: 0.18 },
+    daylight: { sunsetAt: new Date(Date.now() + 159 * 60_000).toISOString(), remainingMinutes: 159 },
+    user: { paceMph: 2.1, fatigue: "low" },
+  });
   assert.equal(recommendation.routeId, hike.routes[0]?.properties.id);
   await app.close();
 });

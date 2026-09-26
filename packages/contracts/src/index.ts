@@ -44,6 +44,8 @@ export type RouteEvaluation = z.infer<typeof routeEvaluationSchema>;
 export const routeRecommendationSchema = z.object({
   routeId: z.string().min(1), suitability: z.number().min(0).max(1),
   policyVersion: z.literal("highest-suitability-v1"), decidedAt: z.string().datetime(),
+  explanation: z.string().min(1),
+  factors: z.array(z.object({ label: z.string().min(1), value: z.string().min(1) })).min(2).max(3),
 });
 export type RouteRecommendation = z.infer<typeof routeRecommendationSchema>;
 export const latestDecisionSchema = z.object({ evaluation: routeEvaluationSchema, recommendation: routeRecommendationSchema });

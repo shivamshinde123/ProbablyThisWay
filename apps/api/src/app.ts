@@ -40,7 +40,7 @@ export async function buildApp() {
       state: { observedAt: now.toISOString(), source: "prototype-static", weather: { temperatureF: 54, windMph: 8, rainProbability: 0.18 }, daylight: { sunsetAt: new Date(now.getTime() + 159 * 60_000).toISOString(), remainingMinutes: 159 }, user: { paceMph: 2.1, fatigue: "low" } },
     };
     const evaluation = await evaluateRoutes({ sessionId: session.id, state: session.state, routes: hike.routes });
-    const recommendation = selectRouteRecommendation(evaluation, hike.routes);
+    const recommendation = selectRouteRecommendation(evaluation, hike.routes, session.state);
     decisions.set(session.id, latestDecisionSchema.parse({ evaluation, recommendation }));
     return reply.code(201).send(sessionStartResponseSchema.parse({ session, evaluation, recommendation }));
   });
