@@ -42,7 +42,7 @@ Every accepted update increments a session-scoped sequence. A threshold crossing
 
 ## TBD
 
-Queue mechanism, cache strategy, authentication, production persistence, calibrated scoring policy, and operational SLOs.
+Queue mechanism, cache strategy, end-user authentication, production persistence, calibrated scoring policy, and operational SLOs.
 
 ## Implemented Jev Adapter
 
@@ -59,3 +59,7 @@ The recommendation policy creates explanation copy only from validated route met
 ## Implemented Decision Events
 
 A session publishes `session_started` after the initial decision and `recommendation_updated` only after a current-sequence threshold evaluation succeeds. Event sequence is contiguous and independent of state-update sequence. `GET /sessions/{sessionId}/events` performs cursor filtering and returns the last delivered sequence as `nextCursor`. The client validates every batch and uses recursive five-second polling so requests do not overlap. Failed reads mark the feed as retrying without discarding the last valid decision.
+
+## Implemented Adapter Authentication
+
+`resolveAdapterAuthConfig` trims and validates `STATE_ADAPTER_TOKEN` during application construction. Configured credentials shorter than 32 characters are rejected, and production construction fails without a token. The state-update route validates the bearer scheme and performs a length check followed by Node's constant-time `timingSafeEqual` comparison before accessing session state. Local development remains credential-optional; end-user authentication is not part of this boundary.

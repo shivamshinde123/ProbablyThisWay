@@ -40,4 +40,4 @@ The product is decision support, not an emergency or navigation guarantee. UI co
 
 - Exact launch trail and source datasets: TBD.
 - Live position data is post-MVP. Until it exists, route progress is omitted or marked unavailable rather than inferred from fabricated location data.
-- Hosting, authentication, and analytics requirements: TBD.
+- Hosting, end-user authentication, and analytics requirements: TBD. Server-to-server state adapters use the implemented bearer credential.

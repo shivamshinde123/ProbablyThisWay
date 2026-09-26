@@ -207,3 +207,46 @@ test("decision events reject invalid cursors and unknown sessions", async () => 
   assert.equal(missing.json().error.code, "session_not_found");
   await app.close();
 });
+
+test("PATCH state enforces configured adapter credentials before session lookup", async () => {
+  const token = "a-secure-adapter-token-with-32-chars";
+  const app = await buildApp({ adapterAuthEnv: { NODE_ENV: "development", STATE_ADAPTER_TOKEN: token } });
+  const createdResponse = await app.inject({
+    method: "POST",
+    url: "/api/v1/sessions",
+    payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" },
+  });
+  const created = sessionStartResponseSchema.parse(createdResponse.json());
+  const payload = {
+    observedAt: new Date(Date.parse(created.session.state.observedAt) + 60_000).toISOString(),
+    source: "weather",
+    changes: { windMph: 10 },
+  };
+
+  const missing = await app.inject({
+    method: "PATCH",
+    url: "/api/v1/sessions/" + created.session.id + "/state",
+    payload,
+  });
+  assert.equal(missing.statusCode, 401);
+  assert.equal(missing.json().error.code, "adapter_unauthorized");
+  assert.equal(missing.headers["www-authenticate"], 'Bearer realm="state-adapter"');
+
+  const wrong = await app.inject({
+    method: "PATCH",
+    url: "/api/v1/sessions/00000000-0000-4000-8000-000000000000/state",
+    headers: { authorization: "Bearer wrong-token" },
+    payload,
+  });
+  assert.equal(wrong.statusCode, 401);
+
+  const accepted = await app.inject({
+    method: "PATCH",
+    url: "/api/v1/sessions/" + created.session.id + "/state",
+    headers: { authorization: "Bearer " + token },
+    payload,
+  });
+  assert.equal(accepted.statusCode, 202);
+  assert.equal(stateUpdateResponseSchema.parse(accepted.json()).accepted, true);
+  await app.close();
+});

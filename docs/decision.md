@@ -174,4 +174,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Context:** Automatic re-evaluation must become visible to the active client, while below-threshold state updates should not create empty positions in the decision feed.
 - **Decision:** Append `session_started` and `recommendation_updated` events with their own contiguous sequence. Include the exact state snapshot and typed decision in each event. Poll the cursor endpoint every five seconds in the MVP and retry passively after failures.
 - **Reasoning:** A separate event cursor produces simple, lossless incremental reads and lets the HUD, map, scores, and explanation update from one coherent record.
-- **Consequences:** The browser can observe external supported updates without a manual control. Events remain process-memory only; durable storage, retention, pagination limits, authentication, and streaming are future work.
+- **Consequences:** The browser can observe external supported updates without a manual control. Events remain process-memory only; durable storage, retention, pagination limits, end-user authentication, and streaming are future work.
+
+## DEC-022 — Protect state mutation with a fail-closed adapter credential
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** Supported weather and user-input adapters can alter the state used for route recommendations, so the mutation boundary must not remain publicly writable.
+- **Decision:** Require `Authorization: Bearer <token>` for state updates whenever `STATE_ADAPTER_TOKEN` is configured. Compare credentials in constant time, require at least 32 characters, authenticate before session lookup, and refuse production startup without the token. Permit tokenless local development.
+- **Reasoning:** A scoped server-side shared secret is a small, auditable boundary suitable for the current adapter model and prevents resource enumeration through the mutation route.
+- **Consequences:** Deployment secret storage and rotation are required. This does not authenticate hikers or authorize per-user resources; end-user identity remains a separate future decision.

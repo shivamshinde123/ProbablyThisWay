@@ -18,6 +18,7 @@ import {
   type Session,
   type UpdateSessionStateRequest,
 } from "@probably-this-way/contracts";
+import { isAuthorizedAdapter, resolveAdapterAuthConfig } from "./adapter-auth.js";
 import { evaluateRoutes } from "./evaluation.js";
 import { selectRouteRecommendation } from "./policy.js";
 import { detectRelevantThresholds } from "./thresholds.js";
@@ -65,7 +66,8 @@ function applyStateUpdate(state: HikingState, update: UpdateSessionStateRequest)
   };
 }
 
-export async function buildApp() {
+export async function buildApp(options: { adapterAuthEnv?: NodeJS.ProcessEnv } = {}) {
+  const adapterAuth = resolveAdapterAuthConfig(options.adapterAuthEnv ?? process.env);
   const sessions = new Map<string, SessionRecord>();
   const app = Fastify({ logger: true });
   await app.register(cors, { origin: process.env.WEB_ORIGIN ?? "http://localhost:5173" });
@@ -111,6 +113,13 @@ export async function buildApp() {
   });
 
   app.patch<{ Params: { sessionId: string } }>("/api/v1/sessions/:sessionId/state", async (request, reply) => {
+    if (!isAuthorizedAdapter(request.headers.authorization, adapterAuth)) {
+      return reply
+        .header("www-authenticate", 'Bearer realm="state-adapter"')
+        .code(401)
+        .send({ error: { code: "adapter_unauthorized", message: "Valid adapter credentials are required", details: {} } });
+    }
+
     const record = sessions.get(request.params.sessionId);
     if (!record) return reply.code(404).send({ error: { code: "session_not_found", message: "Session not found", details: {} } });
 
