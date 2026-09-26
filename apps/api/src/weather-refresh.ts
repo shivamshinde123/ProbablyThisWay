@@ -29,7 +29,7 @@ export function resolveWeatherRefreshInterval(
   return interval;
 }
 
-export type WeatherRefreshResult = "accepted" | "stale" | "conflict";
+export type WeatherRefreshResult = "accepted" | "stale" | "conflict" | "ended";
 
 type WeatherRefresherOptions = {
   sessionStore: SessionStore;
@@ -84,6 +84,7 @@ export class WeatherRefresher {
         try {
           record = await this.#options.sessionStore.get(sessionId);
           if (!record) continue;
+          if (record.session.status !== "active") continue;
           const location = this.#options.locations[record.session.hikeId];
           if (!location)
             throw new Error(

@@ -66,3 +66,7 @@ The selected-hike card links to the Massachusetts DCR geometry source and displa
 ## Supported Trail Search
 
 A prominent field-index search sits before the selected-hike card. It searches the loaded supported route names, hike name, and location, shows distance and location in an accessible result list, and selects the route without starting a session. The control locks while a session is active. A no-match result states the exact Wachusett-only coverage boundary instead of implying worldwide discovery.
+
+## Active Session Control
+
+While a field session is active, the start action is replaced by a full-width outlined End field session button. During the request it reads Ending field session… and cannot be pressed twice. Success removes the live HUD, recommendation, and decision feed while preserving the selected trail; search and route selection become available immediately.

@@ -51,6 +51,16 @@ test("loads authoritative routes and completes the recommendation flow", async (
     page.getByLabel(/highlighting recommended route Pine Hill Trail/),
   ).toBeVisible();
 
+  await page.getByRole("button", { name: "End field session" }).click();
+  await expect(
+    page.getByRole("button", { name: "Start field session" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("searchbox", { name: "Search supported trails" }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("region", { name: "Current hiking state" }),
+  ).toHaveCount(0);
   const viewport = page.viewportSize();
   if (viewport && viewport.width < 600) {
     const mapBox = await page.locator(".map-stage").boundingBox();

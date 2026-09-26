@@ -88,3 +88,7 @@ The DCR line layer has no elevation coordinates or exposure rating. Generated co
 Every route carries `legalStatus`, `accessStatus`, and typed restrictions. `selectRouteRecommendation` first builds audited exclusion reasons, then ranks only eligible routes. Illegal, closed, restricted, and `prohibitive` restriction records are hard exclusions; `advisory` records do not block ranking. If no score belongs to an eligible route, the policy returns `status: unavailable` rather than a route ID.
 
 The recommendation schema accepts stored v1 decisions by defaulting them to `status: recommended` with an empty exclusion list. New decisions use `hard-constraints-v2`. An unknown access status is displayed and is not interpreted as open; the UI continues to direct users to current official notices.
+
+## End-Session Lifecycle
+
+Session is a discriminated union: active sessions have status active; ended sessions have status ended plus endedAt. Ending uses the existing session sequence as an optimistic concurrency boundary and writes the payload and relational status together. Repeated end requests are idempotent. Ended sessions remain readable until retention removes them, but state adapters and scheduled weather refresh cannot advance them.

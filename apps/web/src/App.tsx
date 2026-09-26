@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import {
   createSessionRequestSchema,
   decisionEventsResponseSchema,
+  endSessionResponseSchema,
   hikeDetailSchema,
   hikesResponseSchema,
   sessionStartResponseSchema,
@@ -44,7 +45,7 @@ export function App() {
     "idle" | "syncing" | "live" | "degraded"
   >("idle");
   const [status, setStatus] = useState<
-    "loading" | "ready" | "starting" | "error"
+    "loading" | "ready" | "starting" | "ending" | "error"
   >("loading");
   const sessionId = session?.id;
 
@@ -176,6 +177,27 @@ export function App() {
     }
   }
 
+  async function endSession() {
+    if (!session) return;
+    setStatus("ending");
+    try {
+      const response = await fetch(
+        apiBaseUrl + "/sessions/" + session.id + "/end",
+        { method: "POST" },
+      );
+      if (!response.ok)
+        throw new Error("End session returned " + response.status);
+      endSessionResponseSchema.parse(await response.json());
+      setSession(undefined);
+      setEvaluation(undefined);
+      setRecommendation(undefined);
+      setEvents([]);
+      setFeedStatus("idle");
+      setStatus("ready");
+    } catch {
+      setStatus("error");
+    }
+  }
   const routes = hike?.routes ?? [];
   const scoresByRoute = new Map(
     evaluation?.scores.map((score) => [score.routeId, score]),
@@ -191,6 +213,7 @@ export function App() {
     recommendation?.excludedRoutes.map((route) => route.routeId) ?? [],
   );
   const isEvaluating = status === "starting";
+  const isEnding = status === "ending";
   let sessionLabel = "Field system · standby";
   if (session) sessionLabel = "Session active";
   if (recommendation)
@@ -372,20 +395,29 @@ export function App() {
           {session ? (
             <DecisionFeed events={events} status={feedStatus} />
           ) : null}
-          <button
-            className="primary-action"
-            type="button"
-            disabled={!selectedRouteId || isEvaluating || Boolean(session)}
-            onClick={() => void startSession()}
-            aria-describedby="safety-note"
-          >
-            {isEvaluating
-              ? "Evaluating routes…"
-              : session
-                ? "Session active"
-                : "Start field session"}
-            <span>↗</span>
-          </button>
+          {session ? (
+            <button
+              className="secondary-action"
+              type="button"
+              disabled={isEnding}
+              onClick={() => void endSession()}
+              aria-describedby="safety-note"
+            >
+              {isEnding ? "Ending field session…" : "End field session"}
+              <span>×</span>
+            </button>
+          ) : (
+            <button
+              className="primary-action"
+              type="button"
+              disabled={!selectedRouteId || isEvaluating}
+              onClick={() => void startSession()}
+              aria-describedby="safety-note"
+            >
+              {isEvaluating ? "Evaluating routes…" : "Start field session"}
+              <span>↗</span>
+            </button>
+          )}
           <p className="safety-note" id="safety-note">
             <strong>Decision support, not a safety guarantee.</strong> Check
             current DCR notices and posted closures before entering a trail.

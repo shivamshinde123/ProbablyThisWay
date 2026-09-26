@@ -108,3 +108,18 @@ test("in-memory retention removes only records older than the cutoff", async () 
   assert.equal(await store.get(old.session.id), undefined);
   assert.ok(await store.get(recent.session.id));
 });
+
+test("ended sessions are removed from the active-session index", async () => {
+  const store = new InMemorySessionStore();
+  const record = makeRecord();
+  await store.create(record);
+  record.sequence += 1;
+  record.session = {
+    ...record.session,
+    status: "ended",
+    endedAt: "2026-09-25T13:00:00.000Z",
+  };
+  assert.equal(await store.save(record, 0), true);
+  assert.deepEqual(await store.listActiveSessionIds(), []);
+  assert.equal((await store.get(record.session.id))?.session.status, "ended");
+});

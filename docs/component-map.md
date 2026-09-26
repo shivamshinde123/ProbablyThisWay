@@ -44,3 +44,9 @@
 ## Dependency Rule
 
 The browser depends on shared contracts and public API responses. Provider and database details stay inside API adapters. Pure policy and threshold functions do not depend on React, Cesium, Fastify, PostgreSQL, or provider SDKs.
+
+## Session Lifecycle Additions
+
+- App owns start/end request state. While a session is active it replaces the start control with a visible End field session action; a successful end clears live-session presentation and unlocks TrailSearch.
+- POST /api/v1/sessions/:sessionId/end performs the lifecycle transition through SessionStore compare-and-swap persistence.
+- SessionStore persists both the typed JSON session and relational lifecycle status. WeatherRefresher queries only active session IDs and rechecks status after loading.

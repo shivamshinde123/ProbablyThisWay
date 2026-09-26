@@ -386,3 +386,13 @@ docker compose up
       -> /api/* proxies to Fastify on the private network
   -> browser uses one public origin for UI and API
 ```
+
+## Implemented Session End Flow
+
+Active field session → user selects End field session → POST /api/v1/sessions/{sessionId}/end → load the current session record.
+
+- Already ended: return the original ended session idempotently.
+- Active: increment the compare-and-swap sequence, persist status and endedAt together, and remove the session from active weather-refresh queries.
+- Client success: clear the session HUD, decision feed, and recommendation; make trail search and route selection available again.
+
+Adapter updates and racing weather transitions check lifecycle status and stop without mutating an ended session.

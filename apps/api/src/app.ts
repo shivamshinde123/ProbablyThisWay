@@ -6,6 +6,7 @@ import {
   createSessionRequestSchema,
   decisionEventSchema,
   decisionEventsResponseSchema,
+  endSessionResponseSchema,
   hikeDetailSchema,
   hikeSummarySchema,
   latestDecisionSchema,
@@ -330,6 +331,39 @@ export async function buildApp(
     );
   });
 
+  app.post<{ Params: { sessionId: string } }>(
+    "/api/v1/sessions/:sessionId/end",
+    async (request, reply) => {
+      const record = await sessionStore.get(request.params.sessionId);
+      if (!record)
+        return reply.code(404).send({
+          error: {
+            code: "session_not_found",
+            message: "Session not found",
+            details: {},
+          },
+        });
+      if (record.session.status === "ended")
+        return endSessionResponseSchema.parse({ session: record.session });
+
+      const expectedSequence = record.sequence;
+      record.sequence = expectedSequence + 1;
+      record.session = {
+        ...record.session,
+        status: "ended",
+        endedAt: new Date().toISOString(),
+      };
+      if (!(await sessionStore.save(record, expectedSequence)))
+        return reply.code(409).send({
+          error: {
+            code: "session_update_conflict",
+            message: "Session changed while it was being ended; retry",
+            details: {},
+          },
+        });
+      return endSessionResponseSchema.parse({ session: record.session });
+    },
+  );
   app.get<{ Params: { sessionId: string } }>(
     "/api/v1/sessions/:sessionId",
     async (request, reply) => {
@@ -382,6 +416,15 @@ export async function buildApp(
           },
         });
 
+      if (record.session.status !== "active")
+        return reply.code(409).send({
+          error: {
+            code: "session_ended",
+            message: "Ended sessions cannot accept state updates",
+            details: {},
+          },
+        });
+
       const parsed = updateSessionStateRequestSchema.safeParse(request.body);
       if (!parsed.success)
         return reply.code(422).send({
@@ -414,6 +457,15 @@ export async function buildApp(
           error: {
             code: "stale_state_update",
             message: "State update is not newer than the current snapshot",
+            details: {},
+          },
+        });
+      }
+      if (result.status === "ended") {
+        return reply.code(409).send({
+          error: {
+            code: "session_ended",
+            message: "Ended sessions cannot accept state updates",
             details: {},
           },
         });

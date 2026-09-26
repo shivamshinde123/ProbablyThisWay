@@ -18,6 +18,7 @@ test(
       assert.deepEqual(first.applied, [
         "001_session_persistence.sql",
         "002_retention_index.sql",
+        "003_session_lifecycle.sql",
       ]);
       assert.deepEqual(first.skipped, []);
 
@@ -26,6 +27,7 @@ test(
       assert.deepEqual(second.skipped, [
         "001_session_persistence.sql",
         "002_retention_index.sql",
+        "003_session_lifecycle.sql",
       ]);
 
       const migrations = await pool.query<{ version: string }>(
@@ -33,7 +35,7 @@ test(
       );
       assert.deepEqual(
         migrations.rows.map((row) => row.version),
-        ["001", "002"],
+        ["001", "002", "003"],
       );
       const index = await pool.query<{ exists: boolean }>(
         "SELECT to_regclass('public.sessions_updated_at_idx') IS NOT NULL AS exists",

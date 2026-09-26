@@ -107,16 +107,24 @@ export const createSessionRequestSchema = z.object({
   selectedRouteId: z.string().min(1),
 });
 export type CreateSessionRequest = z.infer<typeof createSessionRequestSchema>;
-export const sessionSchema = z.object({
+const sessionBaseSchema = z.object({
   id: z.string().uuid(),
   hikeId: z.string(),
   selectedRouteId: z.string(),
-  status: z.literal("active"),
   createdAt: z.string().datetime(),
   state: hikingStateSchema,
   environmentalStatus: environmentalStatusSchema.optional(),
 });
+export const sessionSchema = z.discriminatedUnion("status", [
+  sessionBaseSchema.extend({ status: z.literal("active") }),
+  sessionBaseSchema.extend({
+    status: z.literal("ended"),
+    endedAt: z.string().datetime(),
+  }),
+]);
 export type Session = z.infer<typeof sessionSchema>;
+export const endSessionResponseSchema = z.object({ session: sessionSchema });
+export type EndSessionResponse = z.infer<typeof endSessionResponseSchema>;
 export const routeSuitabilitySchema = z.object({
   routeId: z.string().min(1),
   suitability: z.number().min(0).max(1),
