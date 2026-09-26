@@ -12,6 +12,7 @@ The `ProbablyThisWay` repository is an npm-workspaces monorepo. The React/Vite c
 |---|---|---|
 | `apps/web/src/main.tsx` | Browser loads the product | Mount the React application |
 | `apps/web/src/App.tsx` | React mount | Load supported hikes and render the map-first UI |
+| `apps/web/src/components/TerrainMap.tsx` | Map stage mounts | Create and configure Cesium, draw the route preview, set the camera, and destroy the viewer on unmount |
 | `apps/api/src/server.ts` | API process starts | Build and listen on the configured host and port |
 | `apps/api/src/app.ts` | HTTP request | Configure Fastify and serve health/hike routes |
 | `packages/contracts/src/index.ts` | API or web import | Validate and type shared request/response data |

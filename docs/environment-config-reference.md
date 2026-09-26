@@ -10,7 +10,7 @@ No concrete application exists yet. The following names are proposed and must be
 | `WEB_ORIGIN` | No | No | Browser origin allowed by API CORS; defaults to `http://localhost:5173` |
 | `VITE_API_BASE_URL` | No | No | Browser API base URL; defaults to `http://localhost:3001/api/v1` |
 | `DATABASE_URL` | Yes | Yes | PostgreSQL/PostGIS connection |
-| `CESIUM_ION_ACCESS_TOKEN` | Likely | No | Scoped browser token for Cesium terrain/assets, if Cesium ion is used; restrict it by allowed URLs and permissions |
+| `VITE_CESIUM_ION_ACCESS_TOKEN` | No | No | Scoped browser token enabling Cesium World Terrain; without it the map uses an ellipsoid preview |
 | `WEATHER_API_BASE_URL` | TBD | No | Weather provider endpoint |
 | `WEATHER_API_KEY` | TBD | Yes | Weather provider credential |
 | `JEV_API_URL` | TBD | No | Jev service endpoint |

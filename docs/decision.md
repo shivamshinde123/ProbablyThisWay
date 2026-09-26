@@ -82,6 +82,15 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Use deep spruce surfaces, topographic linework, high-visibility orange, compact telemetry typography, and editorial route messaging.
 - **Reasoning:** The result feels like purpose-built field equipment and keeps route information visually dominant without resembling a generic dashboard.
 
+## DEC-013 — Integrate Cesium with a token-optional terrain mode
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** The map-first experience needs a real interactive 3D globe before authoritative trail datasets are connected.
+- **Decision:** Embed CesiumJS directly in a React lifecycle component, copy required Cesium assets during Vite builds, enable World Terrain when `VITE_CESIUM_ION_ACCESS_TOKEN` is configured, and otherwise render an ellipsoid preview.
+- **Reasoning:** The application remains runnable for every contributor while supporting high-resolution terrain through a scoped browser token in configured environments.
+- **Consequences:** Cesium substantially increases the web bundle size, so future work should evaluate route-level lazy loading and chunking.
+
 ## Entry Template
 
 ```text
