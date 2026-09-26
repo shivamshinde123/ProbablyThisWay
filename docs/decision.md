@@ -362,3 +362,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** The public elevation service supplies real global height tiles without requiring the user to add a secret, while the existing token path remains available for teams that prefer Cesium World Terrain.
 - **Consequences:** The browser requires network access to the public elevation service. Provider failure degrades visibly to an ellipsoid and does not affect route evaluation, whose ascent values still come from reviewed trail metrics. Attribution must remain visible.
 - **Supersedes:** DEC-013’s tokenless ellipsoid fallback.
+
+## DEC-042 — Make the Open-Meteo credential contract explicit
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** The generic weather variable names did not tell operators which provider key was compatible or that the public provider is keyless.
+- **Decision:** Identify Open-Meteo as the sole implemented weather provider in both environment templates. Document the keyless public Forecast API as the default and require the Open-Meteo customer endpoint whenever a paid Customer API key is supplied.
+- **Reasoning:** Provider-specific instructions prevent users from purchasing or pasting an incompatible OpenWeatherMap or WeatherAPI credential and keep the free local setup simple.
+- **Consequences:** WEATHER_API_KEY remains backward-compatible but accepts only an Open-Meteo Customer API key. Commercial deployments must change both the endpoint and the key; free/non-commercial deployments leave the key empty.

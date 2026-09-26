@@ -25,7 +25,7 @@ WEATHER_API_KEY=
 JEV_API_KEY=
 ```
 
-`POSTGRES_PASSWORD` and `STATE_ADAPTER_TOKEN` are required. Provider keys are optional: the Cesium token selects Cesium World Terrain instead of the keyless ArcGIS elevation default, a weather key is needed only for a paid Open-Meteo plan, and a Jev key enables hosted evaluation. If the database password needs URL escaping, provide a complete URL-encoded `DATABASE_URL` override.
+`POSTGRES_PASSWORD` and `STATE_ADAPTER_TOKEN` are required. Provider keys are optional: the Cesium token selects Cesium World Terrain instead of the keyless ArcGIS elevation default, and a Jev key enables hosted evaluation. Weather is specifically supplied by Open-Meteo: the public `https://api.open-meteo.com/v1/forecast` endpoint is keyless, while a paid/commercial account requires an Open-Meteo Customer API key from `https://dashboard.open-meteo.com/` plus `WEATHER_API_BASE_URL=https://customer-api.open-meteo.com/v1/forecast`. Do not place an OpenWeatherMap or WeatherAPI key in `WEATHER_API_KEY`. If the database password needs URL escaping, provide a complete URL-encoded `DATABASE_URL` override.
 
 ## Build and start
 
