@@ -12,7 +12,7 @@ const clamp = (value: number) => Math.max(0, Math.min(1, value));
 
 export function evaluateDeterministicBaseline({ sessionId, state, routes }: EvaluationInput): RouteEvaluation {
   const fatigueFit = { low: 1, moderate: 0.72, high: 0.4 }[state.user.fatigue];
-  const exposureFit = { low: 0.96, moderate: 0.84, high: 0.7 };
+  const exposureFit = { low: 0.96, moderate: 0.84, high: 0.7, unknown: 0.5 };
   const scores = routes.map((route) => {
     const daylightFit = clamp((state.daylight.remainingMinutes - route.properties.estimatedMinutes + 30) / 120);
     const effortFit = clamp(1 - route.properties.elevationGainFeet / 1_500);

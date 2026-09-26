@@ -161,7 +161,7 @@ export function App() {
           <div className="trail-card" aria-live="polite">
             {status === "loading" ? <p className="system-message">Reading route catalog…</p> : null}
             {status === "error" ? <p className="system-message error">The latest request failed. Check the local API and try again.</p> : null}
-            {hike ? <><div className="trail-heading"><div><small>Selected hike</small><h2>{hike.name}</h2></div><span className="difficulty">{hike.difficulty}</span></div><p className="location">{hike.location}</p></> : null}
+            {hike ? <><div className="trail-heading"><div><small>Selected hike</small><h2>{hike.name}</h2></div><span className="difficulty">{hike.difficulty}</span></div><p className="location">{hike.location}</p><p className="route-source"><a href={hike.routes[0]?.properties.sourceUrl} target="_blank" rel="noreferrer">Massachusetts DCR trail geometry</a><span>Dataset updated {new Date(hike.routes[0]?.properties.datasetUpdatedAt ?? "").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</span></p></> : null}
           </div>
           <div className="route-options" aria-label="Route alternatives">
             {routes.map((route, index) => {
@@ -183,7 +183,7 @@ export function App() {
           <button className="primary-action" type="button" disabled={!selectedRouteId || isEvaluating || Boolean(session)} onClick={() => void startSession()} aria-describedby="safety-note">
             {isEvaluating ? "Evaluating routes…" : session ? "Session active" : "Start field session"}<span>↗</span>
           </button>
-          <p className="safety-note" id="safety-note"><strong>Decision support, not a safety guarantee.</strong> Prototype inputs are not verified current field observations.</p>
+          <p className="safety-note" id="safety-note"><strong>Decision support, not a safety guarantee.</strong> Check current DCR notices and posted closures before entering a trail.</p>
         </aside>
       </section>
     </main>

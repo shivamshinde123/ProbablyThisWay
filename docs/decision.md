@@ -232,3 +232,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** Freshness is session state, not a decision. Keeping it beside the cursor response preserves the contiguous decision log while making failure and age visible within the existing polling path. A 30-minute ceiling allows two documented provider timesteps before expiry.
 - **Consequences:** The HUD clearly distinguishes current, failed/expired, unknown legacy, and prototype conditions while retaining last valid values. Existing persisted sessions remain readable because stored status is optional and derived when absent. Provider-specific ceilings for additional adapters must be defined when those adapters are added.
 - **Supersedes:** The provider-specific freshness-ceiling follow-ups in DEC-024 and DEC-026.
+
+## DEC-028 — Snapshot authoritative DCR summit corridors with reproducible provenance
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** The map and evaluator used hand-authored preview geometry that could not satisfy the MVP requirement for real trail alternatives.
+- **Decision:** Use the Massachusetts DCR Roads and Trails ArcGIS feature layer for Pine Hill, Mountain House, and Harrington summit corridors. Check in a generated WGS84 snapshot assembled from explicit DCR feature IDs, reject missing, discontinuous, or non-legal segments during regeneration, and retain dataset timestamp, source URL, segment IDs, condition, and legal-status provenance in the public contract. Use the official 2019 DCR trail-map distance, ascent, and duration values because the line layer does not carry those corridor-level metrics.
+- **Reasoning:** A reproducible local snapshot avoids a runtime dependency while keeping every coordinate traceable to a public agency dataset. Validation prevents accidental route changes from entering the application silently.
+- **Consequences:** Geometry is authoritative to the source snapshot but not a live closure feed or navigation guarantee. DCR supplies no exposure rating, so exposure remains explicitly unknown and the deterministic baseline treats it conservatively. Refreshes are intentional through `npm run data:refresh:dcr` and require review of the generated diff.
+- **Supersedes:** The preview-geometry plan and launch-trail TBD.

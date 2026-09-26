@@ -48,3 +48,7 @@ Run `npm run db:migrate -w @probably-this-way/api` before starting an API proces
 ## Planned Geospatial Tables
 
 Authoritative production route ingestion will add normalized `hikes`, `trails`, `routes`, `hiking_state_snapshots`, `evaluations`, and `route_scores` tables plus PostGIS geometry/geography columns and GiST indexes. Their exact migration and retention policy remain TBD.
+
+## Route Snapshot Storage
+
+The current authoritative DCR route catalog is a versioned generated source snapshot, not a database fixture. Each route carries its dataset timestamp, source URL, segment IDs, recorded condition, and legal status. A later PostGIS migration must preserve these provenance fields when moving the catalog into normalized tables.

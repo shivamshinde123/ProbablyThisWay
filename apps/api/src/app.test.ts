@@ -12,8 +12,9 @@ test("GET /api/v1/hikes/:hikeId returns three contract-valid route alternatives"
   assert.equal(response.statusCode, 200);
   const hike = hikeDetailSchema.parse(response.json());
   assert.equal(hike.routes.length, 3);
-  assert.equal(hike.routes[0]?.properties.dataQuality, "preview");
-  assert.deepEqual(hike.routes.map((route) => route.properties.exposure), ["high", "moderate", "low"]);
+  assert.equal(hike.routes[0]?.properties.dataQuality, "authoritative");
+  assert.ok(hike.routes.every((route) => route.properties.legalStatus === "legal"));
+  assert.deepEqual(hike.routes.map((route) => route.properties.exposure), ["unknown", "unknown", "unknown"]);
   await app.close();
 });
 
@@ -26,19 +27,19 @@ test("GET /api/v1/hikes/:hikeId returns a structured 404", async () => {
 });
 test("POST /api/v1/sessions creates a typed static-state session", async () => {
   const app = await buildApp();
-  const response = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" } });
+  const response = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" } });
   assert.equal(response.statusCode, 201);
   const body = sessionStartResponseSchema.parse(response.json());
-  assert.equal(body.session.selectedRouteId, "balanced-traverse");
+  assert.equal(body.session.selectedRouteId, "mountain-house-summit");
   assert.equal(body.session.state.source, "prototype-static");
   assert.equal(body.session.environmentalStatus?.status, "prototype");
   assert.equal(body.session.state.daylight.remainingMinutes, 159);
   assert.equal(body.evaluation.provider, "deterministic-baseline");
   assert.equal(body.evaluation.scores.length, 3);
   assert.ok(body.evaluation.scores.every((score) => score.suitability >= 0 && score.suitability <= 1));
-  assert.equal(body.recommendation.routeId, "lower-return");
+  assert.equal(body.recommendation.routeId, "pine-hill-summit");
   assert.equal(body.recommendation.suitability, Math.max(...body.evaluation.scores.map((score) => score.suitability)));
-  assert.match(body.recommendation.explanation, /Lower Return ranks highest/);
+  assert.match(body.recommendation.explanation, /Pine Hill Trail ranks highest/);
   assert.deepEqual(body.recommendation.factors.map((factor) => factor.label), ["Daylight", "Exposure", "Elevation"]);
   const latest = await app.inject({ method: "GET", url: `/api/v1/sessions/${body.session.id}/evaluations/latest` });
   assert.equal(latest.statusCode, 200);
@@ -85,7 +86,7 @@ test("route policy resolves equal scores by stable route order", async () => {
 
 test("PATCH state accumulates small changes and re-evaluates at the threshold", async () => {
   const app = await buildApp();
-  const createdResponse = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" } });
+  const createdResponse = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" } });
   const created = sessionStartResponseSchema.parse(createdResponse.json());
   const firstObservedAt = new Date(Date.parse(created.session.state.observedAt) + 60_000).toISOString();
   const firstResponse = await app.inject({
@@ -122,7 +123,7 @@ test("PATCH state accumulates small changes and re-evaluates at the threshold", 
 
 test("PATCH state rejects stale and empty updates", async () => {
   const app = await buildApp();
-  const createdResponse = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" } });
+  const createdResponse = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" } });
   const created = sessionStartResponseSchema.parse(createdResponse.json());
 
   const stale = await app.inject({
@@ -157,7 +158,7 @@ test("PATCH state returns a structured 404 for an unknown session", async () => 
 
 test("decision events expose an ordered cursor feed for session start and re-evaluation", async () => {
   const app = await buildApp();
-  const createdResponse = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" } });
+  const createdResponse = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" } });
   const created = sessionStartResponseSchema.parse(createdResponse.json());
 
   const initialResponse = await app.inject({ method: "GET", url: "/api/v1/sessions/" + created.session.id + "/events" });
@@ -201,7 +202,7 @@ test("decision events expose an ordered cursor feed for session start and re-eva
 
 test("decision events reject invalid cursors and unknown sessions", async () => {
   const app = await buildApp();
-  const createdResponse = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" } });
+  const createdResponse = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" } });
   const created = sessionStartResponseSchema.parse(createdResponse.json());
 
   const invalid = await app.inject({ method: "GET", url: "/api/v1/sessions/" + created.session.id + "/events?after=-1" });
@@ -220,7 +221,7 @@ test("PATCH state enforces configured adapter credentials before session lookup"
   const createdResponse = await app.inject({
     method: "POST",
     url: "/api/v1/sessions",
-    payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" },
+    payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" },
   });
   const created = sessionStartResponseSchema.parse(createdResponse.json());
   const payload = {

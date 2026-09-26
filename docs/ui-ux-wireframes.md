@@ -59,3 +59,7 @@ After session evaluation, the highest-ranked valid route changes to signal green
 ## Decision Signal Feed
 
 After session start, a compact field-log panel appears below the recommendation. It shows connection state, newest-first event sequence, decision type, recommended route, material triggers, and local time. It is an observational surface only: it contains no refresh, evaluation, or simulation control. On narrow screens it remains in normal document flow beneath the recommendation.
+
+## Trail Provenance State
+
+The selected-hike card links to the Massachusetts DCR geometry source and displays its dataset date. Route cards show `unknown` rather than inferring exposure. Persistent safety copy tells users to check current DCR notices and posted closures because the checked-in geometry is not a live advisory feed.

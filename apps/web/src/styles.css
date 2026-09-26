@@ -37,3 +37,5 @@
 .decision-feed li p span{color:var(--signal)}
 .decision-feed time{color:#647267;font-size:7px}
 @media(max-width:560px){.decision-feed li{grid-template-columns:24px minmax(0,1fr) auto}.decision-feed-heading{padding-top:15px}}
+
+.route-source{display:flex;flex-wrap:wrap;gap:5px 12px;margin:14px 0 0;color:#748277;font-size:8px;text-transform:uppercase;letter-spacing:.05em}.route-source a{color:var(--moss);text-underline-offset:3px}.route-source span{color:#748277}.exposure-unknown{color:#aeb9aa}

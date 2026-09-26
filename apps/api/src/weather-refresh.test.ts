@@ -31,7 +31,7 @@ test("weather refresh fetches once per hike and re-evaluates active sessions", a
     const response = await app.inject({
       method: "POST",
       url: "/api/v1/sessions",
-      payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" },
+      payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" },
     });
     return sessionStartResponseSchema.parse(response.json()).session;
   };
@@ -57,7 +57,7 @@ test("weather refresh fetches once per hike and re-evaluates active sessions", a
   const refresher = new WeatherRefresher({
     sessionStore,
     weatherProvider: refreshProvider,
-    locations: { "wachusett-summit": { latitude: 42.4898, longitude: -71.8976 } },
+    locations: { "wachusett-summit": { latitude: 42.4889, longitude: -71.8868 } },
     intervalMs: 60_000,
     applySnapshot: async (record, nextState) => (
       await transitionSessionState({ record, nextState, hike, sessionStore })
@@ -80,7 +80,7 @@ test("weather refresh fetches once per hike and re-evaluates active sessions", a
   const failingRefresher = new WeatherRefresher({
     sessionStore,
     weatherProvider: { async getCurrent() { throw new Error("provider unavailable"); } },
-    locations: { "wachusett-summit": { latitude: 42.4898, longitude: -71.8976 } },
+    locations: { "wachusett-summit": { latitude: 42.4889, longitude: -71.8868 } },
     intervalMs: 60_000,
     applySnapshot: async () => "accepted",
     onSessionError: async (record) => {

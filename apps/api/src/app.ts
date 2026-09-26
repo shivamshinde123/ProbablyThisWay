@@ -10,7 +10,6 @@ import {
   latestDecisionSchema,
   sessionStartResponseSchema,
   updateSessionStateRequestSchema,
-  type HikeDetail,
   type HikingState,
   type Session,
   type UpdateSessionStateRequest,
@@ -28,24 +27,9 @@ import {
   resolveEnvironmentalStatus,
   resolveWeatherFreshnessMaxAge,
 } from "./environmental-status.js";
-import { createWeatherProvider, type WeatherLocation, type WeatherProvider } from "./weather-adapter.js";
+import { createWeatherProvider, type WeatherProvider } from "./weather-adapter.js";
+import { hikeDetails, hikeWeatherLocations } from "./route-catalog.js";
 import { WeatherRefresher, resolveWeatherRefreshInterval } from "./weather-refresh.js";
-
-const shared = { source: "prototype-seed", dataQuality: "preview" } as const;
-const hikeDetails: Record<string, HikeDetail> = {
-  "wachusett-summit": {
-    id: "wachusett-summit", name: "Wachusett Summit Circuit", location: "Princeton, Massachusetts",
-    difficulty: "moderate", distanceMiles: 4.2, elevationGainFeet: 1_180,
-    routes: [
-      { type: "Feature", geometry: { type: "LineString", coordinates: [[-71.8976,42.4898,310],[-71.8948,42.4932,390],[-71.8908,42.4967,480],[-71.8868,42.5005,574],[-71.8862,42.5031,611]] }, properties: { ...shared, id: "summit-direct", name: "Summit Direct", distanceMiles: 2.1, elevationGainFeet: 1000, estimatedMinutes: 105, exposure: "high" } },
-      { type: "Feature", geometry: { type: "LineString", coordinates: [[-71.8976,42.4898,310],[-71.8994,42.4935,352],[-71.8961,42.4972,430],[-71.8914,42.5002,535],[-71.8862,42.5031,611]] }, properties: { ...shared, id: "balanced-traverse", name: "Balanced Traverse", distanceMiles: 2.7, elevationGainFeet: 1040, estimatedMinutes: 130, exposure: "moderate" } },
-      { type: "Feature", geometry: { type: "LineString", coordinates: [[-71.8976,42.4898,310],[-71.9021,42.4918,325],[-71.9030,42.4960,360],[-71.8990,42.4991,420],[-71.8942,42.5010,485]] }, properties: { ...shared, id: "lower-return", name: "Lower Return", distanceMiles: 2.4, elevationGainFeet: 575, estimatedMinutes: 95, exposure: "low" } },
-    ],
-  },
-};
-const hikeWeatherLocations: Record<string, WeatherLocation> = {
-  "wachusett-summit": { latitude: 42.4898, longitude: -71.8976 },
-};
 
 function applyStateUpdate(state: HikingState, update: UpdateSessionStateRequest): HikingState {
   const { changes } = update;

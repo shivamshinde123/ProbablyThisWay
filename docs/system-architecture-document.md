@@ -18,7 +18,7 @@ Question configuration <──── optional LLM enhancement ──────
 
 - **Web client:** selection, 3D visualization, HUD, route cards, and decision feed.
 - **Application API:** session orchestration, validation, state updates, and read models.
-- **GIS/routing:** trail geometry, elevation calculations, progress, and valid alternatives.
+- **GIS/routing:** reviewed Massachusetts DCR trail snapshot, official route metrics, terrain clamping, and valid alternatives.
 - **Decision service:** prepares questions and invokes Jev.
 - **Policy service:** chooses the recommendation from structured scores and hard constraints.
 - **Integration adapters:** weather, trail/elevation sources, LLM, and Jev.
