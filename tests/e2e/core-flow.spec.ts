@@ -3,6 +3,20 @@ import { expect, test } from "@playwright/test";
 test("loads authoritative routes and completes the recommendation flow", async ({
   page,
 }) => {
+  await page.route("**/api/v1/trails/search?q=*", async (route) => {
+    const url = new URL(route.request().url());
+    const query = url.searchParams.get("q") ?? "";
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        query,
+        attribution: "© OpenStreetMap contributors",
+        attributionUrl: "https://www.openstreetmap.org/copyright",
+        items: [],
+      }),
+    });
+  });
   await page.goto("/");
 
   await expect(
@@ -28,7 +42,7 @@ test("loads authoritative routes and completes the recommendation flow", async (
   ).toBeVisible();
 
   await page
-    .getByRole("searchbox", { name: "Search supported trails" })
+    .getByRole("searchbox", { name: "Search trails from the internet" })
     .fill("Mountain House");
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await page
@@ -56,7 +70,7 @@ test("loads authoritative routes and completes the recommendation flow", async (
     page.getByRole("button", { name: "Start field session" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("searchbox", { name: "Search supported trails" }),
+    page.getByRole("searchbox", { name: "Search trails from the internet" }),
   ).toBeEnabled();
   await expect(
     page.getByRole("region", { name: "Current hiking state" }),
@@ -93,4 +107,63 @@ test("surfaces stale environmental state while retaining the last values", async
   await expect(
     page.getByRole("region", { name: "Current hiking state" }),
   ).toContainText("54");
+});
+
+test("searches the internet and previews OpenStreetMap trail geometry", async ({
+  page,
+}) => {
+  await page.route("**/api/v1/trails/search?q=*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        query: "Appalachian Trail",
+        attribution: "© OpenStreetMap contributors",
+        attributionUrl: "https://www.openstreetmap.org/copyright",
+        items: [
+          {
+            id: "osm-way-249315063",
+            name: "Appalachian Trail",
+            location: "Salisbury, Connecticut, United States",
+            distanceMiles: 0.68,
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [-73.4009, 41.977],
+                [-73.4013, 41.9784],
+                [-73.4082, 41.98],
+              ],
+            },
+            source: "OpenStreetMap via Nominatim",
+            sourceUrl: "https://www.openstreetmap.org/way/249315063",
+          },
+        ],
+      }),
+    });
+  });
+
+  await page.goto("/");
+  await page
+    .getByRole("searchbox", { name: "Search trails from the internet" })
+    .fill("Appalachian Trail");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page
+    .getByRole("button", { name: /^Appalachian Trail Salisbury/ })
+    .click();
+
+  await expect(
+    page.getByRole("heading", { name: "Appalachian Trail" }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel(
+      "Interactive 3D map previewing internet trail Appalachian Trail",
+    ),
+  ).toBeVisible();
+  await expect(page.getByText(/Preview geometry only/)).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Open trail in OpenStreetMap" }),
+  ).toHaveAttribute("href", /openstreetmap.org\/way\/249315063/);
+  await expect(
+    page.getByRole("button", { name: "Start field session" }),
+  ).toBeDisabled();
 });

@@ -1,5 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const apiPort = process.env.PLAYWRIGHT_API_PORT ?? "3001";
+const webPort = process.env.PLAYWRIGHT_WEB_PORT ?? "5173";
+const apiOrigin = "http://localhost:" + apiPort;
+const webOrigin = "http://localhost:" + webPort;
+
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 45_000,
@@ -19,7 +24,7 @@ export default defineConfig({
       ],
   outputDir: "output/playwright/artifacts",
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: webOrigin,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -27,20 +32,21 @@ export default defineConfig({
   webServer: [
     {
       command: "node apps/api/dist/server.js",
-      url: "http://localhost:3001/api/v1/health",
+      url: apiOrigin + "/api/v1/health",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
         ...process.env,
         HOST: "127.0.0.1",
-        PORT: "3001",
-        WEB_ORIGIN: "http://localhost:5173",
+        PORT: apiPort,
+        WEB_ORIGIN: webOrigin,
       },
     },
     {
       command:
-        "node node_modules/vite/bin/vite.js preview apps/web --host 127.0.0.1 --port 5173",
-      url: "http://localhost:5173",
+        "node node_modules/vite/bin/vite.js preview apps/web --host 127.0.0.1 --port " +
+        webPort,
+      url: webOrigin,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },

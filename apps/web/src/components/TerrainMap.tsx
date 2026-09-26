@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import type { RouteFeature } from "@probably-this-way/contracts";
+import type {
+  InternetTrailResult,
+  RouteFeature,
+} from "@probably-this-way/contracts";
 import {
   BoundingSphere,
   Cartesian2,
@@ -21,6 +24,7 @@ type TerrainMapProps = {
   selectedRouteId?: string;
   recommendedRouteId?: string;
   recommendationSuitability?: number;
+  internetTrail?: InternetTrailResult;
 };
 
 export function TerrainMap({
@@ -28,12 +32,14 @@ export function TerrainMap({
   selectedRouteId,
   recommendedRouteId,
   recommendationSuitability,
+  internetTrail,
 }: TerrainMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
   const routeEntityIdsRef = useRef<string[]>([]);
   const usesWorldTerrainRef = useRef(false);
   const focusedRecommendationRef = useRef<string | undefined>(undefined);
+  const focusedInternetTrailRef = useRef<string | undefined>(undefined);
   const [status, setStatus] = useState<MapStatus>("starting");
 
   useEffect(() => {
@@ -127,6 +133,25 @@ export function TerrainMap({
         });
       });
 
+    const internetLines = internetTrail
+      ? internetTrail.geometry.type === "LineString"
+        ? [internetTrail.geometry.coordinates]
+        : internetTrail.geometry.coordinates
+      : [];
+    internetLines.forEach((line, index) => {
+      const id = "internet-trail-" + index;
+      routeEntityIdsRef.current.push(id);
+      viewer.entities.add({
+        id,
+        name: internetTrail?.name,
+        polyline: {
+          positions: Cartesian3.fromDegreesArray(line.flat()),
+          width: 6,
+          material: Color.fromCssColorString("#ff5c35"),
+          clampToGround: usesWorldTerrainRef.current,
+        },
+      });
+    });
     const focusRoute = routes.find(
       (route) =>
         route.properties.id === (recommendedRouteId ?? selectedRouteId),
@@ -166,6 +191,54 @@ export function TerrainMap({
       });
     }
 
+    const internetCoordinates = internetLines.flat();
+    const internetEndpoint = internetCoordinates.at(-1);
+    if (internetTrail && internetEndpoint) {
+      const id = "internet-trail-label";
+      routeEntityIdsRef.current.push(id);
+      viewer.entities.add({
+        id,
+        position: Cartesian3.fromDegrees(
+          internetEndpoint[0],
+          internetEndpoint[1],
+        ),
+        label: {
+          text: "INTERNET PREVIEW  ·  " + internetTrail.name.toUpperCase(),
+          font: "500 12px DM Mono",
+          fillColor: Color.fromCssColorString("#e7eadf"),
+          outlineColor: Color.fromCssColorString("#07110e"),
+          outlineWidth: 4,
+          style: LabelStyle.FILL_AND_OUTLINE,
+          verticalOrigin: VerticalOrigin.BOTTOM,
+          pixelOffset: new Cartesian2(0, -14),
+        },
+        point: {
+          color: Color.fromCssColorString("#ff5c35"),
+          outlineColor: Color.fromCssColorString("#e7eadf"),
+          outlineWidth: 2,
+          pixelSize: 11,
+        },
+      });
+      if (focusedInternetTrailRef.current !== internetTrail.id) {
+        focusedInternetTrailRef.current = internetTrail.id;
+        const sphere = BoundingSphere.fromPoints(
+          internetCoordinates.map(([longitude, latitude]) =>
+            Cartesian3.fromDegrees(longitude, latitude),
+          ),
+        );
+        const reduceMotion = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
+        viewer.camera.flyToBoundingSphere(sphere, {
+          duration: reduceMotion ? 0 : 1.6,
+          offset: new HeadingPitchRange(
+            CesiumMath.toRadians(8),
+            CesiumMath.toRadians(-48),
+            Math.max(1_000, sphere.radius * 3.2),
+          ),
+        });
+      }
+    }
     if (
       recommendedRouteId &&
       focusRoute &&
@@ -195,26 +268,50 @@ export function TerrainMap({
     selectedRouteId,
     recommendedRouteId,
     recommendationSuitability,
+    internetTrail,
     status,
   ]);
 
-  const focusedName = routes.find(
-    (route) => route.properties.id === (recommendedRouteId ?? selectedRouteId),
-  )?.properties.name;
+  const focusedName =
+    internetTrail?.name ??
+    routes.find(
+      (route) =>
+        route.properties.id === (recommendedRouteId ?? selectedRouteId),
+    )?.properties.name;
+  const internetFirstCoordinate =
+    internetTrail?.geometry.type === "LineString"
+      ? internetTrail.geometry.coordinates[0]
+      : internetTrail?.geometry.coordinates[0]?.[0];
   return (
     <div className="terrain-map">
       <div
         ref={containerRef}
         className="cesium-host"
         aria-label={
-          recommendedRouteId
-            ? `Interactive 3D map highlighting recommended route ${focusedName}`
-            : "Interactive 3D route alternatives map"
+          internetTrail
+            ? "Interactive 3D map previewing internet trail " +
+              internetTrail.name
+            : recommendedRouteId
+              ? "Interactive 3D map highlighting recommended route " +
+                focusedName
+              : "Interactive 3D route alternatives map"
         }
       />
       <div className="map-meta">
-        <span>42.49° N</span>
-        <span>71.89° W</span>
+        <span>
+          {internetFirstCoordinate
+            ? Math.abs(internetFirstCoordinate[1]).toFixed(2) +
+              "° " +
+              (internetFirstCoordinate[1] >= 0 ? "N" : "S")
+            : "42.49° N"}
+        </span>
+        <span>
+          {internetFirstCoordinate
+            ? Math.abs(internetFirstCoordinate[0]).toFixed(2) +
+              "° " +
+              (internetFirstCoordinate[0] >= 0 ? "E" : "W")
+            : "71.89° W"}
+        </span>
       </div>
       <div className="map-mode" data-status={status}>
         <span />
@@ -228,9 +325,11 @@ export function TerrainMap({
       <div className="map-caption">
         {focusedName ?? "Loading route alternatives"}
         <span>
-          {recommendedRouteId
-            ? "Signal green recommended · orange original"
-            : "Orange selected · moss alternatives"}
+          {internetTrail
+            ? "Orange internet preview · not yet evaluated"
+            : recommendedRouteId
+              ? "Signal green recommended · orange original"
+              : "Orange selected · moss alternatives"}
         </span>
       </div>
     </div>

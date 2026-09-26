@@ -51,7 +51,7 @@ Run `npm run db:migrate -w @probably-this-way/api` before starting an API proces
 
 ## Geospatial Storage Boundary
 
-Route geometry is versioned with the application and validated at startup. The MVP performs no ad hoc spatial search, routing, or proximity query, so duplicating the three supported routes in PostGIS would add migration and synchronization risk without a release requirement. A future broad-catalog or live-routing feature must introduce its own normalized schema and preserve every provenance field.
+Route geometry is versioned with the application and validated at startup. Internet trail discovery is a stateless remote text/geometry lookup and performs no database spatial query. Duplicating search previews or the three evaluated routes in PostGIS would add migration and synchronization risk without a current requirement. A future arbitrary-trail evaluation or live-routing feature must introduce its own reviewed normalized schema and preserve every provenance field.
 
 ## Retention
 

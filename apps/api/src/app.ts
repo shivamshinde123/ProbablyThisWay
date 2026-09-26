@@ -46,6 +46,10 @@ import {
 } from "./weather-refresh.js";
 import { resolveOperationalConfig } from "./operational-config.js";
 import { RetentionSweeper, resolveRetentionConfig } from "./retention.js";
+import {
+  NominatimTrailSearchProvider,
+  type TrailSearchProvider,
+} from "./trail-search.js";
 
 function applyStateUpdate(
   state: HikingState,
@@ -81,6 +85,7 @@ export async function buildApp(
     weatherEnv?: NodeJS.ProcessEnv;
     weatherProvider?: WeatherProvider | null;
     operationalEnv?: NodeJS.ProcessEnv;
+    trailSearchProvider?: TrailSearchProvider;
   } = {},
 ) {
   const adapterAuth = resolveAdapterAuthConfig(
@@ -89,6 +94,11 @@ export async function buildApp(
   const sessionStore = options.sessionStore ?? createSessionStore(process.env);
   const weatherEnv = options.weatherEnv ?? process.env;
   const operationalEnv = options.operationalEnv ?? process.env;
+  const trailSearchProvider =
+    options.trailSearchProvider ??
+    new NominatimTrailSearchProvider({
+      baseUrl: process.env.TRAIL_SEARCH_API_BASE_URL?.trim() || undefined,
+    });
   const operational = resolveOperationalConfig(operationalEnv);
   const retention = resolveRetentionConfig(operationalEnv);
   const weatherProvider =
@@ -196,6 +206,32 @@ export async function buildApp(
         return reply
           .code(503)
           .send({ service: "probably-this-way-api", status: "unavailable" });
+      }
+    },
+  );
+  app.get<{ Querystring: { q?: string } }>(
+    "/api/v1/trails/search",
+    async (request, reply) => {
+      const query = request.query.q?.trim() ?? "";
+      if (query.length < 2 || query.length > 120)
+        return reply.code(422).send({
+          error: {
+            code: "invalid_trail_query",
+            message: "Trail search must contain 2 to 120 characters",
+            details: {},
+          },
+        });
+      try {
+        return await trailSearchProvider.search(query);
+      } catch (error) {
+        request.log.warn({ err: error, query }, "Internet trail search failed");
+        return reply.code(502).send({
+          error: {
+            code: "trail_search_unavailable",
+            message: "Internet trail search is temporarily unavailable",
+            details: {},
+          },
+        });
       }
     },
   );

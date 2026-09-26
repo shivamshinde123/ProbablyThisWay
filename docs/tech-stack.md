@@ -17,6 +17,7 @@
 - Web build tooling: Vite.
 - HTTP framework: Fastify.
 - Validation library: Zod, shared through the contracts workspace.
+- Trail discovery: OpenStreetMap data through a server-side Nominatim adapter with request serialization, caching, GeoJSON validation, and visible attribution.
 - Weather integration: Open-Meteo Forecast API through a server-side, provider-shaped adapter.
 - Database query layer: `node-postgres` with parameterized SQL and explicit transactions; no ORM.
 - Test framework: Node test runner through `tsx`, Playwright desktop/mobile Chromium flows, TypeScript checks, and production builds.
@@ -36,4 +37,4 @@
 
 ## Authoritative Trail Data
 
-Massachusetts DCR Roads and Trails is the trail-geometry source. The repository transforms reviewed ArcGIS feature IDs into a checked-in WGS84 snapshot, while the official DCR trail map supplies published distance, ascent, and duration values. Cesium World Terrain remains optional for rendered terrain.
+Massachusetts DCR Roads and Trails is the evaluated route-geometry source. OpenStreetMap via Nominatim supplies attributed internet discovery previews. The repository transforms reviewed ArcGIS feature IDs into a checked-in WGS84 snapshot, while the official DCR trail map supplies published distance, ascent, and duration values. Cesium World Terrain remains optional for rendered terrain.
