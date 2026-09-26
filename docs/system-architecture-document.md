@@ -45,3 +45,7 @@ The API combines session orchestration, live weather initialization and periodic
 ## Internet Discovery Boundary
 
 The browser submits a search to the Fastify API; it never calls the public geocoder directly. The API serializes and caches Nominatim requests, validates GeoJSON through shared contracts, and returns attributed preview geometry. This discovery path does not write to PostgreSQL and does not enter the Jev/policy pipeline. Reviewed route snapshots remain the only source for field-session alternatives and recommendations.
+
+## Terrain Provider Boundary
+
+Terrain rendering is a browser integration. Cesium World Terrain is selected only when a scoped ion token is configured; otherwise Cesium loads the public ArcGIS World Elevation Terrain3D ImageServer. Route evaluation does not consume rendered tile heights: reviewed ascent metrics remain the decision input. Provider credits are part of the map UI, and terrain failure degrades only visualization.

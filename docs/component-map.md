@@ -6,7 +6,7 @@
 |---|---|---|
 | `App.tsx` | Load the supported catalog, start one session, poll events, and compose the screen | Shared contracts and HTTP API |
 | `TrailSearch.tsx` | Search and select the currently supported route catalog with an explicit coverage boundary | Typed hike detail |
-| `TerrainMap.tsx` | Own Cesium lifecycle, terrain mode, route entities, labels, and recommendation camera framing | Cesium and typed routes |
+| TerrainMap.tsx | Own Cesium lifecycle, keyless ArcGIS or token-based Cesium terrain, clamped route entities/labels, credits, and camera framing | Cesium and typed routes |
 | `SessionHud.tsx` | Show current weather/daylight/user state, source attribution, and freshness | Session state |
 | `RecommendationBanner.tsx` | Show recommendation or no-route outcome, evidence, and safety copy | Typed policy result |
 | `DecisionFeed.tsx` | Show recent ordered decision events and polling state | Events response |

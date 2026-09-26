@@ -443,9 +443,23 @@ h1 em {
   width: 100%;
   height: 100%;
 }
-.cesium-viewer-bottom,
 .cesium-viewer-toolbar {
   display: none !important;
+}
+.cesium-viewer-bottom {
+  z-index: 5;
+  max-width: calc(100% - 24px);
+  padding: 3px 7px;
+  background: rgba(7, 17, 14, 0.72);
+}
+
+.cesium-viewer .cesium-widget-credits {
+  color: #c8d0c5;
+  font-size: 11px;
+}
+
+.cesium-viewer .cesium-credit-textContainer a {
+  color: #c8d0c5;
 }
 .terrain-map:after {
   content: "";
@@ -482,7 +496,8 @@ h1 em {
   border-radius: 50%;
   background: #e5b849;
 }
-.map-mode[data-status="ready"] > span {
+.map-mode[data-status="cesium"] > span,
+.map-mode[data-status="global"] > span {
   background: #8fbc75;
   box-shadow: 0 0 8px #8fbc75;
 }
