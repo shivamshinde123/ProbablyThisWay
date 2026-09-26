@@ -12,7 +12,8 @@
     "check": "npm run build -w @probably-this-way/contracts && npm run check -w @probably-this-way/api && npm run check -w @probably-this-way/web",
     "dev": "npm run build -w @probably-this-way/contracts && concurrently -n api,web -c yellow,cyan npm:dev:api npm:dev:web",
     "dev:api": "npm run dev -w @probably-this-way/api",
-    "dev:web": "npm run dev -w @probably-this-way/web"
+    "dev:web": "npm run dev -w @probably-this-way/web",
+    "test": "npm run build -w @probably-this-way/contracts && npm run test -w @probably-this-way/api"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

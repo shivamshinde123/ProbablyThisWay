@@ -19,7 +19,9 @@ Response `200`: `{ "items": [{ "id": "hike_1", "name": "...", "difficulty": "mod
 
 ### `GET /hikes/{hikeId}`
 
-Returns hike metadata, trail GeoJSON, terrain configuration, and route summaries.
+Returns hike metadata and typed trail features. Each trail is a GeoJSON-compatible `Feature<LineString>` whose coordinates use `[longitude, latitude, elevationMeters]`.
+
+Response `200` includes `trails[].properties` with `id`, `name`, `source`, and `dataQuality`. Unknown IDs return a structured `404` with code `hike_not_found`.
 
 ### `POST /sessions`
 

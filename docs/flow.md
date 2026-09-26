@@ -28,7 +28,11 @@ The `ProbablyThisWay` repository is an npm-workspaces monorepo. The React/Vite c
   -> `App`
   -> fetch hike catalog
   -> `GET /api/v1/hikes`
-  -> validate with `hikesResponseSchema`
+  -> select the first supported hike
+  -> `GET /api/v1/hikes/{hikeId}`
+  -> validate catalog with `hikesResponseSchema`
+  -> validate detail and trail geometry with `hikeDetailSchema`
+  -> pass the first typed trail feature to `TerrainMap`
   -> user chooses hike
   -> create session
       -> load trail and candidate routes
