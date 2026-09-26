@@ -237,3 +237,28 @@ pull request targeting main or push to main
 ```
 
 The workflow has only `contents: read` permission and receives no application secrets.
+
+## Implemented Automatic Weather Refresh Flow
+
+```text
+API startup with WEATHER_API_BASE_URL
+  -> validate WEATHER_REFRESH_INTERVAL_MS (default 5 minutes; minimum 1 minute)
+  -> start one unref'd, non-overlapping refresh timer
+  -> list active session IDs from SessionStore
+  -> load each current session record
+  -> fetch one validated weather snapshot per distinct hike
+      -> record provider observedAt + server receivedAt
+      -> provider failure: log and retain last valid state/decision
+  -> combine environmental snapshot with preserved user state
+  -> transitionSessionState
+      -> stale/duplicate observation: ignore
+      -> compare with last evaluated state
+      -> below threshold: compare-and-swap current state only
+      -> threshold crossed: evaluate, select, persist, append recommendation_updated
+  -> client receives a new decision through its existing event cursor poll
+API shutdown
+  -> stop refresh timer
+  -> close SessionStore
+```
+
+The background path and authenticated PATCH path share the same transition function. Neither path exposes a browser simulation control.

@@ -87,3 +87,11 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 | `weather-adapter.ts` | Fetch, validate, normalize, and attribute current weather/daylight | Configured HTTPS Open-Meteo endpoint |
 | Session weather initializer | Use live environmental state when available and explicitly fall back otherwise | Weather provider and hike coordinates |
 | `SessionHud` provenance | Display provider and license attribution for live environmental data | Optional state provenance contract |
+
+## Implemented Automatic Weather Refresh Components
+
+| Component | Responsibility | Depends on |
+|---|---|---|
+| `weather-refresh.ts` | Schedule serialized active-session refresh cycles and deduplicate provider calls per hike | `SessionStore`, weather provider, hike locations |
+| `session-state.ts` | Apply stale checks, threshold detection, evaluation, event creation, and compare-and-swap persistence for every state source | Session record, hike catalog, evaluation and policy |
+| `SessionStore.listActiveSessionIds` | Discover durable active sessions after startup or across API instances | In-memory map or PostgreSQL `sessions.status` |

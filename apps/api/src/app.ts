@@ -9,7 +9,6 @@ import {
   hikeSummarySchema,
   latestDecisionSchema,
   sessionStartResponseSchema,
-  stateUpdateResponseSchema,
   updateSessionStateRequestSchema,
   type HikeDetail,
   type HikingState,
@@ -20,8 +19,9 @@ import { isAuthorizedAdapter, resolveAdapterAuthConfig } from "./adapter-auth.js
 import { evaluateRoutes } from "./evaluation.js";
 import { selectRouteRecommendation } from "./policy.js";
 import { createSessionStore, type SessionStore } from "./session-store.js";
-import { detectRelevantThresholds } from "./thresholds.js";
+import { transitionSessionState } from "./session-state.js";
 import { createWeatherProvider, type WeatherLocation, type WeatherProvider } from "./weather-adapter.js";
+import { WeatherRefresher, resolveWeatherRefreshInterval } from "./weather-refresh.js";
 
 const shared = { source: "prototype-seed", dataQuality: "preview" } as const;
 const hikeDetails: Record<string, HikeDetail> = {
@@ -43,7 +43,9 @@ function applyStateUpdate(state: HikingState, update: UpdateSessionStateRequest)
   const { changes } = update;
   return {
     observedAt: update.observedAt,
+    receivedAt: new Date().toISOString(),
     source: update.source,
+    provenance: state.provenance,
     weather: {
       temperatureF: changes.temperatureF ?? state.weather.temperatureF,
       windMph: changes.windMph ?? state.weather.windMph,
@@ -75,7 +77,29 @@ export async function buildApp(options: {
   const liveWeatherRequired = weatherEnv.NODE_ENV === "production";
   const app = Fastify({ logger: true });
   await app.register(cors, { origin: process.env.WEB_ORIGIN ?? "http://localhost:5173" });
-  app.addHook("onClose", async () => sessionStore.close());
+
+  const weatherRefresher = weatherProvider
+    ? new WeatherRefresher({
+        sessionStore,
+        weatherProvider,
+        locations: hikeWeatherLocations,
+        intervalMs: resolveWeatherRefreshInterval(weatherEnv),
+        applySnapshot: async (record, nextState) => {
+          const hike = hikeDetails[record.session.hikeId];
+          if (!hike) throw new Error("Session references an unavailable hike");
+          const result = await transitionSessionState({ record, nextState, hike, sessionStore });
+          return result.status;
+        },
+        onError: (error, context) => {
+          app.log.warn({ err: error, ...context }, "Automatic weather refresh failed");
+        },
+      })
+    : undefined;
+  weatherRefresher?.start();
+  app.addHook("onClose", async () => {
+    weatherRefresher?.stop();
+    await sessionStore.close();
+  });
 
   app.get("/api/v1/health", async () => ({ service: "probably-this-way-api", status: "ok" }));
   app.get("/api/v1/hikes", async () => ({ items: Object.values(hikeDetails).map((hike) => hikeSummarySchema.parse(hike)) }));
@@ -150,49 +174,17 @@ export async function buildApp(options: {
 
     const parsed = updateSessionStateRequestSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(422).send({ error: { code: "invalid_state_update", message: "Invalid state update", details: parsed.error.flatten() } });
-    if (Date.parse(parsed.data.observedAt) <= Date.parse(record.session.state.observedAt)) {
-      return reply.code(409).send({ error: { code: "stale_state_update", message: "State update is not newer than the current snapshot", details: {} } });
-    }
-
     const nextState = applyStateUpdate(record.session.state, parsed.data);
-    const crossedThresholds = detectRelevantThresholds(record.lastEvaluatedState, nextState);
-    const expectedSequence = record.sequence;
-    record.sequence = expectedSequence + 1;
-    const sequence = record.sequence;
-    record.session = { ...record.session, state: nextState };
-
-    if (crossedThresholds.length === 0) {
-      if (!(await sessionStore.save(record, expectedSequence))) {
-        return reply.code(409).send({ error: { code: "state_update_conflict", message: "Session state changed; retry with a newer observation", details: {} } });
-      }
-      return reply.code(202).send(stateUpdateResponseSchema.parse({
-        accepted: true, evaluationQueued: false, reason: "no_relevant_threshold_crossed",
-        sequence, crossedThresholds,
-      }));
-    }
-
     const hike = hikeDetails[record.session.hikeId];
     if (!hike) throw new Error("Session references an unavailable hike");
-    const evaluation = await evaluateRoutes({ sessionId: record.session.id, state: nextState, routes: hike.routes });
-    const recommendation = selectRouteRecommendation(evaluation, hike.routes, nextState);
-    const decision = latestDecisionSchema.parse({ evaluation, recommendation });
-
-    record.decision = decision;
-    record.lastEvaluatedState = nextState;
-    record.eventSequence += 1;
-    record.events.push(decisionEventSchema.parse({
-      id: randomUUID(), sessionId: record.session.id, sequence: record.eventSequence,
-      type: "recommendation_updated", occurredAt: decision.recommendation.decidedAt,
-      state: nextState, decision, crossedThresholds,
-    }));
-    if (!(await sessionStore.save(record, expectedSequence))) {
+    const result = await transitionSessionState({ record, nextState, hike, sessionStore });
+    if (result.status === "stale") {
+      return reply.code(409).send({ error: { code: "stale_state_update", message: "State update is not newer than the current snapshot", details: {} } });
+    }
+    if (result.status === "conflict") {
       return reply.code(409).send({ error: { code: "state_update_conflict", message: "Session state changed; retry with a newer observation", details: {} } });
     }
-
-    return reply.code(202).send(stateUpdateResponseSchema.parse({
-      accepted: true, evaluationQueued: true, reason: "relevant_threshold_crossed",
-      sequence, crossedThresholds, decision,
-    }));
+    return reply.code(202).send(result.response);
   });
 
   app.get<{ Params: { sessionId: string }; Querystring: { after?: string } }>("/api/v1/sessions/:sessionId/events", async (request, reply) => {

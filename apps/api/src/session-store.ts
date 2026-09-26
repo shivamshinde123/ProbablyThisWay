@@ -32,6 +32,7 @@ export type SessionRecord = {
 export interface SessionStore {
   create(record: SessionRecord): Promise<void>;
   get(sessionId: string): Promise<SessionRecord | undefined>;
+  listActiveSessionIds(): Promise<string[]>;
   save(record: SessionRecord, expectedSequence: number): Promise<boolean>;
   close(): Promise<void>;
 }
@@ -53,6 +54,12 @@ export class InMemorySessionStore implements SessionStore {
   async get(sessionId: string): Promise<SessionRecord | undefined> {
     const record = this.#records.get(sessionId);
     return record ? cloneRecord(record) : undefined;
+  }
+
+  async listActiveSessionIds(): Promise<string[]> {
+    return [...this.#records.values()]
+      .filter((record) => record.session.status === "active")
+      .map((record) => record.session.id);
   }
 
   async save(record: SessionRecord, expectedSequence: number): Promise<boolean> {
@@ -134,6 +141,13 @@ export class PostgresSessionStore implements SessionStore {
       eventSequence: row.event_sequence,
       events: row.events,
     });
+  }
+
+  async listActiveSessionIds(): Promise<string[]> {
+    const result = await this.#pool.query<{ id: string }>(
+      "SELECT id FROM sessions WHERE status = 'active' ORDER BY created_at",
+    );
+    return result.rows.map((row) => row.id);
   }
 
   async save(record: SessionRecord, expectedSequence: number): Promise<boolean> {

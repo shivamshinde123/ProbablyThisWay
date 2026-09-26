@@ -114,6 +114,7 @@ test("PATCH state accumulates small changes and re-evaluates at the threshold", 
   assert.equal(current.statusCode, 200);
   assert.equal(current.json().session.state.weather.windMph, 13);
   assert.equal(current.json().session.state.source, "weather");
+  assert.match(current.json().session.state.receivedAt, /^\d{4}-\d{2}-\d{2}T/);
   assert.equal(current.json().sequence, 2);
   await app.close();
 });
