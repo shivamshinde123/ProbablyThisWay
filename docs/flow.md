@@ -4,13 +4,17 @@ This is a living map of entry points, runtime paths, and dependencies. Update it
 
 ## Current Repository State
 
-The repository currently contains product/design documentation only. Application entry points and executable dependencies are not implemented yet.
+The `ProbablyThisWay` repository is an npm-workspaces monorepo. The React/Vite client, Fastify API, and shared Zod contract package are implemented as the first runnable foundation.
 
 ## Planned Entry Points
 
 | Entry point | Trigger | Responsibility |
 |---|---|---|
-| Web application | User opens the product | Load supported hikes and render the map-first UI |
+| `apps/web/src/main.tsx` | Browser loads the product | Mount the React application |
+| `apps/web/src/App.tsx` | React mount | Load supported hikes and render the map-first UI |
+| `apps/api/src/server.ts` | API process starts | Build and listen on the configured host and port |
+| `apps/api/src/app.ts` | HTTP request | Configure Fastify and serve health/hike routes |
+| `packages/contracts/src/index.ts` | API or web import | Validate and type shared request/response data |
 | Session creation API | User starts a hike session | Load hike data, initialize questions/state, and run the first evaluation |
 | State update API | Authorized live input arrives | Normalize/persist state and invoke threshold detection |
 | Evaluation worker/service | Session start or threshold crossing | Score routes, apply policy, persist and publish the decision |
@@ -19,8 +23,11 @@ The repository currently contains product/design documentation only. Application
 ## Planned Primary Flow
 
 ```text
-Web bootstrap
+`apps/web/src/main.tsx`
+  -> `App`
   -> fetch hike catalog
+  -> `GET /api/v1/hikes`
+  -> validate with `hikesResponseSchema`
   -> user chooses hike
   -> create session
       -> load trail and candidate routes
