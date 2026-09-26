@@ -33,3 +33,11 @@
 ## Dependency Rule
 
 UI and external adapters depend inward on application/domain interfaces. Domain policy must not depend on React, Cesium, HTTP, database drivers, Jev SDK details, or an LLM SDK.
+
+## Implemented Evaluation Components
+
+| Component | Responsibility | Depends on |
+|---|---|---|
+| `evaluation.ts` | Invoke Jev with typed route questions or produce the labeled deterministic baseline | Hiking state, valid route alternatives, server environment |
+| Evaluation store | Retain the latest result for the current process | Session ID |
+| Route score display | Render bounded suitability and provider provenance without selecting a recommendation | Typed route evaluation |

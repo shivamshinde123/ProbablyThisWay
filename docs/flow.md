@@ -95,3 +95,24 @@ selected hike + selected route
   -> lock route selection
   -> render SessionHud over the map
 ```
+
+## Implemented Initial Evaluation Flow
+
+```text
+POST /api/v1/sessions
+  -> validate hike and selected route
+  -> create prototype-static hiking-state snapshot
+  -> evaluateRoutes
+      -> JEV_API_KEY configured
+          -> send one shared state + one Noul question per valid route
+          -> validate bounded probabilities
+          -> provider = jev
+      -> credentials absent or Jev request fails
+          -> calculate documented deterministic baseline
+          -> provider = deterministic-baseline
+  -> store latest evaluation in process memory
+  -> return typed session + evaluation
+  -> App renders every suitability score on its route card
+```
+
+The map selection remains unchanged in this stage. Applying deterministic route policy and highlighting the highest-ranked route is the next flow.

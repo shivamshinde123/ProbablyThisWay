@@ -1,7 +1,8 @@
 import cors from "@fastify/cors";
 import Fastify from "fastify";
 import { randomUUID } from "node:crypto";
-import { createSessionRequestSchema, hikeDetailSchema, hikeSummarySchema, sessionSchema, type HikeDetail, type Session } from "@probably-this-way/contracts";
+import { createSessionRequestSchema, hikeDetailSchema, hikeSummarySchema, sessionStartResponseSchema, type HikeDetail, type RouteEvaluation, type Session } from "@probably-this-way/contracts";
+import { evaluateRoutes } from "./evaluation.js";
 
 const shared = { source: "prototype-seed", dataQuality: "preview" } as const;
 const hikeDetails: Record<string, HikeDetail> = {
@@ -15,8 +16,8 @@ const hikeDetails: Record<string, HikeDetail> = {
     ],
   },
 };
-
 export async function buildApp() {
+  const evaluations = new Map<string, RouteEvaluation>();
   const app = Fastify({ logger: true });
   await app.register(cors, { origin: process.env.WEB_ORIGIN ?? "http://localhost:5173" });
   app.get("/api/v1/health", async () => ({ service: "probably-this-way-api", status: "ok" }));
@@ -37,8 +38,14 @@ export async function buildApp() {
       id: randomUUID(), hikeId: hike.id, selectedRouteId: route.properties.id, status: "active", createdAt: now.toISOString(),
       state: { observedAt: now.toISOString(), source: "prototype-static", weather: { temperatureF: 54, windMph: 8, rainProbability: 0.18 }, daylight: { sunsetAt: new Date(now.getTime() + 159 * 60_000).toISOString(), remainingMinutes: 159 }, user: { paceMph: 2.1, fatigue: "low" } },
     };
-    return reply.code(201).send(sessionSchema.parse(session));
+    const evaluation = await evaluateRoutes({ sessionId: session.id, state: session.state, routes: hike.routes });
+    evaluations.set(session.id, evaluation);
+    return reply.code(201).send(sessionStartResponseSchema.parse({ session, evaluation }));
   });
-
+  app.get<{ Params: { sessionId: string } }>("/api/v1/sessions/:sessionId/evaluations/latest", async (request, reply) => {
+    const evaluation = evaluations.get(request.params.sessionId);
+    if (!evaluation) return reply.code(404).send({ error: { code: "evaluation_not_found", message: "Evaluation not found", details: {} } });
+    return evaluation;
+  });
   return app;
 }

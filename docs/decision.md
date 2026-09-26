@@ -130,3 +130,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - Consequences: What tradeoffs or follow-up work result?
 - Supersedes/Superseded by: DEC-NNN, when applicable
 ```
+
+## DEC-017 — Use a server-side Jev adapter with an explicit deterministic baseline
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** Jev is a hosted decision service requiring credentials, while contributors and automated tests need a functional local path.
+- **Decision:** Send the normalized state and one typed Noul question per valid route from the API when `JEV_API_KEY` is configured. Validate the response and fall back after four seconds or any invalid response to a deterministic, locally calculated score labeled `deterministic-baseline`.
+- **Reasoning:** This preserves the real integration boundary without exposing credentials to the browser or falsely presenting local arithmetic as Jev output.
+- **Consequences:** Local scores are suitable for development only. Provider provenance must remain visible, and production deployment requires a Jev key plus contract verification against the configured endpoint.
