@@ -35,7 +35,7 @@ Question configuration <──── optional LLM enhancement ──────
 
 ## Deployment
 
-GitHub Actions verifies tests, TypeScript checks, and production builds before changes reach `main`. Deployment topology, scaling targets, branch-protection policy, and cloud provider are TBD.
+GitHub Actions verifies tests, PostgreSQL migrations/retention, TypeScript checks, production builds, Compose configuration, both production container images, and browser flows before changes reach `main`. The supported deployment topology is Nginx web/reverse proxy -> Fastify API -> PostgreSQL 17, with a one-shot migration service gating API startup. Scaling targets and cloud provider remain operator decisions.
 
 ## Current Prototype Runtime
 

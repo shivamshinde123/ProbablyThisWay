@@ -374,3 +374,15 @@ API process starts
   -> log and retry on the next interval after failure
   -> stop scheduler during graceful shutdown
 ```
+## Production Container Flow
+
+```text
+docker compose up
+  -> PostgreSQL becomes healthy
+  -> one-shot API image runs tracked migrations
+  -> Fastify starts and passes /api/v1/health/ready
+  -> Nginx starts on :8080
+      -> static routes serve the built React application
+      -> /api/* proxies to Fastify on the private network
+  -> browser uses one public origin for UI and API
+```

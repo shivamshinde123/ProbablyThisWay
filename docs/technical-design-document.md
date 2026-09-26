@@ -48,6 +48,9 @@ The API applies a validated per-process/IP request budget to non-health routes, 
 
 Queue mechanism, distributed cache/rate-limit strategy, end-user authentication, PostGIS route persistence, calibrated scoring policy, and operational SLO targets.
 
+## Production Packaging
+
+The API and web workspaces build independently into pinned Node 22.23.3/Alpine 3.24 and Nginx 1.30.5/Alpine 3.24 images. Compose gates the API on a successful tracked migration and gates Nginx on API readiness. Browser requests use same-origin `/api/v1`; the controlled Nginx hop enables `TRUST_PROXY=true`, while direct deployments default it off. CI validates the topology and builds both images on every pull request.
 ## Implemented Jev Adapter
 
 The API owns Jev credentials and calls the configured decision endpoint with a four-second timeout. Each route maps to one Noul question, and the response must provide a probability in `[0, 1]` for every returned answer. The application contract records provider provenance as `jev` or `deterministic-baseline`. Network or validation failures do not block session startup; they degrade visibly to the baseline. Recommendation policy remains separate and is not implemented by this adapter.

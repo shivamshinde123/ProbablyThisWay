@@ -23,7 +23,8 @@
 - CI: GitHub Actions on Ubuntu with Node.js 22 and locked npm installs.
 - Logging: Fastify/Pino structured JSON with configurable severity.
 - API traffic guard: `@fastify/rate-limit` 11.2.0 with bounded environment configuration.
-- Hosting, deployment, and metrics backend: TBD.
+- Deployment packaging: Docker images for Fastify and Nginx plus a provider-neutral Compose topology with PostgreSQL 17.
+- Hosting provider and metrics backend: TBD operator choices.
 - LLM provider/model for question selection and explanations: TBD.
 
 ## Selection Principles

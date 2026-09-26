@@ -78,7 +78,7 @@ export async function buildApp(options: {
   const weatherFreshnessMaxAge = weatherProvider
     ? resolveWeatherFreshnessMaxAge(weatherEnv, weatherRefreshInterval)
     : DEFAULT_WEATHER_FRESHNESS_MAX_AGE_MS;
-  const app = Fastify({ logger: { level: operational.logLevel } });
+  const app = Fastify({ logger: { level: operational.logLevel }, trustProxy: operational.trustProxy });
   await app.register(cors, { origin: operational.allowedOrigins });
   await app.register(rateLimit, {
     global: true,

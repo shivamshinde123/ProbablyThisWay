@@ -11,6 +11,13 @@ function integerSetting(value: string | undefined, fallback: number, name: strin
   return parsed;
 }
 
+function booleanSetting(value: string | undefined, fallback: boolean, name: string) {
+  if (!value?.trim()) return fallback;
+  if (value === "true") return true;
+  if (value === "false") return false;
+  throw new Error(`${name} must be true or false`);
+}
+
 export function resolveOperationalConfig(env: NodeJS.ProcessEnv = process.env) {
   const configuredOrigins = env.CORS_ALLOWED_ORIGINS?.split(",").map((origin) => origin.trim()).filter(Boolean);
   const legacyOrigin = env.WEB_ORIGIN?.trim();
@@ -25,5 +32,6 @@ export function resolveOperationalConfig(env: NodeJS.ProcessEnv = process.env) {
     rateLimitMax: integerSetting(env.RATE_LIMIT_MAX, 120, "RATE_LIMIT_MAX", 1, 10_000),
     rateLimitWindowMs: integerSetting(env.RATE_LIMIT_WINDOW_MS, 60_000, "RATE_LIMIT_WINDOW_MS", 1_000, 3_600_000),
     eventPageSize: integerSetting(env.EVENT_PAGE_SIZE, 50, "EVENT_PAGE_SIZE", 1, 100),
+    trustProxy: booleanSetting(env.TRUST_PROXY, false, "TRUST_PROXY"),
   };
 }

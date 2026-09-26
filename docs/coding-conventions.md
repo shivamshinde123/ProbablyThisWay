@@ -33,6 +33,7 @@
 - Add tests for changed domain behavior.
 - Keep `npm test`, `npm run check`, `npm run build`, and `npm run test:e2e` green locally and in pull-request CI.
 - Keep third-party GitHub Actions pinned to reviewed immutable commit SHAs.
+- Pin production container base images to reviewed patch/minor tags and update them through a verified pull request.
 - Document material architectural decisions.
 - Never commit credentials or real user location fixtures.
 
