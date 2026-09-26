@@ -19,6 +19,9 @@ test("loads authoritative routes and completes the recommendation flow", async (
       }),
     });
   });
+  await page.route("https://elevation3d.arcgis.com/**", (route) =>
+    route.abort(),
+  );
   await page.goto("/");
 
   await expect(
