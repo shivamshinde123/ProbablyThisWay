@@ -174,7 +174,7 @@ export function TerrainMap({
         ),
         label: {
           text: `${recommended ? "RECOMMENDED  ·  " : ""}${focusRoute.properties.name.toUpperCase()}${scoreText}`,
-          font: "500 12px DM Mono",
+          font: "500 15px DM Mono",
           fillColor: Color.fromCssColorString("#e7eadf"),
           outlineColor: Color.fromCssColorString("#07110e"),
           outlineWidth: 4,
@@ -204,7 +204,7 @@ export function TerrainMap({
         ),
         label: {
           text: "INTERNET PREVIEW  ·  " + internetTrail.name.toUpperCase(),
-          font: "500 12px DM Mono",
+          font: "500 15px DM Mono",
           fillColor: Color.fromCssColorString("#e7eadf"),
           outlineColor: Color.fromCssColorString("#07110e"),
           outlineWidth: 4,

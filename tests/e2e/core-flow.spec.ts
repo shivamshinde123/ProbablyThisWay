@@ -25,6 +25,15 @@ test("loads authoritative routes and completes the recommendation flow", async (
   await expect(
     page.getByRole("link", { name: "Massachusetts DCR trail geometry" }),
   ).toHaveAttribute("href", /mass\.gov/);
+  const searchFontSize = await page
+    .getByRole("searchbox", { name: "Search trails from the internet" })
+    .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+  expect(searchFontSize).toBeGreaterThanOrEqual(13);
+  const routeMetadataFontSize = await page
+    .getByRole("button", { name: /Pine Hill Trail/ })
+    .locator("small")
+    .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+  expect(routeMetadataFontSize).toBeGreaterThanOrEqual(13);
   await expect(
     page.getByRole("button", { name: /Pine Hill Trail/ }),
   ).toBeVisible();

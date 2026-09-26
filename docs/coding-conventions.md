@@ -44,3 +44,7 @@
 - Update the explicit feature manifest in `scripts/import-dcr-trails.mjs`, run `npm run data:refresh:dcr`, and review geometry plus provenance changes.
 - Treat missing, non-legal, malformed, or discontinuous source segments as generation failures.
 - Playwright may reuse already-running local development servers, but CI must always start clean isolated API and web processes.
+
+## UI Typography
+
+Do not introduce interface text below 11 px. Interactive input and route metadata should be at least 13 px, and body/safety copy should be at least 14 px. Verify key computed sizes in browser tests when changing the visual system.

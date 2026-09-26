@@ -343,3 +343,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Query OpenStreetMap through a server-side Nominatim adapter on explicit form submission, return attributed line geometry, and preview selected results in Cesium. Enforce the public service policy with identification, visible attribution, a serialized rate above one second, duplicate-query caching, and a configurable provider URL. Keep arbitrary internet results outside session evaluation until reviewed alternatives, restrictions, metrics, and provenance exist.
 - **Reasoning:** Nominatim provides broad name/location discovery and real geometry without an API key. Separating preview from evaluated routes expands useful coverage without fabricating safety or recommendation data.
 - **Consequences:** Search coverage follows OpenStreetMap naming and Nominatim indexing and cannot guarantee every physical trail. Public-service capacity is suitable for the current single-instance prototype; production growth should use a contracted or self-hosted compatible provider. DEC-037’s reviewed-only search boundary is superseded, while its requirement not to misrepresent evaluation coverage remains.
+
+## DEC-040 — Raise the interface typography floor
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** The field-instrument aesthetic used 7-10 px labels and metadata that were visibly too small for comfortable reading.
+- **Decision:** Set an 11 px minimum for secondary labels, 13 px minimum for key interactive/search and route metadata, 14-17 px body copy, and larger supporting headings while retaining the established visual hierarchy.
+- **Reasoning:** Readability is a functional requirement. The design can preserve its technical character through spacing, capitalization, color, and typography choice without relying on tiny text.
+- **Consequences:** Panels and result rows may become taller, especially on mobile. Browser coverage asserts key computed font sizes so future styling does not silently regress.

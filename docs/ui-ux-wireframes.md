@@ -70,3 +70,7 @@ A prominent field-index search sits before the selected-hike card. On submit it 
 ## Active Session Control
 
 While a field session is active, the start action is replaced by a full-width outlined End field session button. During the request it reads Ending field session… and cannot be pressed twice. Success removes the live HUD, recommendation, and decision feed while preserving the selected trail; search and route selection become available immediately.
+
+## Readable Typography Scale
+
+Operational labels and metadata use an 11 px minimum, compact controls use 12-15 px, body copy uses 14-17 px, and display headings retain the larger editorial scale. Search input text and route metadata are at least 13 px on desktop and mobile. Layouts may grow vertically rather than compressing essential text below this floor.

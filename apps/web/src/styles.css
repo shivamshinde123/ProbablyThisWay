@@ -49,7 +49,7 @@ input:focus-visible {
   border-bottom: 0;
   padding: 0 20px;
   text-transform: uppercase;
-  font-size: 11px;
+  font-size: 15px;
   letter-spacing: 0.08em;
 }
 .wordmark {
@@ -113,7 +113,7 @@ input:focus-visible {
   display: flex;
   justify-content: space-between;
   color: var(--moss);
-  font-size: 10px;
+  font-size: 14px;
   letter-spacing: 0.12em;
   z-index: 4;
 }
@@ -202,7 +202,7 @@ input:focus-visible {
   color: var(--paper);
   background: rgba(7, 17, 14, 0.82);
   border-left: 2px solid var(--orange);
-  font-size: 10px;
+  font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.07em;
 }
@@ -229,7 +229,7 @@ input:focus-visible {
   height: 42px;
   border: 1px solid var(--line);
   border-radius: 50%;
-  font-size: 11px;
+  font-size: 15px;
 }
 .orientation-mark:before {
   content: "";
@@ -243,7 +243,7 @@ input:focus-visible {
   left: 20px;
   bottom: 20px;
   z-index: 4;
-  font-size: 10px;
+  font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -260,7 +260,7 @@ input:focus-visible {
 }
 .eyebrow {
   color: var(--orange);
-  font-size: 10px;
+  font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.16em;
 }
@@ -281,7 +281,7 @@ h1 em {
   margin: 0 0 38px;
   color: #aeb9aa;
   font-family: sans-serif;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.65;
 }
 .trail-card {
@@ -299,26 +299,26 @@ h1 em {
 .trail-heading small,
 .metrics dt {
   color: var(--moss);
-  font-size: 9px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
 .trail-heading h2 {
   margin: 8px 0 0;
   font-family: "Instrument Serif", serif;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 400;
 }
 .difficulty {
   padding: 5px 8px;
   color: var(--orange);
   border: 1px solid currentColor;
-  font-size: 9px;
+  font-size: 13px;
   text-transform: uppercase;
 }
 .location {
   color: var(--moss);
-  font-size: 10px;
+  font-size: 14px;
 }
 .metrics {
   display: grid;
@@ -336,11 +336,11 @@ h1 em {
 .metrics dd {
   margin: 7px 0 0;
   font-family: "Instrument Serif", serif;
-  font-size: 21px;
+  font-size: 24px;
 }
 .system-message {
   color: var(--moss);
-  font-size: 11px;
+  font-size: 15px;
 }
 .system-message.error {
   color: #ff9b84;
@@ -355,7 +355,7 @@ h1 em {
   background: var(--orange);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 11px;
+  font-size: 15px;
   cursor: pointer;
   transition:
     transform 0.2s ease,
@@ -367,7 +367,7 @@ h1 em {
   border: 1px solid var(--signal);
   background: transparent;
   color: var(--signal);
-  font: 700 0.76rem/1 var(--mono);
+  font: 700 0.9rem/1 var(--mono);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   display: flex;
@@ -397,7 +397,7 @@ h1 em {
   margin: 18px 0 0;
   color: #748277;
   font-family: sans-serif;
-  font-size: 10px;
+  font-size: 14px;
   line-height: 1.5;
 }
 .safety-note strong {
@@ -470,7 +470,7 @@ h1 em {
   background: rgba(7, 17, 14, 0.82);
   border: 1px solid var(--line);
   color: var(--moss);
-  font-size: 9px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -521,7 +521,7 @@ h1 em {
 }
 .route-index {
   color: var(--orange);
-  font-size: 10px;
+  font-size: 14px;
 }
 .route-copy {
   display: grid;
@@ -529,17 +529,17 @@ h1 em {
 }
 .route-copy strong {
   font-family: "Instrument Serif", serif;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 400;
 }
 .route-copy small {
   color: var(--moss);
-  font-size: 9px;
+  font-size: 13px;
 }
 .exposure {
   padding: 4px 6px;
   border: 1px solid var(--line);
-  font-size: 8px;
+  font-size: 12px;
   text-transform: uppercase;
 }
 .exposure-high {
@@ -557,7 +557,7 @@ h1 em {
   display: grid;
   place-items: center;
   color: var(--moss);
-  font-size: 10px;
+  font-size: 14px;
   text-transform: uppercase;
 }
 .session-hud {
@@ -578,7 +578,7 @@ h1 em {
   gap: 12px;
   margin-bottom: 10px;
   color: var(--orange);
-  font-size: 9px;
+  font-size: 13px;
   text-transform: uppercase;
 }
 .hud-heading strong {
@@ -590,7 +590,7 @@ h1 em {
   align-items: center;
   gap: 6px;
   color: #e5b849;
-  font-size: 7px;
+  font-size: 11px;
   letter-spacing: 0.08em;
 }
 .freshness-status i {
@@ -621,19 +621,19 @@ h1 em {
 }
 .session-hud dt {
   color: var(--moss);
-  font-size: 8px;
+  font-size: 12px;
   text-transform: uppercase;
 }
 .session-hud dd {
   margin: 4px 0 0;
   font-family: "Instrument Serif", serif;
-  font-size: 18px;
+  font-size: 20px;
   text-transform: capitalize;
 }
 .session-hud p {
   margin: 10px 0 0;
   color: #748277;
-  font-size: 8px;
+  font-size: 12px;
   text-transform: uppercase;
 }
 .session-hud p a {
@@ -667,19 +667,19 @@ h1 em {
 }
 .suitability b {
   font-family: "Instrument Serif", serif;
-  font-size: 25px;
+  font-size: 28px;
   font-weight: 400;
 }
 .suitability small {
   margin-top: 4px;
   color: var(--moss);
-  font-size: 7px;
+  font-size: 11px;
   text-transform: uppercase;
 }
 .evaluation-source {
   margin: 10px 0 0;
   color: #748277;
-  font-size: 8px;
+  font-size: 12px;
   text-align: right;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -700,7 +700,7 @@ h1 em {
   border: 1px solid var(--signal);
   color: var(--signal);
   font-family: "DM Mono", monospace;
-  font-size: 7px;
+  font-size: 11px;
   text-transform: uppercase;
   vertical-align: middle;
 }
@@ -724,13 +724,13 @@ h1 em {
 }
 .recommendation-banner span {
   color: var(--signal);
-  font-size: 8px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
 .recommendation-banner strong {
   font-family: "Instrument Serif", serif;
-  font-size: 25px;
+  font-size: 28px;
   font-weight: 400;
 }
 .recommendation-score {
@@ -742,14 +742,14 @@ h1 em {
 }
 .recommendation-score b {
   font-family: "Instrument Serif", serif;
-  font-size: 38px;
+  font-size: 42px;
   font-weight: 400;
 }
 .recommendation-policy {
   grid-column: 1/-1;
   margin: 5px 0 0;
   color: #8d998e;
-  font-size: 7px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -789,13 +789,13 @@ h1 em {
 }
 .decision-progress strong {
   color: var(--paper);
-  font-size: 9px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 .decision-progress small {
   color: var(--moss);
-  font-size: 7px;
+  font-size: 11px;
   text-transform: uppercase;
 }
 .recommendation-explanation {
@@ -803,7 +803,7 @@ h1 em {
   margin: 7px 0 0;
   color: #c7cfc2;
   font-family: sans-serif;
-  font-size: 12px;
+  font-size: 16px;
   line-height: 1.55;
 }
 .recommendation-factors {
@@ -823,14 +823,14 @@ h1 em {
 }
 .recommendation-factors dt {
   color: #7e9180;
-  font-size: 7px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 .recommendation-factors dd {
   margin: 5px 0 0;
   color: var(--paper);
-  font-size: 8px;
+  font-size: 12px;
   text-transform: capitalize;
 }
 @keyframes decision-spin {
@@ -907,7 +907,7 @@ h1 em {
     gap: 8px;
   }
   .route-copy strong {
-    font-size: 18px;
+    font-size: 20px;
   }
   .recommended-tag {
     display: block;
@@ -961,14 +961,14 @@ h1 em {
 }
 .decision-feed-heading span {
   color: var(--orange);
-  font-size: 7px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
 }
 .decision-feed-heading h2 {
   margin: 0;
   font-family: "Instrument Serif", serif;
-  font-size: 21px;
+  font-size: 24px;
   font-weight: 400;
 }
 .decision-feed-heading small {
@@ -976,7 +976,7 @@ h1 em {
   align-items: center;
   gap: 7px;
   color: var(--moss);
-  font-size: 7px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -1000,7 +1000,7 @@ h1 em {
   margin: 0;
   padding: 0 0 14px;
   color: #748277;
-  font-size: 8px;
+  font-size: 12px;
   text-transform: uppercase;
 }
 .decision-feed ol {
@@ -1019,14 +1019,14 @@ h1 em {
 }
 .event-sequence {
   color: var(--orange);
-  font-size: 8px;
+  font-size: 12px;
 }
 .decision-feed li > div {
   display: grid;
   gap: 4px;
 }
 .decision-feed li strong {
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -1034,7 +1034,7 @@ h1 em {
 .decision-feed li p {
   margin: 0;
   color: #7f8f81;
-  font-size: 7px;
+  font-size: 11px;
   line-height: 1.45;
   text-transform: capitalize;
 }
@@ -1043,7 +1043,7 @@ h1 em {
 }
 .decision-feed time {
   color: #647267;
-  font-size: 7px;
+  font-size: 11px;
 }
 @media (max-width: 560px) {
   .decision-feed li {
@@ -1060,7 +1060,7 @@ h1 em {
   gap: 5px 12px;
   margin: 14px 0 0;
   color: #748277;
-  font-size: 8px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -1083,7 +1083,7 @@ h1 em {
   padding: 4px 6px;
   border: 1px solid var(--orange);
   color: var(--orange);
-  font-size: 7px;
+  font-size: 11px;
   text-transform: uppercase;
 }
 .recommendation-unavailable {
@@ -1112,12 +1112,12 @@ h1 em {
   gap: 3px;
 }
 .excluded-routes strong {
-  font-size: 8px;
+  font-size: 12px;
   text-transform: capitalize;
 }
 .excluded-routes span {
   color: #b68e84;
-  font-size: 7px;
+  font-size: 11px;
   text-transform: uppercase;
 }
 .sr-only {
@@ -1155,13 +1155,13 @@ h1 em {
 .trail-search-heading span,
 .trail-search-heading small {
   color: var(--moss);
-  font-size: 7px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
 .trail-search-heading strong {
   font-family: "Instrument Serif", serif;
-  font-size: 21px;
+  font-size: 24px;
   font-weight: 400;
 }
 .trail-search-form {
@@ -1177,7 +1177,7 @@ h1 em {
   color: var(--paper);
   background: rgba(7, 17, 14, 0.74);
   font: inherit;
-  font-size: 9px;
+  font-size: 13px;
 }
 .trail-search-form input::placeholder {
   color: #657468;
@@ -1187,7 +1187,7 @@ h1 em {
   border: 1px solid var(--orange);
   color: var(--ink);
   background: var(--orange);
-  font-size: 8px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   cursor: pointer;
@@ -1231,19 +1231,19 @@ h1 em {
 }
 .trail-search-results button span {
   font-family: "Instrument Serif", serif;
-  font-size: 18px;
+  font-size: 20px;
 }
 .trail-search-results button small {
   grid-column: 1;
   color: var(--moss);
-  font-size: 7px;
+  font-size: 11px;
 }
 .trail-search-results button b {
   grid-column: 2;
   grid-row: 1 / span 2;
   align-self: center;
   color: var(--signal);
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 400;
 }
 .internet-preview-note {
@@ -1253,7 +1253,7 @@ h1 em {
   color: #c8d0c5;
   background: rgba(255, 92, 53, 0.07);
   font-family: sans-serif;
-  font-size: 10px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -1269,6 +1269,6 @@ h1 em {
   padding: 14px;
   color: #aeb9aa;
   font-family: sans-serif;
-  font-size: 10px;
+  font-size: 14px;
   line-height: 1.5;
 }

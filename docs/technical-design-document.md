@@ -96,3 +96,7 @@ Session is a discriminated union: active sessions have status active; ended sess
 ## Internet Trail Search Design
 
 Internet discovery uses a TrailSearchProvider boundary with a Nominatim implementation. Only form submissions issue requests; autocomplete is intentionally absent. A per-process promise queue and next-request timestamp serialize uncached calls above the public service’s one-request-per-second minimum interval, while a bounded 15-minute in-memory cache suppresses duplicates. Provider payloads are untrusted: Zod validates the collection and shared result contract, non-linear objects are dropped, and failures become a structured 502. Results remain presentation-only because a single discovered line lacks the reviewed alternatives, restrictions, and metrics required by evaluation policy.
+
+## Typography Readability
+
+The field-instrument visual language uses weight, letter spacing, borders, and color for hierarchy rather than extremely small text. CSS raises the former 7-12 px metadata scale to 11-16 px, increases body copy, and enlarges Cesium route labels. Responsive layouts preserve these sizes and accept additional vertical space.
