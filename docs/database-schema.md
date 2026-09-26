@@ -1,6 +1,6 @@
 # Database Schema
 
-PostgreSQL is the implemented durable store for sessions and decision events. PostGIS remains the planned extension for authoritative route geometry; the current persistence migration does not require it.
+PostgreSQL is the implemented durable store for sessions and decision events. The reviewed route catalog is an immutable generated source snapshot, so this release neither installs nor requires PostGIS.
 
 ## Implemented Migrations
 
@@ -49,9 +49,9 @@ When `DATABASE_URL` is set, the API uses `PostgresSessionStore`. Production star
 
 Run `npm run db:migrate -w @probably-this-way/api` before starting an API process. The command discovers ordered migration files, applies only pending versions, and verifies immutable checksums. CI runs the same migrations twice against PostgreSQL 17 to prove first-apply and repeat behavior.
 
-## Planned Geospatial Tables
+## Geospatial Storage Boundary
 
-Authoritative production route ingestion will add normalized `hikes`, `trails`, `routes`, `hiking_state_snapshots`, `evaluations`, and `route_scores` tables plus PostGIS geometry/geography columns and GiST indexes. Their exact migration remains TBD.
+Route geometry is versioned with the application and validated at startup. The MVP performs no ad hoc spatial search, routing, or proximity query, so duplicating the three supported routes in PostGIS would add migration and synchronization risk without a release requirement. A future broad-catalog or live-routing feature must introduce its own normalized schema and preserve every provenance field.
 
 ## Retention
 
@@ -59,4 +59,4 @@ The API deletes a session when its last successful database write is older than 
 
 ## Route Snapshot Storage
 
-The current authoritative DCR route catalog is a versioned generated source snapshot, not a database fixture. Each route carries its dataset timestamp, source URL, segment IDs, recorded condition, and legal status. A later PostGIS migration must preserve these provenance fields when moving the catalog into normalized tables.
+The current authoritative DCR route catalog is a versioned generated source snapshot, not a database fixture. Each route carries its dataset timestamp, source URL, segment IDs, recorded condition, and legal status. Any future move to a spatial database must preserve these provenance fields and is outside the current release.

@@ -38,7 +38,7 @@ The 3D map is primary. Conditions and recommendations must be glanceable, route 
 
 ## Responsive Behavior
 
-Desktop uses map plus side panel. On narrow screens, the map remains dominant and details move into an accessible bottom sheet. Exact breakpoints are TBD.
+Above `900px`, the map and mission panel use the desktop split layout. At `900px` and below, content stacks and the map occupies approximately 58% of the small viewport height before the decision panel. At `560px` and below, evidence fields collapse to one column and compact spacing/type rules apply. The panel remains normal document flow rather than a modal surface.
 
 ## Accessibility
 

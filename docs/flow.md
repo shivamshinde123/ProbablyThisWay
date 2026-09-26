@@ -18,8 +18,7 @@ The `ProbablyThisWay` repository is an npm-workspaces monorepo. The React/Vite c
 | `packages/contracts/src/index.ts` | API or web import | Validate and type shared request/response data |
 | Session creation API | User starts a hike session | Load hike data, initialize questions/state, and run the first evaluation |
 | State update API | Bearer-authenticated supported input arrives | Authenticate, normalize/persist state, and invoke threshold detection |
-| Evaluation worker/service (planned) | Future queued threshold evaluation | Score routes, apply policy, persist and publish the decision |
-| `GET /sessions/:sessionId/events` | Client cursor poll | Return ordered typed decision events after a cursor |
+| `session-state.ts` evaluation transition | Session start or material state change | Score routes, apply policy, and atomically persist/publish the current decision |`n| `GET /sessions/:sessionId/events` | Client cursor poll | Return ordered typed decision events after a cursor |
 
 ## Primary Flow
 
@@ -72,14 +71,14 @@ There is no simulation-button or simulated-condition runtime path.
 web client -> CesiumJS and API contracts
 API contracts -> application use cases -> domain policy
                                     -> integration interfaces
-server integration adapters -> weather / Jev / optional LLM / PostgreSQL
+server integration adapters -> weather / Jev / PostgreSQL
 ```
 
 Domain logic must remain independent of React, Cesium, HTTP frameworks, database drivers, and provider SDKs.
 
 ## Implementation Tracking
 
-When code is added, replace planned labels with real file paths and record:
+Keep this map current whenever entry points or call paths change. Record:
 
 - startup/bootstrap files;
 - routes and handlers;

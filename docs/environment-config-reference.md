@@ -1,6 +1,6 @@
 # Environment Configuration Reference
 
-Implemented variables and planned integrations are listed below. Planned entries remain marked `TBD`.
+These are the implemented runtime and build-time variables. Provider and server credentials are optional only where explicitly stated.
 
 | Variable | Required | Secret | Purpose |
 |---|---:|---:|---|
@@ -18,7 +18,6 @@ Implemented variables and planned integrations are listed below. Planned entries
 | `JEV_API_URL` | No | No | Server-side Jev endpoint; defaults to `https://www.jevai.org/api/v1/decisions` |
 | `JEV_API_KEY` | No | Yes | Server-side Jev bearer credential; absence enables the labeled deterministic baseline |
 | `STATE_ADAPTER_TOKEN` | Yes in production | Yes | Bearer credential for `PATCH /sessions/{sessionId}/state`; minimum 32 characters when configured |
-| `LLM_API_KEY` | TBD | Yes | Optional question/explanation provider credential |
 | `LOG_LEVEL` | No | No | Fastify/Pino verbosity; defaults to `info`; accepts `trace`, `debug`, `info`, `warn`, `error`, `fatal`, or `silent` |
 | `TRUST_PROXY` | No | No | Trust reverse-proxy forwarding headers; defaults to `false`; set only behind a controlled proxy such as the shipped Nginx service |
 | `CORS_ALLOWED_ORIGINS` | Yes in production | No | Comma-separated browser origins; supersedes the single-origin `WEB_ORIGIN` fallback |

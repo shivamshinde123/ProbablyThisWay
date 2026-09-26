@@ -1,6 +1,6 @@
 # Tech Stack
 
-## Selected in the Project Plan
+## Implemented Stack
 
 | Layer | Technology | Purpose |
 |---|---|---|
@@ -9,7 +9,7 @@
 | 3D map | CesiumJS with Vite static asset copying | Terrain, trails, route overlays, camera controls, and optional World Terrain |
 | Backend | Node.js | API and orchestration layer |
 | Decision engine | Jev | Structured route suitability evaluation |
-| Database | PostgreSQL with PostGIS | Relational and geospatial persistence |
+| Database | PostgreSQL 17 | Durable session, evaluation, event, migration, and retention persistence |
 
 ## Supporting Choices
 
@@ -24,15 +24,15 @@
 - Logging: Fastify/Pino structured JSON with configurable severity.
 - API traffic guard: `@fastify/rate-limit` 11.2.0 with bounded environment configuration.
 - Deployment packaging: Docker images for Fastify and Nginx plus a provider-neutral Compose topology with PostgreSQL 17.
-- Hosting provider and metrics backend: TBD operator choices.
-- LLM provider/model for question selection and explanations: TBD.
+- Hosting and metrics: provider-neutral; the operator selects products while preserving documented probes, logs, backups, and alerts.
+- Question/explanation strategy: versioned deterministic question catalog and deterministic evidence copy; no LLM dependency in this release.
 
 ## Selection Principles
 
 - Prefer stable, well-supported libraries.
 - Keep route generation and policy deterministic.
-- Treat the approved deterministic Jev question catalog as the required baseline. Use an LLM only as an optional enhancement for bounded question selection, optional question generation, and explanations.
-- Isolate external map, weather, trail, Jev, and LLM integrations behind adapters.
+- Treat the approved deterministic Jev question catalog and structured explanation fields as the release contract.
+- Isolate external map, weather, trail, and Jev integrations behind adapters.
 
 ## Authoritative Trail Data
 

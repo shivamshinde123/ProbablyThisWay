@@ -1,138 +1,55 @@
 # File and Folder Structure
 
-The repository is initialized as `ProbablyThisWay`. The web, API, and shared-contract directories shown below are implemented; later domain and persistence directories remain planned.
+The repository is an npm-workspaces monorepo. This map reflects the implemented release baseline; generated build output and installed dependencies are intentionally omitted.
 
 ```text
 /
-├── docs/                       # Project specifications and design records
-├── apps/
-│   ├── web/                    # React/TypeScript client
-│   │   └── src/
-│   │       ├── components/SessionHud.tsx
-│   │       ├── components/TerrainMap.tsx
-│   │       ├── App.tsx
-│   │       ├── main.tsx
-│   │       └── styles.css
-│   └── api/                    # Node.js API
-│       └── src/
-│           ├── app.test.ts
-│           ├── app.ts
-│           └── server.ts
-├── packages/
-│   └── contracts/              # Shared Zod schemas and TypeScript types
-├── database/
-│   ├── migrations/
-│   └── seeds/
-├── tests/
-│   ├── integration/
-│   └── e2e/
-├── .env.example
-├── .gitignore
-├── package.json
-├── package-lock.json
-├── README.md
-├── tsconfig.base.json
-└── idea.md                     # Original project plan
+|-- .github/workflows/ci.yml          # Pull-request and main verification
+|-- apps/
+|   |-- api/
+|   |   |-- migrations/               # Ordered immutable PostgreSQL migrations
+|   |   |-- src/
+|   |   |   |-- generated/            # Reviewed DCR route snapshot
+|   |   |   |-- app.ts                # Fastify composition and HTTP routes
+|   |   |   |-- server.ts             # API process entry point
+|   |   |   |-- session-state.ts      # State transition orchestration
+|   |   |   |-- session-store.ts      # PostgreSQL/in-memory persistence boundary
+|   |   |   |-- evaluation.ts         # Jev adapter and deterministic baseline
+|   |   |   |-- policy.ts             # Hard constraints and recommendation policy
+|   |   |   |-- weather-adapter.ts    # Open-Meteo normalization
+|   |   |   |-- weather-refresh.ts    # Periodic refresh scheduler
+|   |   |   `-- *.test.ts             # Co-located unit/contract/integration tests
+|   |   `-- Dockerfile
+|   `-- web/
+|       |-- public/                    # Static browser assets
+|       |-- src/
+|       |   |-- components/            # Terrain, HUD, recommendation, event feed
+|       |   |-- App.tsx                # Browser orchestration
+|       |   |-- main.tsx               # Browser entry point
+|       |   `-- styles.css             # Responsive visual system
+|       |-- nginx.conf                 # Static serving and same-origin API proxy
+|       `-- Dockerfile
+|-- packages/contracts/src/index.ts   # Shared Zod schemas and TypeScript types
+|-- scripts/import-dcr-trails.mjs     # Reproducible DCR snapshot generator
+|-- tests/e2e/core-flow.spec.ts       # Desktop/mobile browser flows
+|-- docs/                             # Required product and engineering records
+|-- compose.yaml                      # PostgreSQL, migration, API, and web topology
+|-- eslint.config.js                  # Source correctness rules
+|-- .gitattributes                    # Cross-platform LF text policy
+|-- .prettierignore                   # Generated/build formatting exclusions
+|-- playwright.config.ts              # Browser-test orchestration
+|-- .env.example                      # Safe configuration names/defaults
+|-- package.json                      # Workspace commands and pinned quality tools
+|-- package-lock.json                 # Reproducible dependency graph
+`-- tsconfig.base.json                # Shared strict TypeScript options
 ```
 
-## Rules
+## Ownership Rules
 
-- Do not import app infrastructure into `packages/domain`.
-- Keep provider-specific code in `integrations`.
-- Co-locate unit tests with source; keep cross-system tests under `tests`.
-- Add generated artifacts to ignored build directories, not source folders.
-
-npm workspaces manage the monorepo. Add planned domain, database, and test directories only when their implementation begins.
-
-## Phase 6 Additions
-
-- `apps/api/src/policy.ts` — deterministic route recommendation policy.
-- `apps/web/src/components/RecommendationBanner.tsx` — current recommendation readout.
-
-## Phase 7 Addition
-
-- `apps/web/public/favicon.svg` — field-instrument browser icon served by Vite.
-- `apps/web/vite.config.ts` — uses Vite's filesystem route for Cesium assets in development and copies the same assets under `cesiumStatic` for production builds.
-
-### Automatic Re-evaluation Files
-
-- `apps/api/src/thresholds.ts` — deterministic material-change detector.
-- `apps/api/src/thresholds.test.ts` — threshold boundary tests.
-- `apps/api/src/app.ts` — ordered state updates and re-evaluation orchestration through `SessionStore`.
-
-### Decision Feed Files
-
-- `apps/web/src/components/DecisionFeed.tsx` — accessible compact decision-event history.
-- `apps/web/src/App.tsx` — cursor polling and atomic event application.
-- `apps/api/src/app.ts` — durable event append orchestration and cursor endpoint.
-
-### Adapter Authentication Files
-
-- `apps/api/src/adapter-auth.ts` — startup validation and constant-time bearer verification.
-- `apps/api/src/adapter-auth.test.ts` — local, configured, weak-token, and production fail-closed tests.
-
-### Persistence Files
-
-- `apps/api/migrations/001_session_persistence.sql` — durable session and decision-event tables, constraints, and index.
-- `apps/api/migrations/002_retention_index.sql` — indexed timestamp support for bounded retention.
-- `apps/api/src/migration-runner.ts` — advisory-locked discovery, checksum validation, and migration tracking.
-- `apps/api/src/postgres.integration.test.ts` — real PostgreSQL first-apply/repeat migration verification.
-- `apps/api/src/session-store.ts` — store contract plus PostgreSQL and in-memory implementations.
-- `apps/api/src/session-store.test.ts` — isolation, compare-and-swap, and production configuration tests.
-- `apps/api/src/migrate.ts` — migration command entry point.
-
-### Weather Adapter Files
-
-- `apps/api/src/weather-adapter.ts` — validated Open-Meteo normalization and configuration boundary.
-- `apps/api/src/weather-adapter.test.ts` — request, normalization, error, and endpoint-security tests.
-- `apps/api/src/weather-session.test.ts` — live initialization and explicit fallback integration tests.
-- `apps/web/src/components/SessionHud.tsx` — source, observation time, and provider attribution display.
-
-### Continuous Integration
-
-- `.github/workflows/ci.yml` — read-only pull-request and main-branch verification for locked install, tests, type checks, and production build.
-
-### Automatic Weather Refresh
-
-- `apps/api/src/weather-refresh.ts` — serialized active-session scheduler, per-hike request deduplication, and interval validation.
-- `apps/api/src/session-state.ts` — shared state-transition/evaluation/persistence path for internal refreshes and authenticated adapter updates.
-- `apps/api/src/weather-refresh.test.ts` — refresh integration and interval-configuration coverage.
-
-### Environmental Freshness Status
-
-- `apps/api/src/environmental-status.ts` — freshness policy, expiry resolution, and configuration validation.
-- `apps/api/src/environmental-status.test.ts` — expiry, failure, and configuration-boundary tests.
-- `apps/web/src/components/SessionHud.tsx` — accessible field-instrument freshness signal and stale-value warning.
-
-## Authoritative Route Catalog Additions
-
-```text
-scripts/import-dcr-trails.mjs                 # Reviewed DCR feature manifest and generator
-apps/api/src/route-catalog.ts                 # Typed supported-hike catalog
-apps/api/src/route-catalog.test.ts            # Provenance and geographic-bound checks
-apps/api/src/generated/wachusett-routes.ts    # Generated, reviewed DCR WGS84 snapshot
-```
-
-### Browser Verification
-
-- `playwright.config.ts` — isolated API/Vite server orchestration, desktop/mobile projects, and failure-artifact policy.
-- `tests/e2e/core-flow.spec.ts` — authoritative catalog, session/recommendation, responsive layout, freshness, and no-simulation flows.
-- `output/playwright/` — ignored browser traces, screenshots, videos, and HTML reports.
-
-### Session Retention
-
-- `apps/api/src/retention.ts` — bounded retention configuration and background sweep lifecycle.
-- `apps/api/src/retention.test.ts` — configuration and cutoff behavior.
-- `apps/api/src/session-store.ts` — in-memory and PostgreSQL cutoff deletion implementations.
-### Production Packaging
-
-- `.dockerignore` — excludes local, secret, dependency, build, and test artifacts from image contexts.
-- `apps/api/Dockerfile` — pinned multi-stage API image.
-- `apps/web/Dockerfile` and `apps/web/nginx.conf` — pinned static web/reverse-proxy image.
-- `compose.yaml` — PostgreSQL, migration, API, and web lifecycle orchestration.
-- `docs/deployment.md` — operator build, verification, update, rollback, and provider handoff runbook.
-### Code Quality Files
-
-- `eslint.config.js` — flat ESLint configuration for Node, TypeScript, React Hooks, and Vite Fast Refresh.
-- `.prettierignore` — excludes generated and build outputs from formatting.
-- Root `package.json` — owns `lint`, `format`, `format:check`, and aggregate `quality` commands.
+- `packages/contracts` owns wire schemas and shared public types; both applications depend on it.
+- `apps/api` owns provider credentials, persistence, evaluation orchestration, and policy.
+- `apps/web` owns presentation and browser polling; it never receives server secrets.
+- Provider payloads are validated and normalized at API adapter boundaries.
+- Unit and contract tests stay beside source; cross-process browser tests stay under `tests/e2e`.
+- `apps/api/src/generated/wachusett-routes.ts` changes only through the import command plus review of source provenance.
+- Build output belongs in ignored `dist` or `output` directories and is never edited by hand.

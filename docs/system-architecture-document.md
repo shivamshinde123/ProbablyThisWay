@@ -5,13 +5,14 @@
 The system separates geospatial truth, changing hike state, decision evaluation, deterministic route policy, and presentation.
 
 ```text
-Trail + terrain data ──> GIS/routing ──> candidate routes ──┐
-Weather/time/user state ──────────────> state service ──────┼─> Jev evaluation
-Question configuration <──── optional LLM enhancement ──────┘         │
-                                                                      v
-                                                               route policy
-                                                                      │
-                                       3D map + HUD + decision feed <──┘
+reviewed route snapshot -----> candidate routes ----+
+live weather + user state ---> session state -------+--> Jev/baseline scores
+approved question catalog --------------------------+          |
+                                                               v
+                                                deterministic policy
+                                                               |
+                                                               v
+                                              map + HUD + decision feed
 ```
 
 ## Boundaries
@@ -21,13 +22,13 @@ Question configuration <──── optional LLM enhancement ──────
 - **GIS/routing:** reviewed Massachusetts DCR trail snapshot, official route metrics, terrain clamping, and valid alternatives.
 - **Decision service:** prepares questions and invokes Jev.
 - **Policy service:** chooses the recommendation from structured scores and hard constraints.
-- **Integration adapters:** weather, trail/elevation sources, LLM, and Jev.
-- **Database:** trail, route, session, state, evaluation, and event persistence.
+- **Integration adapters:** weather, trail data, Jev, and PostgreSQL.
+- **Database:** durable session, state, evaluation, migration, and event persistence; route geometry remains a versioned source snapshot.
 
 ## Key Rules
 
-- The LLM does not directly select the final route.
-- The approved deterministic question catalog is sufficient to start a session. LLM question selection is an optional enhancement and must fall back to that catalog.
+- Jev produces structured suitability scores; deterministic application policy alone selects the final route.
+- The approved deterministic question catalog is the release question source. No LLM runtime or credential is required.
 - Route geometry comes from trusted geospatial data, not generated text.
 - Re-evaluation is event/threshold driven and automatic; there is no simulation control.
 - Legal status, closures, restrictions, and prohibitive advisories override suitability before route selection; return no route when all candidates are excluded.
@@ -35,8 +36,8 @@ Question configuration <──── optional LLM enhancement ──────
 
 ## Deployment
 
-GitHub Actions verifies tests, PostgreSQL migrations/retention, TypeScript checks, production builds, Compose configuration, both production container images, and browser flows before changes reach `main`. The supported deployment topology is Nginx web/reverse proxy -> Fastify API -> PostgreSQL 17, with a one-shot migration service gating API startup. Scaling targets and cloud provider remain operator decisions.
+GitHub Actions verifies tests, PostgreSQL migrations/retention, TypeScript checks, production builds, Compose configuration, both production container images, and browser flows before changes reach `main`. The supported deployment topology is Nginx web/reverse proxy -> Fastify API -> PostgreSQL 17, with a one-shot migration service gating API startup. The supported release topology runs one API replica. Cloud provider and managed-service products remain operator choices.
 
 ## Current Prototype Runtime
 
-The API combines session orchestration, live weather initialization and periodic refresh, threshold detection, evaluation, policy, and the ordered event API in one Fastify process. A `SessionStore` boundary selects PostgreSQL when `DATABASE_URL` is configured and an in-memory implementation for local development/tests. PostgreSQL transactions persist each session transition with its events, while a state-sequence compare-and-swap rejects concurrent overwrites. The client polls an independent event cursor that always returns the latest state and environmental freshness status alongside any new decisions, allowing refresh failures and below-threshold updates to refresh the HUD. End-user identity, a queue, PostGIS-backed route data, and event streaming remain future deployment boundaries. The state mutation route has a server-only adapter bearer boundary.
+The API combines session orchestration, live weather initialization and periodic refresh, threshold detection, evaluation, policy, and the ordered event API in one Fastify process. A `SessionStore` boundary selects PostgreSQL when `DATABASE_URL` is configured and an in-memory implementation for local development/tests. PostgreSQL transactions persist each session transition with its events, while a state-sequence compare-and-swap rejects concurrent overwrites. The client polls an independent event cursor that always returns the latest state and environmental freshness status alongside any new decisions, allowing refresh failures and below-threshold updates to refresh the HUD. The release intentionally has no end-user account system, queue, PostGIS dependency, or event stream: anonymous capability sessions, synchronous bounded evaluation, the immutable route snapshot, and cursor polling satisfy the MVP. The state mutation route has a server-only adapter bearer boundary. Horizontal scaling requires a new design for distributed scheduling and rate limits.
