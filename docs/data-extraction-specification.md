@@ -24,7 +24,7 @@
 
 ## Freshness
 
-Production adapters must preserve `observedAt`, source, provider, license, and attribution URL; adding stored `receivedAt` and a provider-specific freshness ceiling remains TBD. The Open-Meteo adapter requests UTC timestamps plus explicit Fahrenheit and mph units, converts precipitation percentage to a 0-1 probability, and uses the day/night signal to clamp overnight daylight to zero. The session contract rejects out-of-order observations and re-evaluates at the documented deterministic thresholds. Stale values must not be labeled current.
+Production adapters preserve `observedAt`, server-side `receivedAt`, source, provider, license, and attribution URL; a provider-specific freshness ceiling remains TBD. The Open-Meteo adapter requests UTC timestamps plus explicit Fahrenheit and mph units, converts precipitation percentage to a 0-1 probability, and uses the day/night signal to clamp overnight daylight to zero. The session contract rejects out-of-order observations and re-evaluates at the documented deterministic thresholds. Stale values must not be labeled current.
 
 Without a real position source, the MVP does not calculate route progress. The UI omits it or labels it unavailable.
 

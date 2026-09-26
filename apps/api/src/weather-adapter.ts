@@ -21,6 +21,7 @@ export type WeatherLocation = {
 
 export type EnvironmentalSnapshot = {
   observedAt: string;
+  receivedAt: string;
   source: "weather";
   provenance: {
     provider: string;
@@ -47,6 +48,7 @@ type WeatherAdapterOptions = {
   apiKey?: string;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  now?: () => Date;
 };
 
 function utcTimestamp(value: string): string {
@@ -61,8 +63,9 @@ export class OpenMeteoWeatherProvider implements WeatherProvider {
   readonly #apiKey: string | undefined;
   readonly #fetch: typeof fetch;
   readonly #timeoutMs: number;
+  readonly #now: () => Date;
 
-  constructor({ baseUrl, apiKey, fetchImpl = fetch, timeoutMs = 4_000 }: WeatherAdapterOptions) {
+  constructor({ baseUrl, apiKey, fetchImpl = fetch, timeoutMs = 4_000, now = () => new Date() }: WeatherAdapterOptions) {
     const parsed = new URL(baseUrl);
     if (parsed.protocol !== "https:" && parsed.hostname !== "localhost" && parsed.hostname !== "127.0.0.1") {
       throw new Error("WEATHER_API_BASE_URL must use HTTPS outside local development");
@@ -72,6 +75,7 @@ export class OpenMeteoWeatherProvider implements WeatherProvider {
     this.#apiKey = apiKey?.trim() || undefined;
     this.#fetch = fetchImpl;
     this.#timeoutMs = timeoutMs;
+    this.#now = now;
   }
 
   async getCurrent(location: WeatherLocation): Promise<EnvironmentalSnapshot> {
@@ -97,6 +101,7 @@ export class OpenMeteoWeatherProvider implements WeatherProvider {
 
     return {
       observedAt,
+      receivedAt: this.#now().toISOString(),
       source: "weather",
       provenance: {
         provider: "Open-Meteo",

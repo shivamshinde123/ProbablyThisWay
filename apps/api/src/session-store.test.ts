@@ -42,6 +42,8 @@ test("in-memory store returns isolated records and enforces compare-and-swap", a
   const record = makeRecord();
   await store.create(record);
 
+  assert.deepEqual(await store.listActiveSessionIds(), [record.session.id]);
+
   const first = await store.get(record.session.id);
   assert.ok(first);
   first.sequence = 1;

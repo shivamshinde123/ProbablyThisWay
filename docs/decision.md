@@ -212,3 +212,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Run one GitHub Actions job on pull requests targeting `main`, pushes to `main`, and manual dispatch. Use Ubuntu, Node.js 22, `npm ci`, npm cache metadata keyed by the root lockfile, and the repository's test, check, and build scripts. Grant only `contents: read`, disable persisted checkout credentials, cancel superseded runs, set a 15-minute timeout, and pin official actions to reviewed immutable v7 SHAs.
 - **Reasoning:** A single sequential job provides an unambiguous branch-protection check while reusing the exact commands contributors run locally. Locked installs and pinned action code reduce environmental and supply-chain drift.
 - **Consequences:** Every PR now receives automated verification, at the cost of repeating some contract compilation across existing scripts. Branch protection still needs to be enabled in repository settings after the check name exists. Deployment remains a separate future workflow.
+
+## DEC-026 — Refresh active-session weather through the shared state transition
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** Live weather initialized a session but did not change afterward unless an external adapter pushed state, leaving the automatic re-evaluation MVP requirement incomplete.
+- **Decision:** When a weather provider is configured, run one serialized refresh cycle every five minutes by default, with a configurable minimum of one minute. Discover active sessions through the durable store, fetch once per hike per cycle, record provider observation and server receipt times, preserve user state, and apply snapshots through the same stale-check, threshold, event, and compare-and-swap transition as adapter updates. Log provider failures and retain the last valid decision.
+- **Reasoning:** A server-owned refresh closes the live-input loop without adding browser controls, while shared transition logic keeps pushed and pulled observations behaviorally identical. Per-hike request deduplication limits provider traffic.
+- **Consequences:** Active sessions can now produce automatic recommendation events as weather changes, including after an API restart when PostgreSQL is configured. Each API replica currently runs a refresher; compare-and-swap prevents lost updates, but distributed scheduling/leases, provider-specific freshness ceilings, backoff, and caching remain future operational work.
+- **Supersedes:** The automatic-periodic-refresh and stored-receive-time follow-ups in DEC-024.

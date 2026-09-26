@@ -7,6 +7,7 @@ test("Open-Meteo adapter requests explicit units and normalizes current conditio
   const provider = new OpenMeteoWeatherProvider({
     baseUrl: "https://api.open-meteo.com/v1/forecast",
     apiKey: "test-commercial-key",
+    now: () => new Date("2026-09-25T20:00:02.000Z"),
     fetchImpl: async (input) => {
       requestedUrl = new URL(input.toString());
       return new Response(JSON.stringify({
@@ -28,6 +29,7 @@ test("Open-Meteo adapter requests explicit units and normalizes current conditio
   assert.equal(requestedUrl?.searchParams.get("timezone"), "UTC");
   assert.equal(requestedUrl?.searchParams.get("apikey"), "test-commercial-key");
   assert.equal(snapshot.observedAt, "2026-09-25T20:00:00.000Z");
+  assert.equal(snapshot.receivedAt, "2026-09-25T20:00:02.000Z");
   assert.deepEqual(snapshot.provenance, { provider: "Open-Meteo", license: "CC BY 4.0", attributionUrl: "https://open-meteo.com/" });
   assert.deepEqual(snapshot.weather, { temperatureF: 51.4, windMph: 12.5, rainProbability: 0.35 });
   assert.deepEqual(snapshot.daylight, { sunsetAt: "2026-09-25T22:30:00.000Z", remainingMinutes: 150 });

@@ -23,6 +23,7 @@ export const hikeDetailSchema = hikeSummarySchema.extend({ routes: z.array(route
 export type HikeDetail = z.infer<typeof hikeDetailSchema>;
 export const hikingStateSchema = z.object({
   observedAt: z.string().datetime(),
+  receivedAt: z.string().datetime().optional(),
   source: z.enum(["prototype-static", "weather", "user-input", "system-time"]),
   provenance: z.object({
     provider: z.string().min(1),

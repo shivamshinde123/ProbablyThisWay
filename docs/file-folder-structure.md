@@ -88,3 +88,9 @@ npm workspaces manage the monorepo. Add planned domain, database, and test direc
 ### Continuous Integration
 
 - `.github/workflows/ci.yml` — read-only pull-request and main-branch verification for locked install, tests, type checks, and production build.
+
+### Automatic Weather Refresh
+
+- `apps/api/src/weather-refresh.ts` — serialized active-session scheduler, per-hike request deduplication, and interval validation.
+- `apps/api/src/session-state.ts` — shared state-transition/evaluation/persistence path for internal refreshes and authenticated adapter updates.
+- `apps/api/src/weather-refresh.test.ts` — refresh integration and interval-configuration coverage.

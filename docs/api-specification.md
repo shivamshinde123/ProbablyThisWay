@@ -27,7 +27,7 @@ Response `200` includes `routes[].properties` with `id`, `name`, `source`, `data
 
 Request: `{ "hikeId": "wachusett-summit", "selectedRouteId": "balanced-traverse" }`
 
-Response `201` is `{ "session": Session, "evaluation": RouteEvaluation, "recommendation": RouteRecommendation }`. The session contains its ID, selected route, status, timestamps, and typed hiking-state snapshot. When `WEATHER_API_BASE_URL` is configured, the API requests and validates current Open-Meteo temperature, wind, precipitation probability, day/night status, and sunset data and returns `source: "weather"` with provider/license attribution. Outside production, timeout, transport, HTTP, or validation failure falls back to `source: "prototype-static"`, which must not be presented as live observed data. Production startup requires weather configuration, and a runtime provider failure returns `503 weather_unavailable`.
+Response `201` is `{ "session": Session, "evaluation": RouteEvaluation, "recommendation": RouteRecommendation }`. The session contains its ID, selected route, status, timestamps, and typed hiking-state snapshot. Live provider snapshots include both provider `observedAt` and server `receivedAt` timestamps. When `WEATHER_API_BASE_URL` is configured, the API requests and validates current Open-Meteo temperature, wind, precipitation probability, day/night status, and sunset data and returns `source: "weather"` with provider/license attribution. Outside production, timeout, transport, HTTP, or validation failure falls back to `source: "prototype-static"`, which must not be presented as live observed data. Production startup requires weather configuration, and a runtime provider failure returns `503 weather_unavailable`.
 
 ### `GET /sessions/{sessionId}`
 
@@ -82,3 +82,7 @@ When `JEV_API_KEY` is configured, the server sends the shared hiking state and o
 ## Recommendation Explanation Fields
 
 `RouteRecommendation.explanation` is a concise deterministic summary derived from the selected route and the evaluated state snapshot. `factors` contains two or three display-ready `{ label, value }` facts. The current policy emits daylight margin, exposure, and elevation gain. These fields describe the score inputs and do not claim that a route is safe.
+
+## Automatic Weather Refresh
+
+When live weather is configured, the API process scans active sessions at `WEATHER_REFRESH_INTERVAL_MS` (five minutes by default). It fetches one snapshot per supported hike per cycle, rejects duplicate or older provider observations, preserves user pace/fatigue, and applies the same cumulative thresholds and compare-and-swap persistence used by `PATCH /sessions/{sessionId}/state`. Threshold-crossing refreshes append `recommendation_updated` events; below-threshold refreshes update current state without publishing a decision. Provider failures retain the last valid state and decision and are logged without creating fabricated updates.
