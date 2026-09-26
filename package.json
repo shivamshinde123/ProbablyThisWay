@@ -14,14 +14,25 @@
     "dev:api": "npm run dev -w @probably-this-way/api",
     "dev:web": "npm run dev -w @probably-this-way/web",
     "data:refresh:dcr": "node scripts/import-dcr-trails.mjs",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,css,json}\" \"packages/**/*.{ts,json}\" \"scripts/**/*.mjs\" \"*.{js,json,yaml,yml}\" \".github/**/*.yml\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx,css,json}\" \"packages/**/*.{ts,json}\" \"scripts/**/*.mjs\" \"*.{js,json,yaml,yml}\" \".github/**/*.yml\"",
+    "lint": "eslint .",
+    "quality": "npm run lint && npm run format:check",
     "test": "npm run build -w @probably-this-way/contracts && npm run test -w @probably-this-way/api",
     "test:postgres": "npm run build -w @probably-this-way/contracts && npm run test:postgres -w @probably-this-way/api",
     "test:e2e": "npm run build && playwright test"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@playwright/test": "1.55.1",
     "concurrently": "^9.2.1",
-    "typescript": "^5.9.3"
+    "eslint": "10.11.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.7",
+    "globals": "17.12.0",
+    "prettier": "3.9.9",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "8.70.1"
   },
   "engines": {
     "node": ">=22"

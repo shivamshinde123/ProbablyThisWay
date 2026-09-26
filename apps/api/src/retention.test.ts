@@ -8,8 +8,14 @@ test("retention config provides bounded production defaults", () => {
     retentionMs: 30 * 86_400_000,
     sweepIntervalMs: 21_600_000,
   });
-  assert.throws(() => resolveRetentionConfig({ SESSION_RETENTION_DAYS: "0" }), /SESSION_RETENTION_DAYS/);
-  assert.throws(() => resolveRetentionConfig({ RETENTION_SWEEP_INTERVAL_MS: "1000" }), /RETENTION_SWEEP_INTERVAL_MS/);
+  assert.throws(
+    () => resolveRetentionConfig({ SESSION_RETENTION_DAYS: "0" }),
+    /SESSION_RETENTION_DAYS/,
+  );
+  assert.throws(
+    () => resolveRetentionConfig({ RETENTION_SWEEP_INTERVAL_MS: "1000" }),
+    /RETENTION_SWEEP_INTERVAL_MS/,
+  );
 });
 
 test("retention sweeper calculates an exact cutoff", async () => {

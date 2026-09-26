@@ -30,9 +30,13 @@ export async function updateEnvironmentalStatus(options: {
   record.session = {
     ...record.session,
     environmentalStatus,
-    state: receivedAt ? { ...record.session.state, receivedAt } : record.session.state,
+    state: receivedAt
+      ? { ...record.session.state, receivedAt }
+      : record.session.state,
   };
-  return (await sessionStore.save(record, expectedSequence)) ? "accepted" : "conflict";
+  return (await sessionStore.save(record, expectedSequence))
+    ? "accepted"
+    : "conflict";
 }
 
 export async function transitionSessionState(options: {
@@ -42,17 +46,24 @@ export async function transitionSessionState(options: {
   sessionStore: SessionStore;
 }): Promise<SessionStateTransition> {
   const { record, nextState, hike, sessionStore } = options;
-  if (Date.parse(nextState.observedAt) <= Date.parse(record.session.state.observedAt)) {
+  if (
+    Date.parse(nextState.observedAt) <=
+    Date.parse(record.session.state.observedAt)
+  ) {
     return { status: "stale" };
   }
 
-  const crossedThresholds = detectRelevantThresholds(record.lastEvaluatedState, nextState);
+  const crossedThresholds = detectRelevantThresholds(
+    record.lastEvaluatedState,
+    nextState,
+  );
   const expectedSequence = record.sequence;
   record.sequence = expectedSequence + 1;
   record.session = { ...record.session, state: nextState };
 
   if (crossedThresholds.length === 0) {
-    if (!(await sessionStore.save(record, expectedSequence))) return { status: "conflict" };
+    if (!(await sessionStore.save(record, expectedSequence)))
+      return { status: "conflict" };
     return {
       status: "accepted",
       response: stateUpdateResponseSchema.parse({
@@ -70,23 +81,30 @@ export async function transitionSessionState(options: {
     state: nextState,
     routes: hike.routes,
   });
-  const recommendation = selectRouteRecommendation(evaluation, hike.routes, nextState);
+  const recommendation = selectRouteRecommendation(
+    evaluation,
+    hike.routes,
+    nextState,
+  );
   const decision = latestDecisionSchema.parse({ evaluation, recommendation });
 
   record.decision = decision;
   record.lastEvaluatedState = nextState;
   record.eventSequence += 1;
-  record.events.push(decisionEventSchema.parse({
-    id: randomUUID(),
-    sessionId: record.session.id,
-    sequence: record.eventSequence,
-    type: "recommendation_updated",
-    occurredAt: decision.recommendation.decidedAt,
-    state: nextState,
-    decision,
-    crossedThresholds,
-  }));
-  if (!(await sessionStore.save(record, expectedSequence))) return { status: "conflict" };
+  record.events.push(
+    decisionEventSchema.parse({
+      id: randomUUID(),
+      sessionId: record.session.id,
+      sequence: record.eventSequence,
+      type: "recommendation_updated",
+      occurredAt: decision.recommendation.decidedAt,
+      state: nextState,
+      decision,
+      crossedThresholds,
+    }),
+  );
+  if (!(await sessionStore.save(record, expectedSequence)))
+    return { status: "conflict" };
 
   return {
     status: "accepted",

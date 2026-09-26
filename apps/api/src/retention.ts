@@ -3,7 +3,13 @@ import type { SessionStore } from "./session-store.js";
 export const DEFAULT_SESSION_RETENTION_DAYS = 30;
 export const DEFAULT_RETENTION_SWEEP_INTERVAL_MS = 21_600_000;
 
-function integer(value: string | undefined, fallback: number, name: string, minimum: number, maximum: number) {
+function integer(
+  value: string | undefined,
+  fallback: number,
+  name: string,
+  minimum: number,
+  maximum: number,
+) {
   if (!value?.trim()) return fallback;
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed < minimum || parsed > maximum) {
@@ -13,7 +19,13 @@ function integer(value: string | undefined, fallback: number, name: string, mini
 }
 
 export function resolveRetentionConfig(env: NodeJS.ProcessEnv = process.env) {
-  const days = integer(env.SESSION_RETENTION_DAYS, DEFAULT_SESSION_RETENTION_DAYS, "SESSION_RETENTION_DAYS", 1, 365);
+  const days = integer(
+    env.SESSION_RETENTION_DAYS,
+    DEFAULT_SESSION_RETENTION_DAYS,
+    "SESSION_RETENTION_DAYS",
+    1,
+    365,
+  );
   return {
     retentionMs: days * 86_400_000,
     sweepIntervalMs: integer(
@@ -29,17 +41,22 @@ export function resolveRetentionConfig(env: NodeJS.ProcessEnv = process.env) {
 export class RetentionSweeper {
   #timer?: NodeJS.Timeout;
 
-  constructor(private readonly options: {
-    sessionStore: SessionStore;
-    retentionMs: number;
-    sweepIntervalMs: number;
-    onError: (error: unknown) => void;
-    now?: () => number;
-  }) {}
+  constructor(
+    private readonly options: {
+      sessionStore: SessionStore;
+      retentionMs: number;
+      sweepIntervalMs: number;
+      onError: (error: unknown) => void;
+      now?: () => number;
+    },
+  ) {}
 
   start() {
     if (this.#timer) return;
-    this.#timer = setInterval(() => void this.sweep().catch(this.options.onError), this.options.sweepIntervalMs);
+    this.#timer = setInterval(
+      () => void this.sweep().catch(this.options.onError),
+      this.options.sweepIntervalMs,
+    );
     this.#timer.unref();
   }
 
@@ -50,6 +67,8 @@ export class RetentionSweeper {
 
   async sweep() {
     const now = this.options.now?.() ?? Date.now();
-    return this.options.sessionStore.purgeExpired(new Date(now - this.options.retentionMs));
+    return this.options.sessionStore.purgeExpired(
+      new Date(now - this.options.retentionMs),
+    );
   }
 }

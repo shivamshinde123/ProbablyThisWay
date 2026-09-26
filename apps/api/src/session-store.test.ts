@@ -17,24 +17,54 @@ function makeRecord(): SessionRecord {
   };
   const decision = latestDecisionSchema.parse({
     evaluation: {
-      id: randomUUID(), sessionId, status: "completed" as const, createdAt: now,
+      id: randomUUID(),
+      sessionId,
+      status: "completed" as const,
+      createdAt: now,
       questionSetVersion: "route-suitability-v1" as const,
       provider: "deterministic-baseline" as const,
-      scores: [{ routeId: "route-a", suitability: 0.8 }, { routeId: "route-b", suitability: 0.6 }],
+      scores: [
+        { routeId: "route-a", suitability: 0.8 },
+        { routeId: "route-b", suitability: 0.6 },
+      ],
     },
     recommendation: {
-      routeId: "route-a", suitability: 0.8, policyVersion: "highest-suitability-v1" as const,
-      decidedAt: now, explanation: "Route A is preferred.",
-      factors: [{ label: "Weather", value: "Stable" }, { label: "Daylight", value: "Sufficient" }],
+      routeId: "route-a",
+      suitability: 0.8,
+      policyVersion: "highest-suitability-v1" as const,
+      decidedAt: now,
+      explanation: "Route A is preferred.",
+      factors: [
+        { label: "Weather", value: "Stable" },
+        { label: "Daylight", value: "Sufficient" },
+      ],
     },
   });
   return {
-    session: { id: sessionId, hikeId: "hike", selectedRouteId: "route-a", status: "active", createdAt: now, state },
+    session: {
+      id: sessionId,
+      hikeId: "hike",
+      selectedRouteId: "route-a",
+      status: "active",
+      createdAt: now,
+      state,
+    },
     decision,
     sequence: 0,
     lastEvaluatedState: state,
     eventSequence: 1,
-    events: [{ id: randomUUID(), sessionId, sequence: 1, type: "session_started", occurredAt: now, state, decision, crossedThresholds: [] }],
+    events: [
+      {
+        id: randomUUID(),
+        sessionId,
+        sequence: 1,
+        type: "session_started",
+        occurredAt: now,
+        state,
+        decision,
+        crossedThresholds: [],
+      },
+    ],
   };
 }
 
@@ -71,7 +101,10 @@ test("in-memory retention removes only records older than the cutoff", async () 
   await store.create(old);
   await store.create(recent);
 
-  assert.equal(await store.purgeExpired(new Date("2026-10-01T00:00:00.000Z")), 1);
+  assert.equal(
+    await store.purgeExpired(new Date("2026-10-01T00:00:00.000Z")),
+    1,
+  );
   assert.equal(await store.get(old.session.id), undefined);
   assert.ok(await store.get(recent.session.id));
 });

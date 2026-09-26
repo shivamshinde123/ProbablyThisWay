@@ -5,11 +5,10 @@ import { hikeDetails } from "./route-catalog.js";
 test("catalog exposes only authoritative legal DCR summit routes", () => {
   const hike = hikeDetails["wachusett-summit"];
   assert.ok(hike);
-  assert.deepEqual(hike.routes.map((route) => route.properties.id), [
-    "pine-hill-summit",
-    "mountain-house-summit",
-    "harrington-summit",
-  ]);
+  assert.deepEqual(
+    hike.routes.map((route) => route.properties.id),
+    ["pine-hill-summit", "mountain-house-summit", "harrington-summit"],
+  );
   for (const route of hike.routes) {
     assert.equal(route.properties.dataQuality, "authoritative");
     assert.equal(route.properties.legalStatus, "legal");
@@ -25,7 +24,7 @@ test("authoritative route coordinates remain geographically plausible", () => {
   for (const route of hike.routes) {
     for (const [longitude, latitude, elevation] of route.geometry.coordinates) {
       assert.ok(longitude >= -71.91 && longitude <= -71.87);
-      assert.ok(latitude >= 42.47 && latitude <= 42.50);
+      assert.ok(latitude >= 42.47 && latitude <= 42.5);
       assert.equal(elevation, 0);
     }
   }

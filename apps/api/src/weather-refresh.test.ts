@@ -1,10 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { decisionEventsResponseSchema, hikeDetailSchema, sessionStartResponseSchema } from "@probably-this-way/contracts";
+import {
+  decisionEventsResponseSchema,
+  hikeDetailSchema,
+  sessionStartResponseSchema,
+} from "@probably-this-way/contracts";
 import { buildApp } from "./app.js";
 import { InMemorySessionStore } from "./session-store.js";
 import { failedEnvironmentalStatus } from "./environmental-status.js";
-import { transitionSessionState, updateEnvironmentalStatus } from "./session-state.js";
+import {
+  transitionSessionState,
+  updateEnvironmentalStatus,
+} from "./session-state.js";
 import type { WeatherProvider } from "./weather-adapter.js";
 import {
   DEFAULT_WEATHER_REFRESH_INTERVAL_MS,
@@ -20,24 +27,40 @@ test("weather refresh fetches once per hike and re-evaluates active sessions", a
         observedAt: "2026-09-25T20:00:00.000Z",
         receivedAt: "2026-09-25T20:00:01.000Z",
         source: "weather",
-        provenance: { provider: "Open-Meteo", license: "CC BY 4.0", attributionUrl: "https://open-meteo.com/" },
+        provenance: {
+          provider: "Open-Meteo",
+          license: "CC BY 4.0",
+          attributionUrl: "https://open-meteo.com/",
+        },
         weather: { temperatureF: 51, windMph: 8, rainProbability: 0.2 },
-        daylight: { sunsetAt: "2026-09-25T22:30:00.000Z", remainingMinutes: 150 },
+        daylight: {
+          sunsetAt: "2026-09-25T22:30:00.000Z",
+          remainingMinutes: 150,
+        },
       };
     },
   };
-  const app = await buildApp({ sessionStore, weatherProvider: initialProvider });
+  const app = await buildApp({
+    sessionStore,
+    weatherProvider: initialProvider,
+  });
   const createSession = async () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/v1/sessions",
-      payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" },
+      payload: {
+        hikeId: "wachusett-summit",
+        selectedRouteId: "mountain-house-summit",
+      },
     });
     return sessionStartResponseSchema.parse(response.json()).session;
   };
   const first = await createSession();
   const second = await createSession();
-  const hikeResponse = await app.inject({ method: "GET", url: "/api/v1/hikes/wachusett-summit" });
+  const hikeResponse = await app.inject({
+    method: "GET",
+    url: "/api/v1/hikes/wachusett-summit",
+  });
   const hike = hikeDetailSchema.parse(hikeResponse.json());
 
   let providerCalls = 0;
@@ -48,20 +71,29 @@ test("weather refresh fetches once per hike and re-evaluates active sessions", a
         observedAt: "2026-09-25T20:05:00.000Z",
         receivedAt: "2026-09-25T20:05:01.000Z",
         source: "weather",
-        provenance: { provider: "Open-Meteo", license: "CC BY 4.0", attributionUrl: "https://open-meteo.com/" },
+        provenance: {
+          provider: "Open-Meteo",
+          license: "CC BY 4.0",
+          attributionUrl: "https://open-meteo.com/",
+        },
         weather: { temperatureF: 51, windMph: 14, rainProbability: 0.2 },
-        daylight: { sunsetAt: "2026-09-25T22:30:00.000Z", remainingMinutes: 145 },
+        daylight: {
+          sunsetAt: "2026-09-25T22:30:00.000Z",
+          remainingMinutes: 145,
+        },
       };
     },
   };
   const refresher = new WeatherRefresher({
     sessionStore,
     weatherProvider: refreshProvider,
-    locations: { "wachusett-summit": { latitude: 42.4889, longitude: -71.8868 } },
+    locations: {
+      "wachusett-summit": { latitude: 42.4889, longitude: -71.8868 },
+    },
     intervalMs: 60_000,
-    applySnapshot: async (record, nextState) => (
-      await transitionSessionState({ record, nextState, hike, sessionStore })
-    ).status,
+    applySnapshot: async (record, nextState) =>
+      (await transitionSessionState({ record, nextState, hike, sessionStore }))
+        .status,
   });
 
   await refresher.refreshNow();
@@ -79,8 +111,14 @@ test("weather refresh fetches once per hike and re-evaluates active sessions", a
 
   const failingRefresher = new WeatherRefresher({
     sessionStore,
-    weatherProvider: { async getCurrent() { throw new Error("provider unavailable"); } },
-    locations: { "wachusett-summit": { latitude: 42.4889, longitude: -71.8868 } },
+    weatherProvider: {
+      async getCurrent() {
+        throw new Error("provider unavailable");
+      },
+    },
+    locations: {
+      "wachusett-summit": { latitude: 42.4889, longitude: -71.8868 },
+    },
     intervalMs: 60_000,
     applySnapshot: async () => "accepted",
     onSessionError: async (record) => {
@@ -88,7 +126,11 @@ test("weather refresh fetches once per hike and re-evaluates active sessions", a
         record.session.environmentalStatus,
         "2026-09-25T20:10:00.000Z",
       );
-      const result = await updateEnvironmentalStatus({ record, environmentalStatus, sessionStore });
+      const result = await updateEnvironmentalStatus({
+        record,
+        environmentalStatus,
+        sessionStore,
+      });
       assert.equal(result, "accepted");
     },
   });
@@ -115,10 +157,17 @@ test("weather refresh fetches once per hike and re-evaluates active sessions", a
 });
 
 test("weather refresh interval has a safe default and rejects rapid polling", () => {
-  assert.equal(resolveWeatherRefreshInterval({}), DEFAULT_WEATHER_REFRESH_INTERVAL_MS);
-  assert.equal(resolveWeatherRefreshInterval({ WEATHER_REFRESH_INTERVAL_MS: "60000" }), 60_000);
+  assert.equal(
+    resolveWeatherRefreshInterval({}),
+    DEFAULT_WEATHER_REFRESH_INTERVAL_MS,
+  );
+  assert.equal(
+    resolveWeatherRefreshInterval({ WEATHER_REFRESH_INTERVAL_MS: "60000" }),
+    60_000,
+  );
   assert.throws(
-    () => resolveWeatherRefreshInterval({ WEATHER_REFRESH_INTERVAL_MS: "59999" }),
+    () =>
+      resolveWeatherRefreshInterval({ WEATHER_REFRESH_INTERVAL_MS: "59999" }),
     /at least 60000/,
   );
 });

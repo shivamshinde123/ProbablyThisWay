@@ -299,3 +299,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Build pinned Node/Alpine API and web-builder stages, serve the web bundle through pinned Nginx, proxy same-origin `/api` traffic, and provide Compose orchestration for PostgreSQL, one-shot migrations, API readiness, and web startup. Build both images in pull-request CI.
 - **Reasoning:** Containers make the tested runtime portable without prematurely selecting a cloud provider, registry, DNS service, or secret manager.
 - **Consequences:** Operators must inject required credentials, terminate TLS, manage backups, and translate the topology to their platform. The shipped single-instance process-local rate limit and refresh scheduler require shared coordination before horizontal scaling.
+## DEC-035 — Enforce automated source quality
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Type checking and tests were automated, but formatting and lint rules were still unspecified.
+- **Decision:** Pin ESLint 10, TypeScript ESLint, React Hooks, React Refresh, and Prettier 3 at the workspace root. Run `npm run quality` in pull-request CI and exclude generated route geometry from mechanical source checks.
+- **Reasoning:** A reproducible code-quality gate catches JavaScript, TypeScript, and React correctness issues while keeping generated authoritative data byte-stable.
+- **Consequences:** Supported source and configuration files are normalized once and all later pull requests must pass lint and formatting checks in addition to tests, types, builds, containers, and browser flows.
+- **Supersedes:** The unspecified lint/format tooling in the coding conventions.

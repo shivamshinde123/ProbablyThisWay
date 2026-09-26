@@ -52,9 +52,12 @@ type WeatherAdapterOptions = {
 };
 
 function utcTimestamp(value: string): string {
-  const explicitZone = /(?:Z|[+-]\d{2}:\d{2})$/u.test(value) ? value : `${value}Z`;
+  const explicitZone = /(?:Z|[+-]\d{2}:\d{2})$/u.test(value)
+    ? value
+    : `${value}Z`;
   const parsed = new Date(explicitZone);
-  if (Number.isNaN(parsed.getTime())) throw new Error("Weather provider returned an invalid timestamp");
+  if (Number.isNaN(parsed.getTime()))
+    throw new Error("Weather provider returned an invalid timestamp");
   return parsed.toISOString();
 }
 
@@ -65,12 +68,25 @@ export class OpenMeteoWeatherProvider implements WeatherProvider {
   readonly #timeoutMs: number;
   readonly #now: () => Date;
 
-  constructor({ baseUrl, apiKey, fetchImpl = fetch, timeoutMs = 4_000, now = () => new Date() }: WeatherAdapterOptions) {
+  constructor({
+    baseUrl,
+    apiKey,
+    fetchImpl = fetch,
+    timeoutMs = 4_000,
+    now = () => new Date(),
+  }: WeatherAdapterOptions) {
     const parsed = new URL(baseUrl);
-    if (parsed.protocol !== "https:" && parsed.hostname !== "localhost" && parsed.hostname !== "127.0.0.1") {
-      throw new Error("WEATHER_API_BASE_URL must use HTTPS outside local development");
+    if (
+      parsed.protocol !== "https:" &&
+      parsed.hostname !== "localhost" &&
+      parsed.hostname !== "127.0.0.1"
+    ) {
+      throw new Error(
+        "WEATHER_API_BASE_URL must use HTTPS outside local development",
+      );
     }
-    if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) throw new Error("Weather timeout must be a positive integer");
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0)
+      throw new Error("Weather timeout must be a positive integer");
     this.#baseUrl = parsed.toString();
     this.#apiKey = apiKey?.trim() || undefined;
     this.#fetch = fetchImpl;
@@ -82,7 +98,10 @@ export class OpenMeteoWeatherProvider implements WeatherProvider {
     const url = new URL(this.#baseUrl);
     url.searchParams.set("latitude", String(location.latitude));
     url.searchParams.set("longitude", String(location.longitude));
-    url.searchParams.set("current", "temperature_2m,wind_speed_10m,precipitation_probability,is_day");
+    url.searchParams.set(
+      "current",
+      "temperature_2m,wind_speed_10m,precipitation_probability,is_day",
+    );
     url.searchParams.set("daily", "sunset");
     url.searchParams.set("temperature_unit", "fahrenheit");
     url.searchParams.set("wind_speed_unit", "mph");
@@ -90,14 +109,23 @@ export class OpenMeteoWeatherProvider implements WeatherProvider {
     url.searchParams.set("forecast_days", "1");
     if (this.#apiKey) url.searchParams.set("apikey", this.#apiKey);
 
-    const response = await this.#fetch(url, { signal: AbortSignal.timeout(this.#timeoutMs) });
-    if (!response.ok) throw new Error(`Weather provider returned ${response.status}`);
+    const response = await this.#fetch(url, {
+      signal: AbortSignal.timeout(this.#timeoutMs),
+    });
+    if (!response.ok)
+      throw new Error(`Weather provider returned ${response.status}`);
     const parsed = openMeteoResponseSchema.parse(await response.json());
     const observedAt = utcTimestamp(parsed.current.time);
     const sunsetAt = utcTimestamp(parsed.daily.sunset[0] ?? "");
-    const remainingMinutes = parsed.current.is_day === 1
-      ? Math.max(0, Math.floor((Date.parse(sunsetAt) - Date.parse(observedAt)) / 60_000))
-      : 0;
+    const remainingMinutes =
+      parsed.current.is_day === 1
+        ? Math.max(
+            0,
+            Math.floor(
+              (Date.parse(sunsetAt) - Date.parse(observedAt)) / 60_000,
+            ),
+          )
+        : 0;
 
     return {
       observedAt,
@@ -118,11 +146,19 @@ export class OpenMeteoWeatherProvider implements WeatherProvider {
   }
 }
 
-export function createWeatherProvider(env: NodeJS.ProcessEnv = process.env): WeatherProvider | undefined {
+export function createWeatherProvider(
+  env: NodeJS.ProcessEnv = process.env,
+): WeatherProvider | undefined {
   const baseUrl = env.WEATHER_API_BASE_URL?.trim();
-  if (baseUrl) return new OpenMeteoWeatherProvider({ baseUrl, apiKey: env.WEATHER_API_KEY });
+  if (baseUrl)
+    return new OpenMeteoWeatherProvider({
+      baseUrl,
+      apiKey: env.WEATHER_API_KEY,
+    });
   if (env.NODE_ENV === "production") {
-    throw new Error("WEATHER_API_BASE_URL is required when NODE_ENV=production");
+    throw new Error(
+      "WEATHER_API_BASE_URL is required when NODE_ENV=production",
+    );
   }
   return undefined;
 }

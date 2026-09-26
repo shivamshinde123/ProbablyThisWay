@@ -11,14 +11,17 @@ export type MigrationResult = { applied: string[]; skipped: string[] };
 
 export async function runMigrations(
   connectionString: string,
-  migrationsDirectory = fileURLToPath(new URL("../migrations/", import.meta.url)),
+  migrationsDirectory = fileURLToPath(
+    new URL("../migrations/", import.meta.url),
+  ),
 ): Promise<MigrationResult> {
   const entries = (await readdir(migrationsDirectory, { withFileTypes: true }))
     .filter((entry) => entry.isFile() && migrationNamePattern.test(entry.name))
     .map((entry) => entry.name)
     .sort();
   const versions = entries.map((name) => name.slice(0, 3));
-  if (new Set(versions).size !== versions.length) throw new Error("Migration versions must be unique");
+  if (new Set(versions).size !== versions.length)
+    throw new Error("Migration versions must be unique");
 
   const pool = new Pool({ connectionString });
   const client = await pool.connect();
@@ -32,15 +35,25 @@ export async function runMigrations(
     )`);
     return await applyPendingMigrations(client, migrationsDirectory, entries);
   } finally {
-    await client.query("SELECT pg_advisory_unlock(hashtext($1))", [lockName]).catch(() => undefined);
+    await client
+      .query("SELECT pg_advisory_unlock(hashtext($1))", [lockName])
+      .catch(() => undefined);
     client.release();
     await pool.end();
   }
 }
 
-async function applyPendingMigrations(client: PoolClient, directory: string, filenames: string[]): Promise<MigrationResult> {
-  const existing = await client.query<{ version: string; checksum: string }>("SELECT version, checksum FROM schema_migrations");
-  const checksums = new Map(existing.rows.map((row) => [row.version, row.checksum]));
+async function applyPendingMigrations(
+  client: PoolClient,
+  directory: string,
+  filenames: string[],
+): Promise<MigrationResult> {
+  const existing = await client.query<{ version: string; checksum: string }>(
+    "SELECT version, checksum FROM schema_migrations",
+  );
+  const checksums = new Map(
+    existing.rows.map((row) => [row.version, row.checksum]),
+  );
   const result: MigrationResult = { applied: [], skipped: [] };
 
   for (const filename of filenames) {
@@ -49,7 +62,8 @@ async function applyPendingMigrations(client: PoolClient, directory: string, fil
     const checksum = createHash("sha256").update(sql).digest("hex");
     const recorded = checksums.get(version);
     if (recorded) {
-      if (recorded !== checksum) throw new Error(`Applied migration ${filename} has changed`);
+      if (recorded !== checksum)
+        throw new Error(`Applied migration ${filename} has changed`);
       result.skipped.push(filename);
       continue;
     }
