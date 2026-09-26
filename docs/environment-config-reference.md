@@ -12,8 +12,8 @@ These are the implemented runtime and build-time variables. Provider and server 
 | `DATABASE_URL` | Yes in production | Yes | PostgreSQL connection used by the durable session/event store; omission selects the in-memory store only outside production |
 | `VITE_CESIUM_ION_ACCESS_TOKEN` | No | No | Optional scoped browser token selecting Cesium World Terrain; without it the map uses the public ArcGIS World Elevation terrain service |
 | TRAIL_SEARCH_API_BASE_URL | No | No | Nominatim-compatible search endpoint; defaults to the public OpenStreetMap Nominatim search service and allows an operator-required provider switch |
-| `WEATHER_API_BASE_URL` | Yes in production | No | HTTPS Open-Meteo Forecast endpoint; setting it enables live weather/daylight at session start |
-| `WEATHER_API_KEY` | No | Yes | Optional Open-Meteo commercial subscription key, sent only by the server |
+| `WEATHER_API_BASE_URL` | Yes in production | No | Open-Meteo Forecast endpoint. Use `https://api.open-meteo.com/v1/forecast` for free/non-commercial keyless access, or `https://customer-api.open-meteo.com/v1/forecast` with a paid customer key |
+| `WEATHER_API_KEY` | No | Yes | Open-Meteo Customer API key from `https://dashboard.open-meteo.com/`; leave empty for the public endpoint. Keys from OpenWeatherMap or WeatherAPI are incompatible |
 | `WEATHER_REFRESH_INTERVAL_MS` | No | No | Active-session weather refresh cadence; defaults to `300000` (five minutes) and must be at least `60000` |
 | `WEATHER_FRESHNESS_MAX_AGE_MS` | No | No | Maximum weather observation age; defaults to `1800000` (30 minutes), must be at least `900000`, and cannot be shorter than the refresh interval |
 | `JEV_API_URL` | No | No | Server-side Jev endpoint; defaults to `https://www.jevai.org/api/v1/decisions` |
