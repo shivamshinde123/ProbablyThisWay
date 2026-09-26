@@ -73,10 +73,10 @@ npm workspaces manage the monorepo. Add planned domain, database, and test direc
 
 ### Persistence Files
 
-- pps/api/migrations/001_session_persistence.sql — durable session and decision-event tables, constraints, and index.
-- pps/api/migrations/002_retention_index.sql — indexed timestamp support for bounded retention.
-- pps/api/src/migration-runner.ts — advisory-locked discovery, checksum validation, and migration tracking.
-- pps/api/src/postgres.integration.test.ts — real PostgreSQL first-apply/repeat migration verification.
+- `apps/api/migrations/001_session_persistence.sql` — durable session and decision-event tables, constraints, and index.
+- `apps/api/migrations/002_retention_index.sql` — indexed timestamp support for bounded retention.
+- `apps/api/src/migration-runner.ts` — advisory-locked discovery, checksum validation, and migration tracking.
+- `apps/api/src/postgres.integration.test.ts` — real PostgreSQL first-apply/repeat migration verification.
 - `apps/api/src/session-store.ts` — store contract plus PostgreSQL and in-memory implementations.
 - `apps/api/src/session-store.test.ts` — isolation, compare-and-swap, and production configuration tests.
 - `apps/api/src/migrate.ts` — migration command entry point.
@@ -118,3 +118,9 @@ apps/api/src/generated/wachusett-routes.ts    # Generated, reviewed DCR WGS84 sn
 - `playwright.config.ts` — isolated API/Vite server orchestration, desktop/mobile projects, and failure-artifact policy.
 - `tests/e2e/core-flow.spec.ts` — authoritative catalog, session/recommendation, responsive layout, freshness, and no-simulation flows.
 - `output/playwright/` — ignored browser traces, screenshots, videos, and HTML reports.
+
+### Session Retention
+
+- `apps/api/src/retention.ts` — bounded retention configuration and background sweep lifecycle.
+- `apps/api/src/retention.test.ts` — configuration and cutoff behavior.
+- `apps/api/src/session-store.ts` — in-memory and PostgreSQL cutoff deletion implementations.

@@ -32,6 +32,7 @@ import { createWeatherProvider, type WeatherProvider } from "./weather-adapter.j
 import { hikeDetails, hikeWeatherLocations } from "./route-catalog.js";
 import { WeatherRefresher, resolveWeatherRefreshInterval } from "./weather-refresh.js";
 import { resolveOperationalConfig } from "./operational-config.js";
+import { RetentionSweeper, resolveRetentionConfig } from "./retention.js";
 
 function applyStateUpdate(state: HikingState, update: UpdateSessionStateRequest): HikingState {
   const { changes } = update;
@@ -68,6 +69,7 @@ export async function buildApp(options: {
   const weatherEnv = options.weatherEnv ?? process.env;
   const operationalEnv = options.operationalEnv ?? process.env;
   const operational = resolveOperationalConfig(operationalEnv);
+  const retention = resolveRetentionConfig(operationalEnv);
   const weatherProvider = options.weatherProvider === null
     ? undefined
     : options.weatherProvider ?? createWeatherProvider(weatherEnv);
@@ -115,8 +117,15 @@ export async function buildApp(options: {
       })
     : undefined;
   weatherRefresher?.start();
+  const retentionSweeper = new RetentionSweeper({
+    sessionStore,
+    ...retention,
+    onError: (error) => app.log.warn({ err: error }, "Retention sweep failed"),
+  });
+  retentionSweeper.start();
   app.addHook("onClose", async () => {
     weatherRefresher?.stop();
+    retentionSweeper.stop();
     await sessionStore.close();
   });
 

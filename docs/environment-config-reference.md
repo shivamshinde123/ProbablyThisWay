@@ -24,6 +24,8 @@ Implemented variables and planned integrations are listed below. Planned entries
 | `RATE_LIMIT_MAX` | No | No | Maximum non-health requests per process and client IP during the configured window; defaults to `120`; integer 1-10000 |
 | `RATE_LIMIT_WINDOW_MS` | No | No | Rate-limit window in milliseconds; defaults to `60000`; integer 1000-3600000 |
 | `EVENT_PAGE_SIZE` | No | No | Default decision-event page size; defaults to `50`; integer 1-100 |
+| `SESSION_RETENTION_DAYS` | No | No | Delete sessions and cascading decision events after this many inactive days; defaults to `30`; integer 1-365 |
+| `RETENTION_SWEEP_INTERVAL_MS` | No | No | Retention sweep cadence; defaults to `21600000` (six hours); integer 60000-86400000 |
 
 ## Rules
 

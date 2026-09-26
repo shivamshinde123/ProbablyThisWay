@@ -29,7 +29,7 @@ Every accepted update, including an automatic weather refresh, increments a sess
 
 - Keep secrets server-side.
 - Minimize stored location and user-state data.
-- Define retention and deletion policy before collecting personal GPS history.
+- Delete inactive session snapshots and their decision events 30 days after the last successful write by default. This application does not collect personal GPS history; adding it requires a separate reviewed policy.
 - Rate-limit public endpoints and validate geometry/query bounds.
 
 The API applies a validated per-process/IP request budget to non-health routes, supports an explicit multi-origin CORS allowlist, and emits structured Fastify/Pino logs at the configured level. Liveness does not touch dependencies; readiness executes a store probe. Event polling is capped at 100 items per response. A distributed limiter is required before horizontally scaled deployment.
@@ -46,7 +46,7 @@ The API applies a validated per-process/IP request budget to non-health routes, 
 
 ## TBD
 
-Queue mechanism, distributed cache/rate-limit strategy, end-user authentication, PostGIS route persistence, calibrated scoring policy, retention, and operational SLO targets.
+Queue mechanism, distributed cache/rate-limit strategy, end-user authentication, PostGIS route persistence, calibrated scoring policy, and operational SLO targets.
 
 ## Implemented Jev Adapter
 
