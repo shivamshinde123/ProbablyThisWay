@@ -1,0 +1,41 @@
+import { defineConfig, devices } from "@playwright/test";
+
+export default defineConfig({
+  testDir: "./tests/e2e",
+  timeout: 45_000,
+  expect: { timeout: 10_000 },
+  fullyParallel: false,
+  forbidOnly: Boolean(process.env.CI),
+  retries: process.env.CI ? 2 : 0,
+  workers: 1,
+  reporter: process.env.CI
+    ? [["github"], ["html", { outputFolder: "output/playwright/report", open: "never" }]]
+    : [["list"], ["html", { outputFolder: "output/playwright/report", open: "never" }]],
+  outputDir: "output/playwright/artifacts",
+  use: {
+    baseURL: "http://127.0.0.1:5173",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+  },
+  webServer: [
+    {
+      command: "npm run dev -w @probably-this-way/api",
+      url: "http://127.0.0.1:3001/api/v1/health",
+      reuseExistingServer: false,
+      timeout: 120_000,
+      env: { ...process.env, HOST: "127.0.0.1", PORT: "3001", WEB_ORIGIN: "http://127.0.0.1:5173" },
+    },
+    {
+      command: "npm run dev -w @probably-this-way/web -- --host 127.0.0.1",
+      url: "http://127.0.0.1:5173",
+      reuseExistingServer: false,
+      timeout: 120_000,
+      env: { ...process.env, VITE_API_BASE_URL: "http://127.0.0.1:3001/api/v1" },
+    },
+  ],
+  projects: [
+    { name: "desktop-chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "mobile-chromium", use: { ...devices["Pixel 7"] } },
+  ],
+});

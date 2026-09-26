@@ -253,3 +253,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** Official constraints must dominate probabilistic or baseline suitability. A no-route result is safer and more truthful than choosing the highest score from an ineligible set.
 - **Consequences:** The UI disables known-ineligible routes, suppresses map recommendation highlighting when no route is eligible, and presents exclusion reasons assertively. The current DCR geometry snapshot does not provide live operating status, so its routes remain explicitly `unknown`; users are directed to current notices until an advisory adapter supplies newer status.
 - **Supersedes:** The missing closure/restriction override noted in DEC-018.
+
+## DEC-030 — Gate pull requests with desktop and mobile browser flows
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Unit, contract, type, and build checks did not prove that the API, Vite client, Cesium shell, and responsive interaction flow worked together in a browser.
+- **Decision:** Add Playwright with pinned Chromium coverage for desktop Chrome and Pixel 7 viewports. Start the real local API and Vite servers, exercise authoritative route loading, route selection, session creation, recommendation rendering, responsive stacking, stale-environmental warnings, and absence of a simulation control. Retain traces, screenshots, video, and an HTML report only as ignored artifacts. Install Chromium and run the suite in the existing pull-request CI job.
+- **Reasoning:** The tests cover the product story at the user boundary while keeping one required CI signal and reproducible local commands.
+- **Consequences:** CI takes longer and downloads a browser runtime. Failures retain diagnostic artifacts under `output/playwright/`; the suite uses local prototype weather and does not require secrets.
+- **Supersedes:** The missing-browser-coverage follow-up in the technical design.

@@ -31,7 +31,7 @@
 
 - Format and lint automatically; exact tools are TBD.
 - Add tests for changed domain behavior.
-- Keep `npm test`, `npm run check`, and `npm run build` green locally and in pull-request CI.
+- Keep `npm test`, `npm run check`, `npm run build`, and `npm run test:e2e` green locally and in pull-request CI.
 - Keep third-party GitHub Actions pinned to reviewed immutable commit SHAs.
 - Document material architectural decisions.
 - Never commit credentials or real user location fixtures.
