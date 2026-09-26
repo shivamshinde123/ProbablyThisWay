@@ -18,7 +18,7 @@ A hiker selecting or following one of the predefined supported trails.
 - Render its terrain, trail, and route alternatives.
 - Display weather, time, pace, fatigue, elevation, distance, daylight, and route progress when available. Hide or clearly mark unavailable values; live GPS is not required for the MVP.
 - Evaluate every candidate route through a defined Jev question set.
-- Apply deterministic application policy to the results.
+- Apply deterministic application policy to the results, excluding official illegal/closed/restricted routes before ranking and returning no route when every candidate is ineligible.
 - Highlight the current recommendation and show suitability values.
 - Explain the factors behind the recommendation without presenting it as a safety guarantee.
 - Re-evaluate automatically when supported live inputs materially change.

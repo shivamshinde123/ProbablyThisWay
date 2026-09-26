@@ -290,6 +290,8 @@ export const wachusettRoutes = [
         31430
       ],
       "legalStatus": "legal",
+      "accessStatus": "unknown",
+      "restrictions": [],
       "condition": "mixed",
       "dataQuality": "authoritative",
       "elevationSource": "official-trail-map",
@@ -930,6 +932,8 @@ export const wachusettRoutes = [
         32092
       ],
       "legalStatus": "legal",
+      "accessStatus": "unknown",
+      "restrictions": [],
       "condition": "mixed",
       "dataQuality": "authoritative",
       "elevationSource": "official-trail-map",
@@ -1900,6 +1904,8 @@ export const wachusettRoutes = [
         32159
       ],
       "legalStatus": "legal",
+      "accessStatus": "unknown",
+      "restrictions": [],
       "condition": "mixed",
       "dataQuality": "authoritative",
       "elevationSource": "official-trail-map",

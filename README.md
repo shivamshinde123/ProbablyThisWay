@@ -4,7 +4,7 @@ ProbablyThisWay is a map-first hiking decision-support prototype. It renders aut
 
 ## Status
 
-The prototype currently supports a Cesium terrain view, three typed route alternatives, session startup and automatic active-session refresh with optional live weather/daylight, visible current/stale/prototype condition status, typed state updates, cumulative threshold-driven re-evaluation, stale-update rejection, a cursor-based live decision feed, per-route suitability scores, deterministic recommendation highlighting, evidence-backed explanations, and responsive recommendation-focused camera behavior. Route geometry is a reviewed snapshot of Massachusetts DCR data with source IDs and timestamps. It is not a live closure feed or a navigation guarantee. Product, architecture, API, data, and UI specifications are maintained in [`docs/`](docs/).
+The prototype currently supports a Cesium terrain view, three typed route alternatives, session startup and automatic active-session refresh with optional live weather/daylight, visible current/stale/prototype condition status, typed state updates, cumulative threshold-driven re-evaluation, stale-update rejection, a cursor-based live decision feed, per-route suitability scores, hard-constraint filtering, deterministic recommendation highlighting, explicit no-route outcomes, evidence-backed explanations, and responsive recommendation-focused camera behavior. Route geometry is a reviewed snapshot of Massachusetts DCR data with source IDs and timestamps. It is not a live closure feed or a navigation guarantee. Product, architecture, API, data, and UI specifications are maintained in [`docs/`](docs/).
 
 ## Core Principles
 

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+import { latestDecisionSchema } from "@probably-this-way/contracts";
 import type { SessionRecord } from "./session-store.js";
 import { InMemorySessionStore, createSessionStore } from "./session-store.js";
 
@@ -14,7 +15,7 @@ function makeRecord(): SessionRecord {
     daylight: { sunsetAt: "2026-09-25T14:39:00.000Z", remainingMinutes: 159 },
     user: { paceMph: 2.1, fatigue: "low" as const },
   };
-  const decision = {
+  const decision = latestDecisionSchema.parse({
     evaluation: {
       id: randomUUID(), sessionId, status: "completed" as const, createdAt: now,
       questionSetVersion: "route-suitability-v1" as const,
@@ -26,7 +27,7 @@ function makeRecord(): SessionRecord {
       decidedAt: now, explanation: "Route A is preferred.",
       factors: [{ label: "Weather", value: "Stable" }, { label: "Daylight", value: "Sufficient" }],
     },
-  };
+  });
   return {
     session: { id: sessionId, hikeId: "hike", selectedRouteId: "route-a", status: "active", createdAt: now, state },
     decision,
