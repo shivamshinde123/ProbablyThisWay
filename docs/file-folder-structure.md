@@ -58,15 +58,22 @@ npm workspaces manage the monorepo. Add planned domain, database, and test direc
 
 - `apps/api/src/thresholds.ts` — deterministic material-change detector.
 - `apps/api/src/thresholds.test.ts` — threshold boundary tests.
-- `apps/api/src/app.ts` — in-memory session state, ordered updates, and re-evaluation orchestration.
+- `apps/api/src/app.ts` — ordered state updates and re-evaluation orchestration through `SessionStore`.
 
 ### Decision Feed Files
 
 - `apps/web/src/components/DecisionFeed.tsx` — accessible compact decision-event history.
 - `apps/web/src/App.tsx` — cursor polling and atomic event application.
-- `apps/api/src/app.ts` — process-memory event append and cursor endpoint.
+- `apps/api/src/app.ts` — durable event append orchestration and cursor endpoint.
 
 ### Adapter Authentication Files
 
 - `apps/api/src/adapter-auth.ts` — startup validation and constant-time bearer verification.
 - `apps/api/src/adapter-auth.test.ts` — local, configured, weak-token, and production fail-closed tests.
+
+### Persistence Files
+
+- `apps/api/migrations/001_session_persistence.sql` — durable session and decision-event tables, constraints, and index.
+- `apps/api/src/session-store.ts` — store contract plus PostgreSQL and in-memory implementations.
+- `apps/api/src/session-store.test.ts` — isolation, compare-and-swap, and production configuration tests.
+- `apps/api/src/migrate.ts` — migration command entry point.

@@ -15,7 +15,7 @@
 
 `PATCH /api/v1/sessions/{sessionId}/state` validates supported source-specific changes and rejects observations whose timestamp is not newer than the session's current state. The detector compares the accumulated state with the last evaluated snapshot, not merely the preceding update. Thresholds are 10 F temperature, 5 mph wind, 0.15 rain probability, 10 minutes remaining daylight, 15% relative pace, and any fatigue-level change.
 
-Every accepted update increments a session-scoped sequence. A threshold crossing runs evaluation synchronously in the current process; the result replaces the latest decision only if its captured sequence is still current, preventing an older concurrent result from overwriting newer state. A future worker can preserve the same contract while making the operation asynchronous. This process is automatic and has no user-facing evaluation control.
+Every accepted update increments a session-scoped sequence. A threshold crossing runs evaluation synchronously in the current process. The complete state/decision/event transition is then saved with an expected prior sequence; PostgreSQL applies that comparison and the event writes in one transaction. A mismatch returns `409 state_update_conflict`, so an older concurrent request cannot overwrite newer state. A future worker can preserve the same contract while making evaluation asynchronous. This process is automatic and has no user-facing evaluation control.
 
 ## Reliability
 
@@ -42,7 +42,7 @@ Every accepted update increments a session-scoped sequence. A threshold crossing
 
 ## TBD
 
-Queue mechanism, cache strategy, end-user authentication, production persistence, calibrated scoring policy, and operational SLOs.
+Queue mechanism, cache strategy, end-user authentication, PostGIS route persistence, calibrated scoring policy, retention, and operational SLOs.
 
 ## Implemented Jev Adapter
 

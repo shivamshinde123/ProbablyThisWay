@@ -1,49 +1,50 @@
 # Database Schema
 
-PostgreSQL with PostGIS is the planned store. Names and types below are logical; migrations are TBD.
+PostgreSQL is the implemented durable store for sessions and decision events. PostGIS remains the planned extension for authoritative route geometry; the current persistence migration does not require it.
 
-## Core Tables
+## Implemented Migration
 
-### `hikes`
-
-`id`, `name`, `description`, `difficulty`, `bounds`, `terrain_config`, `status`, timestamps.
-
-### `trails`
-
-`id`, `hike_id` FK, `name`, `geometry geography`, `distance_meters`, `elevation_gain_meters`, `source`, `source_version`, timestamps.
-
-### `routes`
-
-`id`, `hike_id` FK, `name`, `geometry geography`, `distance_meters`, `elevation_gain_meters`, `estimated_duration_seconds`, `attributes jsonb`, `active`, timestamps.
+`apps/api/migrations/001_session_persistence.sql` creates:
 
 ### `sessions`
 
-`id`, `hike_id` FK, `status`, `started_at`, `ended_at`, `user_profile jsonb`. User/account FK is TBD.
-
-### `hiking_state_snapshots`
-
-`id`, `session_id` FK, `sequence`, `observed_at`, `position geography NULL`, weather/time/pace/fatigue fields, `source_metadata jsonb`, `created_at`. Unique `(session_id, sequence)`.
-
-### `evaluations`
-
-`id`, `session_id` FK, `state_snapshot_id` FK, `question_set_version`, `status`, `selected_route_id` FK NULL, `policy_version`, `explanation`, timestamps, `idempotency_key` unique.
-
-### `route_scores`
-
-`evaluation_id` FK, `route_id` FK, `suitability`, `constraint_status`, `answers jsonb`, `factors jsonb`. Primary key `(evaluation_id, route_id)`.
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` | Primary key |
+| `hike_id` | `text` | Current catalog identifier |
+| `selected_route_id` | `text` | Selected route identifier |
+| `status` | `text` | Constrained to `active` |
+| `created_at` | `timestamptz` | Session creation time |
+| `session_payload` | `jsonb` | Contract-valid current `Session` |
+| `last_evaluated_state` | `jsonb` | Baseline for cumulative threshold detection |
+| `latest_decision` | `jsonb` | Contract-valid latest evaluation and recommendation |
+| `state_sequence` | `integer` | Non-negative optimistic-concurrency version |
+| `event_sequence` | `integer` | Non-negative latest decision-event cursor |
+| `updated_at` | `timestamptz` | Last successful state write |
 
 ### `decision_events`
 
-`id`, `session_id` FK, `evaluation_id` FK NULL, `sequence`, `event_type`, `payload jsonb`, `occurred_at`. Unique `(session_id, sequence)`.
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` | Primary key |
+| `session_id` | `uuid` | FK to `sessions(id)`, cascading on delete |
+| `sequence` | `integer` | Positive cursor; unique with `session_id` |
+| `event_type` | `text` | `session_started` or `recommendation_updated` |
+| `occurred_at` | `timestamptz` | Event time |
+| `payload` | `jsonb` | Contract-valid `DecisionEvent` |
 
-## Relationships
+An index on `(session_id, occurred_at)` supports chronological event reads.
 
-One hike has trails and routes. One session belongs to a hike and has ordered state snapshots, evaluations, and events. One evaluation references one snapshot and has one score per candidate route.
+## Write Consistency
 
-## Indexes and Retention
+Session state, the latest decision, and new events are written in one transaction. Updates use `WHERE state_sequence = expectedSequence`; a mismatch returns an application-level conflict rather than overwriting a concurrent observation. Event uniqueness makes repeated event insertion harmless within a successful state transition.
 
-Add GiST indexes to geometry/geography, B-tree indexes to foreign keys and chronological session queries, and retention rules for location/user-state data. Exact retention period is TBD.
+## Runtime Modes
 
-## Current Prototype Storage
+When `DATABASE_URL` is set, the API uses `PostgresSessionStore`. Production startup fails without that variable. Local development and tests may omit it and use `InMemorySessionStore`, which implements the same compare-and-swap contract but is cleared on restart.
 
-The implemented API uses a process-memory session record containing the current session snapshot, latest decision, accepted-update sequence, last evaluated snapshot, independent event sequence, and ordered decision events. It mirrors the ordering model above but is not durable and is cleared on restart. PostgreSQL/PostGIS migrations remain a production-stage requirement.
+Run `npm run db:migrate -w @probably-this-way/api` before starting an API process against a new database.
+
+## Planned Geospatial Tables
+
+Authoritative production route ingestion will add normalized `hikes`, `trails`, `routes`, `hiking_state_snapshots`, `evaluations`, and `route_scores` tables plus PostGIS geometry/geography columns and GiST indexes. Their exact migration and retention policy remain TBD.

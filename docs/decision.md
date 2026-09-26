@@ -165,7 +165,7 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Context:** Automatic updates need deterministic trigger rules, and individually small observations must not prevent a material cumulative change from being evaluated.
 - **Decision:** Compare the current accumulated state with the last successfully evaluated snapshot. Trigger at 10 F temperature, 5 mph wind, 0.15 rain probability, 10 minutes remaining daylight, 15% relative pace, or any fatigue change. Increment a session sequence for every accepted update and publish a result only when its sequence is still current.
 - **Reasoning:** Explicit thresholds make evaluation frequency testable and auditable; the last-evaluated baseline allows small changes to accumulate without evaluating every observation.
-- **Consequences:** The current process-memory implementation evaluates synchronously and loses sessions on restart. Threshold calibration, durable persistence, adapter authentication, and a queued worker remain production work.
+- **Consequences:** Evaluation remains synchronous. The process-memory persistence limitation and adapter-authentication follow-ups were resolved by DEC-023 and DEC-022 respectively; threshold calibration and a queued worker remain future work.
 
 ## DEC-021 — Publish typed decisions through an independent event cursor
 
@@ -174,7 +174,7 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Context:** Automatic re-evaluation must become visible to the active client, while below-threshold state updates should not create empty positions in the decision feed.
 - **Decision:** Append `session_started` and `recommendation_updated` events with their own contiguous sequence. Include the exact state snapshot and typed decision in each event. Poll the cursor endpoint every five seconds in the MVP and retry passively after failures.
 - **Reasoning:** A separate event cursor produces simple, lossless incremental reads and lets the HUD, map, scores, and explanation update from one coherent record.
-- **Consequences:** The browser can observe external supported updates without a manual control. Events remain process-memory only; durable storage, retention, pagination limits, end-user authentication, and streaming are future work.
+- **Consequences:** The browser can observe external supported updates without a manual control. The process-memory event limitation was resolved by DEC-023 when PostgreSQL is configured; retention, pagination limits, end-user authentication, and streaming remain future work.
 
 ## DEC-022 — Protect state mutation with a fail-closed adapter credential
 
@@ -184,3 +184,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Require `Authorization: Bearer <token>` for state updates whenever `STATE_ADAPTER_TOKEN` is configured. Compare credentials in constant time, require at least 32 characters, authenticate before session lookup, and refuse production startup without the token. Permit tokenless local development.
 - **Reasoning:** A scoped server-side shared secret is a small, auditable boundary suitable for the current adapter model and prevents resource enumeration through the mutation route.
 - **Consequences:** Deployment secret storage and rotation are required. This does not authenticate hikers or authorize per-user resources; end-user identity remains a separate future decision.
+
+## DEC-023 — Persist session transitions through a compare-and-swap store
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** Process-local sessions and events disappear on restart and cannot safely coordinate state writes across multiple API instances.
+- **Decision:** Introduce a `SessionStore` interface with PostgreSQL and in-memory implementations. Use `node-postgres`, parameterized queries, and one transaction for each session/event write. Require `DATABASE_URL` in production, retain the in-memory implementation for local development and tests, and reject updates whose expected `state_sequence` is no longer current.
+- **Reasoning:** A narrow persistence boundary keeps the HTTP and policy layers independent of the driver, while database compare-and-swap semantics prevent lost updates across processes.
+- **Consequences:** Deployments must provision PostgreSQL and apply `001_session_persistence.sql` before API startup. The first migration stores contract-valid JSON payloads beside queryable identity, status, sequence, and time columns. PostGIS-backed normalized route data, migration version tracking, retention policy, and live PostgreSQL integration coverage remain follow-up work.
+- **Supersedes:** The process-memory-only consequences recorded in DEC-020 and DEC-021.

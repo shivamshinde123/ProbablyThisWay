@@ -31,7 +31,7 @@ Response `201` is `{ "session": Session, "evaluation": RouteEvaluation, "recomme
 
 ### `GET /sessions/{sessionId}`
 
-Returns `{ "session": Session, "hike": HikeDetail, "decision": LatestDecision, "sequence": 0 }` from the current process-memory read model. Unknown IDs return `404 session_not_found`.
+Returns `{ "session": Session, "hike": HikeDetail, "decision": LatestDecision, "sequence": 0 }` from the configured session store. Unknown IDs return `404 session_not_found`.
 
 ### `PATCH /sessions/{sessionId}/state`
 
@@ -47,7 +47,7 @@ Response `202`: `{ "accepted": true, "evaluationQueued": false, "reason": "no_re
 
 The detector compares the accumulated current state with the last evaluated snapshot. It triggers at temperature change >= 10 F, wind change >= 5 mph, rain-probability change >= 0.15, remaining-daylight change >= 10 minutes, relative pace change >= 15%, or any fatigue change. A triggering response sets `evaluationQueued: true`, lists the crossed fields, and includes `decision` when that request remains the newest sequence. Evaluation currently completes synchronously inside the request; the field name preserves the future queued-worker contract.
 
-Unknown sessions return `404 session_not_found`, invalid updates return `422 invalid_state_update`, and observations not newer than the current snapshot return `409 stale_state_update`. The endpoint is protected by the configured adapter bearer credential. This shared-secret boundary authenticates adapters, not end users; rotate and distribute it through deployment secret management.
+Unknown sessions return `404 session_not_found`, invalid updates return `422 invalid_state_update`, observations not newer than the current snapshot return `409 stale_state_update`, and a concurrent compare-and-swap failure returns `409 state_update_conflict`. The endpoint is protected by the configured adapter bearer credential. This shared-secret boundary authenticates adapters, not end users; rotate and distribute it through deployment secret management.
 
 ### Planned: `POST /sessions/{sessionId}/evaluations`
 
@@ -61,7 +61,7 @@ Returns the typed route evaluation and deterministic recommendation, including i
 
 Returns `{ "items": DecisionEvent[], "nextCursor": 2 }`. Omitting `after` reads from the start; otherwise only events with a greater event sequence are returned. Event sequence is independent from accepted state-update sequence, starts at one, and advances only when a decision is published.
 
-Each event includes its ID, session ID, type (`session_started` or `recommendation_updated`), occurrence time, exact hiking-state snapshot, typed decision, and crossed thresholds. Invalid cursors return `422 invalid_cursor` and unknown sessions return `404 session_not_found`. The current feed is process-memory only. The client polls every five seconds; streaming transport remains a future option.
+Each event includes its ID, session ID, type (`session_started` or `recommendation_updated`), occurrence time, exact hiking-state snapshot, typed decision, and crossed thresholds. Invalid cursors return `422 invalid_cursor` and unknown sessions return `404 session_not_found`. The feed is durable when PostgreSQL is configured and process-local in the development/test fallback. The client polls every five seconds; streaming transport remains a future option.
 
 ## Status Codes
 
@@ -75,7 +75,7 @@ Schemas for the internal evaluation endpoint, end-user authentication, paginatio
 
 `POST /sessions` runs the initial route evaluation, applies deterministic policy, and returns `{ "session": Session, "evaluation": RouteEvaluation, "recommendation": RouteRecommendation }`. `RouteEvaluation` includes an ID, session ID, timestamp, `questionSetVersion`, provider provenance, and one `{ routeId, suitability }` score per route. Suitability is bounded from `0` to `1`.
 
-`GET /sessions/{sessionId}/evaluations/latest` returns `{ "evaluation": RouteEvaluation, "recommendation": RouteRecommendation }` or a structured `404` with code `evaluation_not_found`. The current store is process memory and is replaced by persistence in a later stage.
+`GET /sessions/{sessionId}/evaluations/latest` returns `{ "evaluation": RouteEvaluation, "recommendation": RouteRecommendation }` or a structured `404` with code `evaluation_not_found`. The current store is PostgreSQL-backed when `DATABASE_URL` is configured, with an in-memory development/test fallback.
 
 When `JEV_API_KEY` is configured, the server sends the shared hiking state and one typed Noul suitability question per valid route to the Jev endpoint. Missing credentials, timeout, transport errors, or invalid Jev responses use the explicitly labeled `deterministic-baseline` provider. The fallback is development continuity, not a claim of Jev inference.
 

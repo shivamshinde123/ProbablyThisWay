@@ -23,6 +23,9 @@
 - Do not place route-selection policy in controllers or React components.
 - Use structured errors and logs; do not swallow exceptions.
 - Make retries bounded and safe through idempotency.
+- Parameterize every SQL value; never build SQL by concatenating request or domain data.
+- Use one checked-out database client for every multi-statement transaction and release it in `finally`.
+- Validate JSON read from persistence with shared schemas before returning it to application code.
 
 ## Quality
 

@@ -41,7 +41,7 @@ The `ProbablyThisWay` repository is an npm-workspaces monorepo. The React/Vite c
       -> assemble state snapshot
       -> evaluate every route
       -> apply deterministic route policy
-      -> retain latest decision in process memory
+      -> persist session, latest decision, and session_started event through SessionStore
   -> render terrain, routes, HUD, and recommendation
 ```
 
@@ -52,13 +52,13 @@ PATCH /api/v1/sessions/{sessionId}/state
   -> validate adapter bearer credential before resource lookup
   -> validate source, timestamp, and non-empty supported changes
   -> reject stale observation
-  -> merge changes into the current in-memory session state
+  -> load and merge changes into the current stored session state
   -> increment session sequence
   -> compare accumulated state with lastEvaluatedState
       -> below all thresholds: return 202 without evaluation
       -> threshold crossed: evaluate all routes
           -> apply deterministic route policy
-          -> replace latest decision only if request sequence is still current
+          -> transactionally save only if the expected state sequence is still current
           -> advance lastEvaluatedState
           -> append recommendation_updated event
           -> return 202 with crossed fields and decision
@@ -114,7 +114,7 @@ POST /api/v1/sessions
       -> credentials absent or Jev request fails
           -> calculate documented deterministic baseline
           -> provider = deterministic-baseline
-  -> store latest evaluation in process memory
+  -> persist latest evaluation through SessionStore
   -> return typed session + evaluation
   -> App renders every suitability score on its route card
 ```
@@ -172,3 +172,28 @@ session created
 ```
 
 Event cursors are independent from accepted state-update sequences. This keeps feed pagination contiguous even when below-threshold updates do not publish a decision.
+
+## Implemented Persistence Flow
+
+```text
+API startup
+  -> DATABASE_URL configured
+      -> create PostgresSessionStore connection pool
+      -> production session and event reads/writes use PostgreSQL
+  -> DATABASE_URL absent outside production
+      -> create isolated InMemorySessionStore
+  -> DATABASE_URL absent in production
+      -> fail startup
+
+state transition
+  -> load and validate stored SessionRecord
+  -> capture expected state_sequence
+  -> calculate next state and optional decision event
+  -> begin PostgreSQL transaction
+  -> update sessions WHERE state_sequence = expected
+      -> no row: commit no write and return 409 state_update_conflict
+      -> one row: insert new events idempotently and commit
+  -> application shutdown closes the connection pool
+```
+
+`apps/api/src/migrate.ts` applies `001_session_persistence.sql` before a new database is used.
