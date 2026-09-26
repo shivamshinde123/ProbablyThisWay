@@ -148,3 +148,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Application policy selects the valid route with the highest suitability. Exact ties preserve the validated hike's existing route order. The policy emits a separate typed recommendation using version `highest-suitability-v1`.
 - **Reasoning:** A pure deterministic step keeps final control outside Jev, makes outcomes repeatable, and creates a versioned boundary for adding hard constraints later.
 - **Consequences:** Signal green denotes the recommendation, orange preserves the user's original choice, and the UI continues to display all scores. Closure and restriction overrides remain required future policy inputs.
+
+## DEC-019 — Explain recommendations from validated facts
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** The MVP needs a short explanation, but optional LLM availability must not block or embellish the recommendation.
+- **Decision:** Build the first explanation deterministically from the winning route's estimated duration, daylight margin, exposure, and elevation. Return the copy and display facts in the typed recommendation contract. Frame the route once in Cesium and honor reduced-motion preferences.
+- **Reasoning:** Users receive immediate, auditable context from the exact evaluated inputs without introducing another model dependency or hidden reasoning.
+- **Consequences:** Explanations remain concise and factual. Future optional LLM wording may improve prose only if it preserves these facts and never delays the route update.

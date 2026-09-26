@@ -49,3 +49,9 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 | `policy.ts` | Select the highest-scoring valid route with deterministic tie-breaking | Typed evaluation and hike routes |
 | `RecommendationBanner` | Show the chosen route, suitability, policy version, and judgment reminder | Typed recommendation |
 | Recommendation-aware `TerrainMap` | Render recommended, originally selected, and alternative route states | Route IDs and recommendation score |
+
+## Phase 7 Component Behavior
+
+- `RecommendationBanner` renders the deterministic explanation and three evidence fields.
+- `TerrainMap` frames a new recommendation once using its coordinate-derived bounding sphere and honors reduced-motion preferences.
+- `App` exposes evaluation progress through `aria-busy` and a visible map status instrument.

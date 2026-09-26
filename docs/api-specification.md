@@ -49,7 +49,7 @@ Internal service endpoint that runs or queues an evaluation from the current per
 
 ### `GET /sessions/{sessionId}/evaluations/latest`
 
-Returns the typed route evaluation and deterministic recommendation. Constraint details and explanations will be added when those inputs are implemented.
+Returns the typed route evaluation and deterministic recommendation, including its concise explanation and display factors. Constraint details will be added when those inputs are implemented.
 
 ### `GET /sessions/{sessionId}/events?after={cursor}`
 
@@ -70,3 +70,7 @@ Schemas for unimplemented endpoints, authentication, pagination limits, and real
 `GET /sessions/{sessionId}/evaluations/latest` returns `{ "evaluation": RouteEvaluation, "recommendation": RouteRecommendation }` or a structured `404` with code `evaluation_not_found`. The current store is process memory and is replaced by persistence in a later stage.
 
 When `JEV_API_KEY` is configured, the server sends the shared hiking state and one typed Noul suitability question per valid route to the Jev endpoint. Missing credentials, timeout, transport errors, or invalid Jev responses use the explicitly labeled `deterministic-baseline` provider. The fallback is development continuity, not a claim of Jev inference.
+
+## Recommendation Explanation Fields
+
+`RouteRecommendation.explanation` is a concise deterministic summary derived from the selected route and the evaluated state snapshot. `factors` contains two or three display-ready `{ label, value }` facts. The current policy emits daylight margin, exposure, and elevation gain. These fields describe the score inputs and do not claim that a route is safe.

@@ -49,3 +49,7 @@ The API owns Jev credentials and calls the configured decision endpoint with a f
 ## Implemented Recommendation Policy
 
 `selectRouteRecommendation` is pure application policy. It indexes scores by route ID, considers only routes in the validated hike, and selects the greatest suitability. Exact ties retain the hike's stable route order. The result records `highest-suitability-v1`, the winning score, and a decision timestamp. Jev and the deterministic baseline only supply scores; neither controls the final route directly.
+
+## Deterministic Explanation and Camera Behavior
+
+The recommendation policy creates explanation copy only from validated route metrics and the same hiking-state snapshot used for evaluation. It does not generate hidden reasoning or call an LLM. The client renders those facts directly. When the recommendation first arrives, Cesium computes a bounding sphere from that route's coordinates and flies to it once; `prefers-reduced-motion` changes the transition duration to zero.

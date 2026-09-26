@@ -47,3 +47,11 @@ All controls require labels, keyboard access, visible focus, adequate contrast, 
 ## Implemented Recommendation State
 
 After session evaluation, the highest-ranked valid route changes to signal green on both the map and route list. The original pre-session choice remains orange when different, and other routes remain moss. A compact recommendation panel shows route name, suitability, policy version, and a reminder to compare against official guidance and actual field conditions.
+
+## Phase 7 Responsive and Motion Details
+
+- Evaluation displays a compact map-overlay instrument with explicit status text; it is also announced as a live status.
+- Recommendation evidence uses three columns on wide screens and one column below `560px`.
+- Below `900px`, the map occupies approximately 58% of the small viewport height before the decision panel.
+- The camera frames a recommendation over 1.6 seconds unless reduced motion is requested.
+- Error text provides a retry path through the unchanged session-start action.
