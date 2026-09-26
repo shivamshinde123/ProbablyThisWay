@@ -1,5 +1,8 @@
 # ProbablyThisWay — MVP Project Plan
 
+
+> **Historical design note:** This source plan predates DEC-043. The implemented hosted evaluator now uses OpenRouter with schema-validated scores; references to Jev below describe the original concept, not current configuration.
+
 ## 1. Project Goal
 
 Build a simple hiking decision-support application that combines:

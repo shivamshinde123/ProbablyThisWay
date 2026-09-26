@@ -44,8 +44,11 @@ services:
       TRAIL_SEARCH_API_BASE_URL: ${TRAIL_SEARCH_API_BASE_URL:-https://nominatim.openstreetmap.org/search}
       WEATHER_API_BASE_URL: ${WEATHER_API_BASE_URL:-https://api.open-meteo.com/v1/forecast}
       WEATHER_API_KEY: ${WEATHER_API_KEY:-}
-      JEV_API_URL: ${JEV_API_URL:-https://www.jevai.org/api/v1/decisions}
-      JEV_API_KEY: ${JEV_API_KEY:-}
+      OPENROUTER_API_URL: ${OPENROUTER_API_URL:-https://openrouter.ai/api/v1/chat/completions}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openrouter/auto}
+      OPENROUTER_SITE_URL: ${OPENROUTER_SITE_URL:-}
+      OPENROUTER_APP_NAME: ${OPENROUTER_APP_NAME:-ProbablyThisWay}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       TRUST_PROXY: "true"
       SESSION_RETENTION_DAYS: ${SESSION_RETENTION_DAYS:-30}

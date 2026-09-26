@@ -14,7 +14,7 @@ import { buildApp } from "./app.js";
 import { selectRouteRecommendation } from "./policy.js";
 import { InMemorySessionStore } from "./session-store.js";
 
-delete process.env.JEV_API_KEY;
+delete process.env.OPENROUTER_API_KEY;
 
 test("GET /api/v1/hikes/:hikeId returns three contract-valid route alternatives", async () => {
   const app = await buildApp();

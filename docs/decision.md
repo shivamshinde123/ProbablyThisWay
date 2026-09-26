@@ -133,7 +133,7 @@ Record material product and engineering decisions chronologically. Do not rewrit
 
 ## DEC-017 — Use a server-side Jev adapter with an explicit deterministic baseline
 
-- **Status:** Accepted
+- **Status:** Superseded by DEC-043
 - **Date:** 2026-09-25
 - **Context:** Jev is a hosted decision service requiring credentials, while contributors and automated tests need a functional local path.
 - **Decision:** Send the normalized state and one typed Noul question per valid route from the API when `JEV_API_KEY` is configured. Validate the response and fall back after four seconds or any invalid response to a deterministic, locally calculated score labeled `deterministic-baseline`.
@@ -371,3 +371,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Identify Open-Meteo as the sole implemented weather provider in both environment templates. Document the keyless public Forecast API as the default and require the Open-Meteo customer endpoint whenever a paid Customer API key is supplied.
 - **Reasoning:** Provider-specific instructions prevent users from purchasing or pasting an incompatible OpenWeatherMap or WeatherAPI credential and keep the free local setup simple.
 - **Consequences:** WEATHER_API_KEY remains backward-compatible but accepts only an Open-Meteo Customer API key. Commercial deployments must change both the endpoint and the key; free/non-commercial deployments leave the key empty.
+
+## DEC-043 — Replace the hosted Jev adapter with OpenRouter
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** The user chose OpenRouter for hosted route evaluation, but an OpenRouter key is not compatible with Jev's custom endpoint, Noul request format, or response shape.
+- **Decision:** Replace the Jev network adapter and environment variables with an OpenRouter Chat Completions adapter. Request strict JSON-schema output for every reviewed route, validate route membership and scores again in application code, record provider `openrouter`, and retain the labeled deterministic baseline on missing credentials or any provider failure. Default model routing to `openrouter/auto` while allowing an explicit `OPENROUTER_MODEL`.
+- **Reasoning:** A provider-native adapter prevents sending incompatible payloads, keeps the API key server-side, allows model choice without code changes, and preserves the deterministic safety/policy boundary.
+- **Consequences:** Operators create a key at `https://openrouter.ai/settings/keys` and set `OPENROUTER_API_KEY`. OpenRouter/model usage may incur cost and variable latency. The model supplies scores only; hard constraints and final route selection remain deterministic application code.
+- **Supersedes:** DEC-017's hosted Jev adapter. Earlier Jev references in this chronological log describe superseded design history.

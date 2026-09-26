@@ -37,7 +37,7 @@ The `ProbablyThisWay` repository is an npm-workspaces monorepo. The React/Vite c
   -> user chooses hike
   -> create session
       -> load trail and candidate routes
-      -> select approved Jev questions
+      -> load the versioned OpenRouter scoring prompt and schema
       -> assemble state snapshot
       -> evaluate every route
       -> apply deterministic route policy
@@ -72,7 +72,7 @@ There is no simulation-button or simulated-condition runtime path.
 web client -> CesiumJS and API contracts
 API contracts -> application use cases -> domain policy
                                     -> integration interfaces
-server integration adapters -> weather / Jev / PostgreSQL
+server integration adapters -> weather / OpenRouter / PostgreSQL
 ```
 
 Domain logic must remain independent of React, Cesium, HTTP frameworks, database drivers, and provider SDKs.
@@ -109,11 +109,11 @@ POST /api/v1/sessions
   -> validate hike and selected route
   -> initialize attributed weather state or explicit prototype-static fallback
   -> evaluateRoutes
-      -> JEV_API_KEY configured
-          -> send one shared state + one Noul question per valid route
-          -> validate bounded probabilities
-          -> provider = jev
-      -> credentials absent or Jev request fails
+      -> OPENROUTER_API_KEY configured
+          -> send shared state + reviewed route metadata with a strict JSON schema
+          -> validate complete, unique, bounded route scores
+          -> provider = openrouter
+      -> credentials absent or OpenRouter request/output fails
           -> calculate documented deterministic baseline
           -> provider = deterministic-baseline
   -> persist latest evaluation through SessionStore

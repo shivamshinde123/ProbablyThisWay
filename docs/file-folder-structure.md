@@ -14,7 +14,7 @@ The repository is an npm-workspaces monorepo. This map reflects the implemented 
 |   |   |   |-- server.ts             # API process entry point
 |   |   |   |-- session-state.ts      # State transition orchestration
 |   |   |   |-- session-store.ts      # PostgreSQL/in-memory persistence boundary
-|   |   |   |-- evaluation.ts         # Jev adapter and deterministic baseline
+|   |   |   |-- evaluation.ts         # OpenRouter adapter and deterministic baseline
 |   |   |   |-- policy.ts             # Hard constraints and recommendation policy
 |   |   |   |-- weather-adapter.ts    # Open-Meteo normalization
 |   |   |   |-- weather-refresh.ts    # Periodic refresh scheduler

@@ -87,7 +87,7 @@ The release exposes only the endpoints documented above. Sessions are anonymous 
 
 `GET /sessions/{sessionId}/evaluations/latest` returns `{ "evaluation": RouteEvaluation, "recommendation": RouteRecommendation }` or a structured `404` with code `evaluation_not_found`. The current store is PostgreSQL-backed when `DATABASE_URL` is configured, with an in-memory development/test fallback.
 
-When `JEV_API_KEY` is configured, the server sends the shared hiking state and one typed Noul suitability question per valid route to the Jev endpoint. Missing credentials, timeout, transport errors, or invalid Jev responses use the explicitly labeled `deterministic-baseline` provider. The fallback is development continuity, not a claim of Jev inference.
+When `OPENROUTER_API_KEY` is configured, the server sends the shared hiking state and reviewed route metadata to the OpenRouter chat-completions endpoint. The request requires strict JSON-schema output containing each route exactly once with a suitability value in `[0, 1]`; unknown, duplicate, missing, or out-of-range scores are rejected. Missing credentials, timeout, transport errors, non-success responses, or invalid model output use the explicitly labeled `deterministic-baseline` provider. The fallback is development continuity, not a claim of model inference.
 
 ## Recommendation Explanation Fields
 

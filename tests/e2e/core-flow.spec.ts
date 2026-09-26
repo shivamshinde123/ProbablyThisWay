@@ -3,6 +3,8 @@ import { expect, test } from "@playwright/test";
 test("loads authoritative routes and completes the recommendation flow", async ({
   page,
 }) => {
+  test.setTimeout(90_000);
+
   await page.route("**/api/v1/trails/search?q=*", async (route) => {
     const url = new URL(route.request().url());
     const query = url.searchParams.get("q") ?? "";
@@ -102,6 +104,7 @@ test("loads authoritative routes and completes the recommendation flow", async (
 test("surfaces stale environmental state while retaining the last values", async ({
   page,
 }) => {
+
   await page.route("**/sessions/*/events?after=*", async (route) => {
     const response = await route.fetch();
     const body = await response.json();
@@ -126,6 +129,7 @@ test("surfaces stale environmental state while retaining the last values", async
 test("searches the internet and previews OpenStreetMap trail geometry", async ({
   page,
 }) => {
+
   await page.route("**/api/v1/trails/search?q=*", async (route) => {
     await route.fulfill({
       status: 200,

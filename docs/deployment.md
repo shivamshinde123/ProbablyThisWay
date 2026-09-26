@@ -6,7 +6,7 @@ The repository ships a provider-neutral Docker Compose topology:
 
 ```text
 browser -> web (Nginx :8080) -> /api/* -> api (Fastify :3001) -> PostgreSQL 17
-                                      -> Open-Meteo / optional Jev
+                                      -> Open-Meteo / optional OpenRouter
                    migrate (one-shot) -> PostgreSQL before API startup
 ```
 
@@ -22,10 +22,10 @@ STATE_ADAPTER_TOKEN=replace-with-at-least-32-random-characters
 CORS_ALLOWED_ORIGINS=https://your-public-host.example
 VITE_CESIUM_ION_ACCESS_TOKEN=
 WEATHER_API_KEY=
-JEV_API_KEY=
+OPENROUTER_API_KEY=
 ```
 
-`POSTGRES_PASSWORD` and `STATE_ADAPTER_TOKEN` are required. Provider keys are optional: the Cesium token selects Cesium World Terrain instead of the keyless ArcGIS elevation default, and a Jev key enables hosted evaluation. Weather is specifically supplied by Open-Meteo: the public `https://api.open-meteo.com/v1/forecast` endpoint is keyless, while a paid/commercial account requires an Open-Meteo Customer API key from `https://dashboard.open-meteo.com/` plus `WEATHER_API_BASE_URL=https://customer-api.open-meteo.com/v1/forecast`. Do not place an OpenWeatherMap or WeatherAPI key in `WEATHER_API_KEY`. If the database password needs URL escaping, provide a complete URL-encoded `DATABASE_URL` override.
+`POSTGRES_PASSWORD` and `STATE_ADAPTER_TOKEN` are required. Provider keys are optional: the Cesium token selects Cesium World Terrain instead of the keyless ArcGIS elevation default, and a server-only OpenRouter key enables hosted evaluation. Weather is specifically supplied by Open-Meteo: the public `https://api.open-meteo.com/v1/forecast` endpoint is keyless, while a paid/commercial account requires an Open-Meteo Customer API key from `https://dashboard.open-meteo.com/` plus `WEATHER_API_BASE_URL=https://customer-api.open-meteo.com/v1/forecast`. Do not place an OpenWeatherMap or WeatherAPI key in `WEATHER_API_KEY`. If the database password needs URL escaping, provide a complete URL-encoded `DATABASE_URL` override.
 
 ## Build and start
 

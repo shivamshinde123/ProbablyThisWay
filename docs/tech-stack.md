@@ -8,7 +8,7 @@
 | Language | TypeScript | Typed frontend and service code |
 | 3D map | CesiumJS with Vite static asset copying | Keyless ArcGIS elevation terrain or optional Cesium World Terrain, trails, route overlays, camera controls, and attribution |
 | Backend | Node.js | API and orchestration layer |
-| Decision engine | Jev | Structured route suitability evaluation |
+| Decision engine | OpenRouter Chat Completions | Configurable model routing with strict structured route-suitability output |
 | Database | PostgreSQL 17 | Durable session, evaluation, event, migration, and retention persistence |
 
 ## Supporting Choices
@@ -32,8 +32,8 @@
 
 - Prefer stable, well-supported libraries.
 - Keep route generation and policy deterministic.
-- Treat the approved deterministic Jev question catalog and structured explanation fields as the release contract.
-- Isolate external map, weather, trail, and Jev integrations behind adapters.
+- Treat the versioned route-suitability prompt, JSON schema, and deterministic explanation fields as the release contract.
+- Isolate external map, weather, trail, and OpenRouter integrations behind adapters.
 
 ## Authoritative Trail Data
 

@@ -435,9 +435,11 @@ export function App() {
           {evaluation ? (
             <p className="evaluation-source">
               Question set {evaluation.questionSetVersion} ·{" "}
-              {evaluation.provider === "jev"
-                ? "Jev evaluation"
-                : "deterministic baseline"}
+              {evaluation.provider === "openrouter"
+                ? "OpenRouter evaluation"
+                : evaluation.provider === "jev"
+                  ? "legacy Jev evaluation"
+                  : "deterministic baseline"}
             </p>
           ) : null}
           {session ? (

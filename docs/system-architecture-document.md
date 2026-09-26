@@ -6,8 +6,8 @@ The system separates geospatial truth, changing hike state, decision evaluation,
 
 ```text
 reviewed route snapshot -----> candidate routes ----+
-live weather + user state ---> session state -------+--> Jev/baseline scores
-approved question catalog --------------------------+          |
+live weather + user state ---> session state -------+--> OpenRouter/baseline scores
+versioned score schema --------------------------+          |
                                                                v
                                                 deterministic policy
                                                                |
@@ -20,15 +20,15 @@ approved question catalog --------------------------+          |
 - **Web client:** selection, 3D visualization, HUD, route cards, and decision feed.
 - **Application API:** session orchestration, validation, state updates, and read models.
 - **GIS/routing:** reviewed Massachusetts DCR trail snapshot, official route metrics, terrain clamping, and valid alternatives.
-- **Decision service:** prepares questions and invokes Jev.
+- **Decision service:** prepares a bounded scoring request and invokes OpenRouter.
 - **Policy service:** chooses the recommendation from structured scores and hard constraints.
-- **Integration adapters:** weather, trail data, Jev, and PostgreSQL.
+- **Integration adapters:** weather, trail data, OpenRouter, and PostgreSQL.
 - **Database:** durable session, state, evaluation, migration, and event persistence; route geometry remains a versioned source snapshot.
 
 ## Key Rules
 
-- Jev produces structured suitability scores; deterministic application policy alone selects the final route.
-- The approved deterministic question catalog is the release question source. No LLM runtime or credential is required.
+- OpenRouter produces schema-validated suitability scores; deterministic application policy alone selects the final route.
+- The versioned prompt and JSON schema bound hosted evaluation. No model credential is required because missing or failed OpenRouter calls use the visibly labeled deterministic baseline.
 - Route geometry comes from trusted geospatial data, not generated text.
 - Re-evaluation is event/threshold driven and automatic; there is no simulation control.
 - Legal status, closures, restrictions, and prohibitive advisories override suitability before route selection; return no route when all candidates are excluded.
@@ -44,7 +44,7 @@ The API combines session orchestration, live weather initialization and periodic
 
 ## Internet Discovery Boundary
 
-The browser submits a search to the Fastify API; it never calls the public geocoder directly. The API serializes and caches Nominatim requests, validates GeoJSON through shared contracts, and returns attributed preview geometry. This discovery path does not write to PostgreSQL and does not enter the Jev/policy pipeline. Reviewed route snapshots remain the only source for field-session alternatives and recommendations.
+The browser submits a search to the Fastify API; it never calls the public geocoder directly. The API serializes and caches Nominatim requests, validates GeoJSON through shared contracts, and returns attributed preview geometry. This discovery path does not write to PostgreSQL and does not enter the OpenRouter/policy pipeline. Reviewed route snapshots remain the only source for field-session alternatives and recommendations.
 
 ## Terrain Provider Boundary
 
