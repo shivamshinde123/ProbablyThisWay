@@ -7,7 +7,7 @@
 3. At session start, the question service loads a deterministic approved Jev question set. If the optional LLM integration is enabled, it may select a bounded subset; unavailable or invalid LLM output falls back to the approved default set.
 4. The state service requests and validates configured live weather/daylight, or produces a visibly labeled static fallback when the provider is absent or unavailable.
 5. Jev evaluates each candidate route using the same snapshot and questions.
-6. Policy rejects hard-constraint violations, ranks remaining routes, and selects one.
+6. Policy rejects hard-constraint violations, ranks remaining routes, and selects one or returns an explicit unavailable decision.
 7. API persists the evaluation and emits a decision event.
 8. Client updates route styling, cards, HUD, and feed.
 
@@ -51,7 +51,7 @@ The API owns Jev credentials and calls the configured decision endpoint with a f
 
 ## Implemented Recommendation Policy
 
-`selectRouteRecommendation` is pure application policy. It indexes scores by route ID, considers only routes in the validated hike, and selects the greatest suitability. Exact ties retain the hike's stable route order. The result records `highest-suitability-v1`, the winning score, and a decision timestamp. Jev and the deterministic baseline only supply scores; neither controls the final route directly.
+`selectRouteRecommendation` is pure application policy. It validates route membership, removes hard-excluded routes, and selects the greatest remaining suitability with stable route-order ties. New results record `hard-constraints-v2`, audited exclusions, and a decision timestamp; when no route remains, the result is explicitly unavailable. Jev and the deterministic baseline only supply scores; neither controls the final route directly.
 
 ## Deterministic Explanation and Camera Behavior
 
@@ -76,3 +76,9 @@ Weather is opt-in outside production and required in production through `WEATHER
 The checked-in Wachusett catalog contains the DCR Pine Hill, Mountain House, and Harrington summit corridors. `scripts/import-dcr-trails.mjs` requests explicit feature IDs from the public DCR ArcGIS layer, validates that every segment is present and marked legal, rejects gaps over 20 meters, converts coordinates to WGS84 triples, and regenerates the immutable TypeScript snapshot. API startup parses the snapshot through the shared route schema. Source URL, dataset timestamp, feature IDs, legal status, and recorded condition remain attached to every route.
 
 The DCR line layer has no elevation coordinates or exposure rating. Generated coordinates therefore carry zero as an explicit unavailable elevation value for Cesium ground clamping; official trail-map distance, elevation change, and duration populate route metrics. Exposure is `unknown` and receives the conservative deterministic baseline value rather than an inferred favorable value. This snapshot does not replace current posted closure checks.
+
+## Hard-Constraint Policy
+
+Every route carries `legalStatus`, `accessStatus`, and typed restrictions. `selectRouteRecommendation` first builds audited exclusion reasons, then ranks only eligible routes. Illegal, closed, restricted, and `prohibitive` restriction records are hard exclusions; `advisory` records do not block ranking. If no score belongs to an eligible route, the policy returns `status: unavailable` rather than a route ID.
+
+The recommendation schema accepts stored v1 decisions by defaulting them to `status: recommended` with an empty exclusion list. New decisions use `hard-constraints-v2`. An unknown access status is displayed and is not interpreted as open; the UI continues to direct users to current official notices.

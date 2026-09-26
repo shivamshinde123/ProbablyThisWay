@@ -142,12 +142,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 
 ## DEC-018 — Rank by suitability with stable route-order ties
 
-- **Status:** Accepted
+- **Status:** Superseded
 - **Date:** 2026-09-25
 - **Context:** Phase 6 needs an auditable recommendation from model-produced route scores, while current route data has no closure or hard-constraint fields.
 - **Decision:** Application policy selects the valid route with the highest suitability. Exact ties preserve the validated hike's existing route order. The policy emits a separate typed recommendation using version `highest-suitability-v1`.
 - **Reasoning:** A pure deterministic step keeps final control outside Jev, makes outcomes repeatable, and creates a versioned boundary for adding hard constraints later.
-- **Consequences:** Signal green denotes the recommendation, orange preserves the user's original choice, and the UI continues to display all scores. Closure and restriction overrides remain required future policy inputs.
+- **Consequences:** Signal green denotes the recommendation, orange preserves the user's original choice, and the UI continues to display all scores. The missing closure and restriction override was resolved by DEC-029.
+- **Superseded by:** DEC-029.
 
 ## DEC-019 — Explain recommendations from validated facts
 
@@ -242,3 +243,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** A reproducible local snapshot avoids a runtime dependency while keeping every coordinate traceable to a public agency dataset. Validation prevents accidental route changes from entering the application silently.
 - **Consequences:** Geometry is authoritative to the source snapshot but not a live closure feed or navigation guarantee. DCR supplies no exposure rating, so exposure remains explicitly unknown and the deterministic baseline treats it conservatively. Refreshes are intentional through `npm run data:refresh:dcr` and require review of the generated diff.
 - **Supersedes:** The preview-geometry plan and launch-trail TBD.
+
+## DEC-029 — Apply route access constraints before suitability ranking
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Suitability scores could select a route even when an authoritative source marked it illegal, closed, restricted, or subject to a prohibitive rule.
+- **Decision:** Add typed access status and restrictions to every route. Policy version `hard-constraints-v2` removes illegal, closed, restricted, and prohibitively constrained routes before comparing scores. It returns a typed unavailable decision with audited exclusion reasons when nothing remains. Advisory restrictions remain visible but do not exclude a route. Legacy `highest-suitability-v1` decisions are parsed with backward-compatible defaults.
+- **Reasoning:** Official constraints must dominate probabilistic or baseline suitability. A no-route result is safer and more truthful than choosing the highest score from an ineligible set.
+- **Consequences:** The UI disables known-ineligible routes, suppresses map recommendation highlighting when no route is eligible, and presents exclusion reasons assertively. The current DCR geometry snapshot does not provide live operating status, so its routes remain explicitly `unknown`; users are directed to current notices until an advisory adapter supplies newer status.
+- **Supersedes:** The missing closure/restriction override noted in DEC-018.

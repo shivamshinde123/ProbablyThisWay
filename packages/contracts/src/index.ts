@@ -14,7 +14,9 @@ export const routeFeatureSchema = z.object({
   properties: z.object({
     id: z.string().min(1), name: z.string().min(1), source: z.string().min(1), sourceUrl: z.string().url(),
     datasetUpdatedAt: z.string().datetime(), segmentIds: z.array(z.number().int().positive()).min(1),
-    legalStatus: z.enum(["legal", "illegal", "unknown"]), condition: z.enum(["good", "fair", "poor", "mixed", "unknown"]),
+    legalStatus: z.enum(["legal", "illegal", "unknown"]), accessStatus: z.enum(["open", "closed", "restricted", "unknown"]).default("unknown"),
+    restrictions: z.array(z.object({ id: z.string().min(1), kind: z.enum(["prohibitive", "advisory"]), summary: z.string().min(1), sourceUrl: z.string().url() })).default([]),
+    condition: z.enum(["good", "fair", "poor", "mixed", "unknown"]),
     dataQuality: z.enum(["preview", "authoritative"]), distanceMiles: z.number().positive(),
     elevationSource: z.enum(["official-trail-map", "provider", "terrain", "not-provided"]),
     elevationGainFeet: z.number().nonnegative(), estimatedMinutes: z.number().int().positive(),
@@ -61,12 +63,20 @@ export const routeEvaluationSchema = z.object({
   scores: z.array(routeSuitabilitySchema).min(2),
 });
 export type RouteEvaluation = z.infer<typeof routeEvaluationSchema>;
-export const routeRecommendationSchema = z.object({
-  routeId: z.string().min(1), suitability: z.number().min(0).max(1),
-  policyVersion: z.literal("highest-suitability-v1"), decidedAt: z.string().datetime(),
-  explanation: z.string().min(1),
-  factors: z.array(z.object({ label: z.string().min(1), value: z.string().min(1) })).min(2).max(3),
+const recommendationFactorSchema = z.object({ label: z.string().min(1), value: z.string().min(1) });
+const excludedRouteSchema = z.object({ routeId: z.string().min(1), reasons: z.array(z.string().min(1)).min(1) });
+const recommendedRouteSchema = z.object({
+  status: z.literal("recommended").default("recommended"), routeId: z.string().min(1), suitability: z.number().min(0).max(1),
+  policyVersion: z.enum(["highest-suitability-v1", "hard-constraints-v2"]), decidedAt: z.string().datetime(),
+  explanation: z.string().min(1), factors: z.array(recommendationFactorSchema).min(2).max(3),
+  excludedRoutes: z.array(excludedRouteSchema).default([]),
 });
+const unavailableRouteSchema = z.object({
+  status: z.literal("unavailable"), policyVersion: z.literal("hard-constraints-v2"), decidedAt: z.string().datetime(),
+  explanation: z.string().min(1), factors: z.array(recommendationFactorSchema).min(1).max(3),
+  excludedRoutes: z.array(excludedRouteSchema).min(1),
+});
+export const routeRecommendationSchema = z.union([recommendedRouteSchema, unavailableRouteSchema]);
 export type RouteRecommendation = z.infer<typeof routeRecommendationSchema>;
 export const latestDecisionSchema = z.object({ evaluation: routeEvaluationSchema, recommendation: routeRecommendationSchema });
 export type LatestDecision = z.infer<typeof latestDecisionSchema>;

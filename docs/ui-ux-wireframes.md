@@ -62,4 +62,4 @@ After session start, a compact field-log panel appears below the recommendation.
 
 ## Trail Provenance State
 
-The selected-hike card links to the Massachusetts DCR geometry source and displays its dataset date. Route cards show `unknown` rather than inferring exposure. Persistent safety copy tells users to check current DCR notices and posted closures because the checked-in geometry is not a live advisory feed.
+The selected-hike card links to the Massachusetts DCR geometry source and displays its dataset date. Route cards show `unknown` rather than inferring exposure or access. Known hard exclusions disable the route, replace its score with an Excluded label, and list reasons in a no-route alert when every option is blocked. Persistent safety copy tells users to check current DCR notices and posted closures because the checked-in geometry is not a live advisory feed.

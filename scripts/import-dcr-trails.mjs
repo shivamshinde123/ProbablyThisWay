@@ -49,7 +49,8 @@ const generatedRoutes = routes.map((route) => {
     geometry: { type: "LineString", coordinates },
     properties: {
       id: route.id, name: route.name, source: "Massachusetts DCR Roads and Trails", sourceUrl, datasetUpdatedAt,
-      segmentIds: route.segments.map(([id]) => id), legalStatus: "legal", condition: conditions.size === 1 ? [...conditions][0] : "mixed",
+      segmentIds: route.segments.map(([id]) => id), legalStatus: "legal", accessStatus: "unknown", restrictions: [],
+      condition: conditions.size === 1 ? [...conditions][0] : "mixed",
       dataQuality: "authoritative", elevationSource: "official-trail-map", distanceMiles: route.distanceMiles,
       elevationGainFeet: route.elevationGainFeet, estimatedMinutes: route.estimatedMinutes, exposure: "unknown",
     },

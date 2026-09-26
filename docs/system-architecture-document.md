@@ -30,6 +30,7 @@ Question configuration <──── optional LLM enhancement ──────
 - The approved deterministic question catalog is sufficient to start a session. LLM question selection is an optional enhancement and must fall back to that catalog.
 - Route geometry comes from trusted geospatial data, not generated text.
 - Re-evaluation is event/threshold driven and automatic; there is no simulation control.
+- Legal status, closures, restrictions, and prohibitive advisories override suitability before route selection; return no route when all candidates are excluded.
 - Every recommendation records its input snapshot, question set, scores, policy outcome, and timestamp.
 
 ## Deployment

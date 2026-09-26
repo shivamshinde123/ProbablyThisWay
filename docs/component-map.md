@@ -26,7 +26,7 @@
 | Route service | Candidate geometry and metrics | GIS/PostGIS |
 | Question service | Approved Jev question set | Catalog, optional LLM |
 | Evaluation service | Evaluate every route | Jev adapter |
-| Route policy | Constraints, ranking, final choice | Evaluation results |
+| Route policy | Exclude illegal, closed, restricted, or prohibitively constrained routes; rank eligible routes or return unavailable | Evaluation results and typed route access metadata |
 | Event service | Persist/serve decision feed | Database |
 | Explanation service | Optional concise rationale | Structured decision, optional LLM |
 

@@ -8,6 +8,7 @@ import {
   type DecisionEvent,
   type HikeDetail,
   type RouteEvaluation,
+  type RouteFeature,
   type RouteRecommendation,
   type Session,
 } from "@probably-this-way/contracts";
@@ -17,6 +18,11 @@ import { SessionHud } from "./components/SessionHud";
 
 const TerrainMap = lazy(() => import("./components/TerrainMap").then((module) => ({ default: module.TerrainMap })));
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001/api/v1";
+
+const isRouteBlocked = (route: RouteFeature) => route.properties.legalStatus !== "legal"
+  || route.properties.accessStatus === "closed"
+  || route.properties.accessStatus === "restricted"
+  || route.properties.restrictions.some((restriction) => restriction.kind === "prohibitive");
 
 export function App() {
   const [hike, setHike] = useState<HikeDetail>();
@@ -42,7 +48,7 @@ export function App() {
         if (!detailResponse.ok) throw new Error("Hike detail returned " + detailResponse.status);
         const detail = hikeDetailSchema.parse(await detailResponse.json());
         setHike(detail);
-        setSelectedRouteId(detail.routes[0]?.properties.id);
+        setSelectedRouteId(detail.routes.find((route) => !isRouteBlocked(route))?.properties.id);
         setStatus("ready");
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
@@ -137,19 +143,24 @@ export function App() {
 
   const routes = hike?.routes ?? [];
   const scoresByRoute = new Map(evaluation?.scores.map((score) => [score.routeId, score]));
-  const recommendedRoute = routes.find((route) => route.properties.id === recommendation?.routeId);
+  const recommendedRouteId = recommendation?.status === "recommended" ? recommendation.routeId : undefined;
+  const recommendedRoute = routes.find((route) => route.properties.id === recommendedRouteId);
+  const excludedRouteIds = new Set(recommendation?.excludedRoutes.map((route) => route.routeId) ?? []);
   const isEvaluating = status === "starting";
+  let sessionLabel = "Field system · standby";
+  if (session) sessionLabel = "Session active";
+  if (recommendation) sessionLabel = recommendation.status === "recommended" ? "Recommendation ready" : "No eligible route";
 
   return (
     <main className="app-shell">
       <header className="masthead">
         <a className="wordmark" href="/" aria-label="ProbablyThisWay home"><span className="waymark">PTW</span><span>ProbablyThisWay</span></a>
-        <div className="session-state" data-ready={Boolean(recommendation)}><span /> {recommendation ? "Recommendation ready" : session ? "Session active" : "Field system · standby"}</div>
+        <div className="session-state" data-ready={Boolean(recommendation)}><span /> {sessionLabel}</div>
       </header>
       <section className="hero-grid">
         <div className="map-stage" aria-busy={isEvaluating}>
           <Suspense fallback={<div className="map-loading">Loading terrain engine…</div>}>
-            <TerrainMap routes={routes} selectedRouteId={selectedRouteId} recommendedRouteId={recommendation?.routeId} recommendationSuitability={recommendation?.suitability} />
+            <TerrainMap routes={routes} selectedRouteId={selectedRouteId} recommendedRouteId={recommendedRouteId} recommendationSuitability={recommendation?.status === "recommended" ? recommendation.suitability : undefined} />
           </Suspense>
           {isEvaluating ? <div className="decision-progress" role="status"><span /><div><strong>Evaluating route fit</strong><small>State + alternatives → policy</small></div></div> : null}
           {session ? <SessionHud session={session} /> : null}
@@ -166,18 +177,19 @@ export function App() {
           <div className="route-options" aria-label="Route alternatives">
             {routes.map((route, index) => {
               const active = route.properties.id === selectedRouteId;
-              const isRecommended = route.properties.id === recommendation?.routeId;
+              const isRecommended = route.properties.id === recommendedRouteId;
+              const isExcluded = excludedRouteIds.has(route.properties.id) || isRouteBlocked(route);
               const score = scoresByRoute.get(route.properties.id);
               return (
-                <button key={route.properties.id} type="button" className="route-option" data-active={active} data-recommended={isRecommended} aria-pressed={active} disabled={Boolean(session) || isEvaluating} onClick={() => setSelectedRouteId(route.properties.id)}>
+                <button key={route.properties.id} type="button" className="route-option" data-active={active} data-recommended={isRecommended} data-excluded={isExcluded} aria-pressed={active} disabled={isExcluded || Boolean(session) || isEvaluating} onClick={() => setSelectedRouteId(route.properties.id)}>
                   <span className="route-index">0{index + 1}</span>
-                  <span className="route-copy"><strong>{route.properties.name}{isRecommended ? <small className="recommended-tag">Recommended</small> : null}</strong><small>{route.properties.distanceMiles} mi · +{route.properties.elevationGainFeet.toLocaleString("en-US")} ft · {route.properties.estimatedMinutes} min</small></span>
-                  {score ? <span className="suitability"><b>{Math.round(score.suitability * 100)}</b><small>% fit</small></span> : <span className={"exposure exposure-" + route.properties.exposure}>{route.properties.exposure}</span>}
+                  <span className="route-copy"><strong>{route.properties.name}{isRecommended ? <small className="recommended-tag">Recommended</small> : null}</strong><small>{route.properties.distanceMiles} mi · +{route.properties.elevationGainFeet.toLocaleString("en-US")} ft · {route.properties.estimatedMinutes} min · access {route.properties.accessStatus}</small></span>
+                  {isExcluded ? <span className="route-excluded">Excluded</span> : score ? <span className="suitability"><b>{Math.round(score.suitability * 100)}</b><small>% fit</small></span> : <span className={"exposure exposure-" + route.properties.exposure}>{route.properties.exposure}</span>}
                 </button>
               );
             })}
           </div>
-          {recommendation && recommendedRoute ? <RecommendationBanner routeName={recommendedRoute.properties.name} recommendation={recommendation} /> : null}
+          {recommendation ? <RecommendationBanner routeName={recommendedRoute?.properties.name} recommendation={recommendation} /> : null}
           {evaluation ? <p className="evaluation-source">Question set {evaluation.questionSetVersion} · {evaluation.provider === "jev" ? "Jev evaluation" : "deterministic baseline"}</p> : null}
           {session ? <DecisionFeed events={events} status={feedStatus} /> : null}
           <button className="primary-action" type="button" disabled={!selectedRouteId || isEvaluating || Boolean(session)} onClick={() => void startSession()} aria-describedby="safety-note">

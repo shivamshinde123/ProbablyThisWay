@@ -30,7 +30,9 @@ export function DecisionFeed({ events, status }: DecisionFeedProps) {
       ) : (
         <ol aria-live="polite">
           {[...events.slice(-4)].reverse().map((event) => {
-            const routeName = event.decision.recommendation.routeId.replaceAll("-", " ");
+            const routeName = event.decision.recommendation.status === "recommended"
+              ? event.decision.recommendation.routeId.replaceAll("-", " ")
+              : "no eligible route";
             const trigger = event.crossedThresholds.map((field) => thresholdLabels[field] ?? field).join(", ");
             return (
               <li key={event.id}>

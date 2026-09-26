@@ -302,3 +302,18 @@ npm run data:refresh:dcr
   -> hike endpoint exposes geometry plus provenance
   -> web map renders routes and links to DCR source
 ```
+
+## Route Constraint Flow
+
+```text
+typed routes + suitability scores
+  -> collect legal/access/restriction exclusion reasons
+  -> remove hard-excluded routes before ranking
+  -> eligible routes exist
+       -> select highest suitability with stable route-order ties
+       -> return recommended + audited exclusions
+  -> no eligible routes
+       -> return unavailable + every exclusion reason
+  -> persist and publish the typed decision
+  -> UI disables excluded cards and removes recommendation highlight
+```

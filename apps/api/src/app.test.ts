@@ -37,6 +37,8 @@ test("POST /api/v1/sessions creates a typed static-state session", async () => {
   assert.equal(body.evaluation.provider, "deterministic-baseline");
   assert.equal(body.evaluation.scores.length, 3);
   assert.ok(body.evaluation.scores.every((score) => score.suitability >= 0 && score.suitability <= 1));
+  assert.equal(body.recommendation.status, "recommended");
+  if (body.recommendation.status !== "recommended") throw new Error("Expected a recommendation");
   assert.equal(body.recommendation.routeId, "pine-hill-summit");
   assert.equal(body.recommendation.suitability, Math.max(...body.evaluation.scores.map((score) => score.suitability)));
   assert.match(body.recommendation.explanation, /Pine Hill Trail ranks highest/);
@@ -80,6 +82,8 @@ test("route policy resolves equal scores by stable route order", async () => {
     daylight: { sunsetAt: new Date(Date.now() + 159 * 60_000).toISOString(), remainingMinutes: 159 },
     user: { paceMph: 2.1, fatigue: "low" },
   });
+  assert.equal(recommendation.status, "recommended");
+  if (recommendation.status !== "recommended") throw new Error("Expected a recommendation");
   assert.equal(recommendation.routeId, hike.routes[0]?.properties.id);
   await app.close();
 });
