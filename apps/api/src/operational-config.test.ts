@@ -12,10 +12,12 @@ test("operational config resolves multiple origins and bounded defaults", () => 
   assert.equal(config.rateLimitMax, 120);
   assert.equal(config.rateLimitWindowMs, 60_000);
   assert.equal(config.eventPageSize, 50);
+  assert.equal(config.trustProxy, false);
 });
 
 test("operational config validates production CORS and numeric bounds", () => {
   assert.throws(() => resolveOperationalConfig({ NODE_ENV: "production" }), /CORS_ALLOWED_ORIGINS or WEB_ORIGIN is required/);
   assert.throws(() => resolveOperationalConfig({ RATE_LIMIT_MAX: "0" }), /RATE_LIMIT_MAX/);
   assert.throws(() => resolveOperationalConfig({ EVENT_PAGE_SIZE: "101" }), /EVENT_PAGE_SIZE/);
+  assert.throws(() => resolveOperationalConfig({ TRUST_PROXY: "yes" }), /TRUST_PROXY/);
 });

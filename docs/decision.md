@@ -291,3 +291,11 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** The MVP needs short-lived operational continuity, not indefinite behavioral history. Using the last write protects active sessions while limiting stored state.
 - **Consequences:** Expired session URLs return not found and cannot be restored by the application. Every API replica may sweep safely because deletion is idempotent. Personal GPS history remains out of scope.
 - **Supersedes:** The retention-policy follow-ups in DEC-020, DEC-023, and the technical design.
+## DEC-034 — Ship provider-neutral production containers
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Production artifacts existed, but there was no reproducible runtime topology, migration gate, reverse proxy, or deploy-time image verification.
+- **Decision:** Build pinned Node/Alpine API and web-builder stages, serve the web bundle through pinned Nginx, proxy same-origin `/api` traffic, and provide Compose orchestration for PostgreSQL, one-shot migrations, API readiness, and web startup. Build both images in pull-request CI.
+- **Reasoning:** Containers make the tested runtime portable without prematurely selecting a cloud provider, registry, DNS service, or secret manager.
+- **Consequences:** Operators must inject required credentials, terminate TLS, manage backups, and translate the topology to their platform. The shipped single-instance process-local rate limit and refresh scheduler require shared coordination before horizontal scaling.

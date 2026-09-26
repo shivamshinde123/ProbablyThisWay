@@ -126,3 +126,11 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 | `retention.ts` | Validate retention settings and schedule cutoff sweeps | `SessionStore.purgeExpired` |
 | In-memory/PostgreSQL stores | Delete records older than the cutoff | Session activity timestamps; database cascade |
 | `sessions_updated_at_idx` | Keep PostgreSQL age scans indexable | Migration 002 |
+## Deployment Components
+
+| Component | Responsibility | Depends on |
+|---|---|---|
+| API Dockerfile | Build contracts/API and run Fastify as the unprivileged Node user | Node 22.23.3 Alpine image |
+| Web Dockerfile + Nginx | Build the Vite bundle, serve static assets, and proxy same-origin API traffic | Nginx 1.30.5 Alpine image |
+| `compose.yaml` migration service | Gate API startup on PostgreSQL health and tracked migration success | PostgreSQL 17.11 and API image |
+| GitHub Actions container steps | Validate Compose and prove both images build from a clean checkout | Docker on Ubuntu runner |

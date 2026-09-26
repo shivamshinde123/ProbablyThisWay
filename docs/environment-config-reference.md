@@ -20,6 +20,7 @@ Implemented variables and planned integrations are listed below. Planned entries
 | `STATE_ADAPTER_TOKEN` | Yes in production | Yes | Bearer credential for `PATCH /sessions/{sessionId}/state`; minimum 32 characters when configured |
 | `LLM_API_KEY` | TBD | Yes | Optional question/explanation provider credential |
 | `LOG_LEVEL` | No | No | Fastify/Pino verbosity; defaults to `info`; accepts `trace`, `debug`, `info`, `warn`, `error`, `fatal`, or `silent` |
+| `TRUST_PROXY` | No | No | Trust reverse-proxy forwarding headers; defaults to `false`; set only behind a controlled proxy such as the shipped Nginx service |
 | `CORS_ALLOWED_ORIGINS` | Yes in production | No | Comma-separated browser origins; supersedes the single-origin `WEB_ORIGIN` fallback |
 | `RATE_LIMIT_MAX` | No | No | Maximum non-health requests per process and client IP during the configured window; defaults to `120`; integer 1-10000 |
 | `RATE_LIMIT_WINDOW_MS` | No | No | Rate-limit window in milliseconds; defaults to `60000`; integer 1000-3600000 |

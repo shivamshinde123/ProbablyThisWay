@@ -68,5 +68,16 @@ jobs:
       - name: Build production artifacts
         run: npm run build
 
+      - name: Validate production Compose configuration
+        run: docker compose config --quiet
+        env:
+          POSTGRES_PASSWORD: ci-postgres-password
+          STATE_ADAPTER_TOKEN: 0123456789abcdef0123456789abcdef
+
+      - name: Build production containers
+        run: |
+          docker build --file apps/api/Dockerfile --tag probably-this-way-api:ci .
+          docker build --file apps/web/Dockerfile --tag probably-this-way-web:ci .
+
       - name: Run browser tests
         run: npm run test:e2e

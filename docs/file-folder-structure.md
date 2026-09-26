@@ -124,3 +124,10 @@ apps/api/src/generated/wachusett-routes.ts    # Generated, reviewed DCR WGS84 sn
 - `apps/api/src/retention.ts` — bounded retention configuration and background sweep lifecycle.
 - `apps/api/src/retention.test.ts` — configuration and cutoff behavior.
 - `apps/api/src/session-store.ts` — in-memory and PostgreSQL cutoff deletion implementations.
+### Production Packaging
+
+- `.dockerignore` — excludes local, secret, dependency, build, and test artifacts from image contexts.
+- `apps/api/Dockerfile` — pinned multi-stage API image.
+- `apps/web/Dockerfile` and `apps/web/nginx.conf` — pinned static web/reverse-proxy image.
+- `compose.yaml` — PostgreSQL, migration, API, and web lifecycle orchestration.
+- `docs/deployment.md` — operator build, verification, update, rollback, and provider handoff runbook.
