@@ -20,7 +20,12 @@ test("threshold detector reports each supported material change", () => {
     user: { paceMph: 1.7, fatigue: "moderate" },
   };
   assert.deepEqual(detectRelevantThresholds(baseline, current), [
-    "temperatureF", "windMph", "rainProbability", "remainingMinutes", "paceMph", "fatigue",
+    "temperatureF",
+    "windMph",
+    "rainProbability",
+    "remainingMinutes",
+    "paceMph",
+    "fatigue",
   ]);
 });
 

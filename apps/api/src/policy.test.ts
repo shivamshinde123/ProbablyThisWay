@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
-import { routeEvaluationSchema, routeFeatureSchema, type HikingState, type RouteFeature } from "@probably-this-way/contracts";
+import {
+  routeEvaluationSchema,
+  routeFeatureSchema,
+  type HikingState,
+  type RouteFeature,
+} from "@probably-this-way/contracts";
 import { selectRouteRecommendation } from "./policy.js";
 import { hikeDetails } from "./route-catalog.js";
 
@@ -13,8 +18,14 @@ const state: HikingState = {
   user: { paceMph: 2.2, fatigue: "low" },
 };
 
-function withAccess(route: RouteFeature, properties: Partial<RouteFeature["properties"]>): RouteFeature {
-  return routeFeatureSchema.parse({ ...route, properties: { ...route.properties, ...properties } });
+function withAccess(
+  route: RouteFeature,
+  properties: Partial<RouteFeature["properties"]>,
+): RouteFeature {
+  return routeFeatureSchema.parse({
+    ...route,
+    properties: { ...route.properties, ...properties },
+  });
 }
 
 function evaluation(routes: RouteFeature[], scores: number[]) {
@@ -25,7 +36,10 @@ function evaluation(routes: RouteFeature[], scores: number[]) {
     createdAt: state.observedAt,
     questionSetVersion: "route-suitability-v1",
     provider: "deterministic-baseline",
-    scores: routes.map((route, index) => ({ routeId: route.properties.id, suitability: scores[index] })),
+    scores: routes.map((route, index) => ({
+      routeId: route.properties.id,
+      suitability: scores[index],
+    })),
   });
 }
 
@@ -37,11 +51,20 @@ test("hard constraints exclude a higher-scoring closed route before ranking", ()
     withAccess(sourceRoutes[1]!, { accessStatus: "open" }),
     withAccess(sourceRoutes[2]!, { accessStatus: "open" }),
   ];
-  const recommendation = selectRouteRecommendation(evaluation(routes, [0.99, 0.72, 0.61]), routes, state);
+  const recommendation = selectRouteRecommendation(
+    evaluation(routes, [0.99, 0.72, 0.61]),
+    routes,
+    state,
+  );
   assert.equal(recommendation.status, "recommended");
   if (recommendation.status !== "recommended") return;
   assert.equal(recommendation.routeId, routes[1]?.properties.id);
-  assert.deepEqual(recommendation.excludedRoutes, [{ routeId: routes[0]?.properties.id, reasons: ["Route is officially closed"] }]);
+  assert.deepEqual(recommendation.excludedRoutes, [
+    {
+      routeId: routes[0]?.properties.id,
+      reasons: ["Route is officially closed"],
+    },
+  ]);
 });
 
 test("hard constraints return no recommendation when every route is excluded", () => {
@@ -52,10 +75,17 @@ test("hard constraints return no recommendation when every route is excluded", (
     withAccess(sourceRoutes[1]!, { accessStatus: "restricted" }),
     withAccess(sourceRoutes[2]!, { legalStatus: "illegal" }),
   ];
-  const recommendation = selectRouteRecommendation(evaluation(routes, [0.9, 0.8, 0.7]), routes, state);
+  const recommendation = selectRouteRecommendation(
+    evaluation(routes, [0.9, 0.8, 0.7]),
+    routes,
+    state,
+  );
   assert.equal(recommendation.status, "unavailable");
   assert.equal(recommendation.excludedRoutes.length, 3);
-  assert.match(recommendation.explanation, /No supported route is currently eligible/);
+  assert.match(
+    recommendation.explanation,
+    /No supported route is currently eligible/,
+  );
 });
 
 test("prohibitive restrictions override suitability while advisories do not", () => {
@@ -64,17 +94,37 @@ test("prohibitive restrictions override suitability while advisories do not", ()
   const routes = [
     withAccess(sourceRoutes[0]!, {
       accessStatus: "open",
-      restrictions: [{ id: "seasonal-closure", kind: "prohibitive", summary: "Seasonal habitat closure", sourceUrl: "https://www.mass.gov/" }],
+      restrictions: [
+        {
+          id: "seasonal-closure",
+          kind: "prohibitive",
+          summary: "Seasonal habitat closure",
+          sourceUrl: "https://www.mass.gov/",
+        },
+      ],
     }),
     withAccess(sourceRoutes[1]!, {
       accessStatus: "open",
-      restrictions: [{ id: "mud", kind: "advisory", summary: "Muddy conditions", sourceUrl: "https://www.mass.gov/" }],
+      restrictions: [
+        {
+          id: "mud",
+          kind: "advisory",
+          summary: "Muddy conditions",
+          sourceUrl: "https://www.mass.gov/",
+        },
+      ],
     }),
     withAccess(sourceRoutes[2]!, { accessStatus: "open" }),
   ];
-  const recommendation = selectRouteRecommendation(evaluation(routes, [0.99, 0.7, 0.6]), routes, state);
+  const recommendation = selectRouteRecommendation(
+    evaluation(routes, [0.99, 0.7, 0.6]),
+    routes,
+    state,
+  );
   assert.equal(recommendation.status, "recommended");
   if (recommendation.status !== "recommended") return;
   assert.equal(recommendation.routeId, routes[1]?.properties.id);
-  assert.deepEqual(recommendation.excludedRoutes[0]?.reasons, ["Seasonal habitat closure"]);
+  assert.deepEqual(recommendation.excludedRoutes[0]?.reasons, [
+    "Seasonal habitat closure",
+  ]);
 });

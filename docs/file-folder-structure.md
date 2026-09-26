@@ -131,3 +131,8 @@ apps/api/src/generated/wachusett-routes.ts    # Generated, reviewed DCR WGS84 sn
 - `apps/web/Dockerfile` and `apps/web/nginx.conf` — pinned static web/reverse-proxy image.
 - `compose.yaml` — PostgreSQL, migration, API, and web lifecycle orchestration.
 - `docs/deployment.md` — operator build, verification, update, rollback, and provider handoff runbook.
+### Code Quality Files
+
+- `eslint.config.js` — flat ESLint configuration for Node, TypeScript, React Hooks, and Vite Fast Refresh.
+- `.prettierignore` — excludes generated and build outputs from formatting.
+- Root `package.json` — owns `lint`, `format`, `format:check`, and aggregate `quality` commands.

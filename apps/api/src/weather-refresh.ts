@@ -1,16 +1,30 @@
-import { hikingStateSchema, type HikingState } from "@probably-this-way/contracts";
+import {
+  hikingStateSchema,
+  type HikingState,
+} from "@probably-this-way/contracts";
 import type { SessionRecord, SessionStore } from "./session-store.js";
-import type { EnvironmentalSnapshot, WeatherLocation, WeatherProvider } from "./weather-adapter.js";
+import type {
+  EnvironmentalSnapshot,
+  WeatherLocation,
+  WeatherProvider,
+} from "./weather-adapter.js";
 
 export const DEFAULT_WEATHER_REFRESH_INTERVAL_MS = 5 * 60_000;
 const MINIMUM_WEATHER_REFRESH_INTERVAL_MS = 60_000;
 
-export function resolveWeatherRefreshInterval(env: NodeJS.ProcessEnv = process.env): number {
+export function resolveWeatherRefreshInterval(
+  env: NodeJS.ProcessEnv = process.env,
+): number {
   const configured = env.WEATHER_REFRESH_INTERVAL_MS?.trim();
   if (!configured) return DEFAULT_WEATHER_REFRESH_INTERVAL_MS;
   const interval = Number(configured);
-  if (!Number.isSafeInteger(interval) || interval < MINIMUM_WEATHER_REFRESH_INTERVAL_MS) {
-    throw new Error(`WEATHER_REFRESH_INTERVAL_MS must be an integer of at least ${MINIMUM_WEATHER_REFRESH_INTERVAL_MS}`);
+  if (
+    !Number.isSafeInteger(interval) ||
+    interval < MINIMUM_WEATHER_REFRESH_INTERVAL_MS
+  ) {
+    throw new Error(
+      `WEATHER_REFRESH_INTERVAL_MS must be an integer of at least ${MINIMUM_WEATHER_REFRESH_INTERVAL_MS}`,
+    );
   }
   return interval;
 }
@@ -22,9 +36,15 @@ type WeatherRefresherOptions = {
   weatherProvider: WeatherProvider;
   locations: Readonly<Record<string, WeatherLocation>>;
   intervalMs: number;
-  applySnapshot: (record: SessionRecord, state: HikingState) => Promise<WeatherRefreshResult>;
+  applySnapshot: (
+    record: SessionRecord,
+    state: HikingState,
+  ) => Promise<WeatherRefreshResult>;
   onSessionError?: (record: SessionRecord, error: unknown) => Promise<void>;
-  onError?: (error: unknown, context: { hikeId?: string; sessionId?: string }) => void;
+  onError?: (
+    error: unknown,
+    context: { hikeId?: string; sessionId?: string },
+  ) => void;
 };
 
 export class WeatherRefresher {
@@ -38,7 +58,10 @@ export class WeatherRefresher {
 
   start(): void {
     if (this.#timer) return;
-    this.#timer = setInterval(() => void this.refreshNow(), this.#options.intervalMs);
+    this.#timer = setInterval(
+      () => void this.refreshNow(),
+      this.#options.intervalMs,
+    );
     this.#timer.unref();
   }
 
@@ -52,7 +75,8 @@ export class WeatherRefresher {
     if (this.#running) return;
     this.#running = true;
     try {
-      const sessionIds = await this.#options.sessionStore.listActiveSessionIds();
+      const sessionIds =
+        await this.#options.sessionStore.listActiveSessionIds();
       const snapshots = new Map<string, Promise<EnvironmentalSnapshot>>();
 
       for (const sessionId of sessionIds) {
@@ -61,14 +85,20 @@ export class WeatherRefresher {
           record = await this.#options.sessionStore.get(sessionId);
           if (!record) continue;
           const location = this.#options.locations[record.session.hikeId];
-          if (!location) throw new Error(`Hike ${record.session.hikeId} has no weather location`);
+          if (!location)
+            throw new Error(
+              `Hike ${record.session.hikeId} has no weather location`,
+            );
           let snapshot = snapshots.get(record.session.hikeId);
           if (!snapshot) {
             snapshot = this.#options.weatherProvider.getCurrent(location);
             snapshots.set(record.session.hikeId, snapshot);
           }
           const environmental = await snapshot;
-          const nextState = hikingStateSchema.parse({ ...environmental, user: record.session.state.user });
+          const nextState = hikingStateSchema.parse({
+            ...environmental,
+            user: record.session.state.user,
+          });
           await this.#options.applySnapshot(record, nextState);
         } catch (error) {
           const context = { sessionId, hikeId: record?.session.hikeId };

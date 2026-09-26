@@ -64,7 +64,10 @@ export class InMemorySessionStore implements SessionStore {
       .map((record) => record.session.id);
   }
 
-  async save(record: SessionRecord, expectedSequence: number): Promise<boolean> {
+  async save(
+    record: SessionRecord,
+    expectedSequence: number,
+  ): Promise<boolean> {
     const current = this.#records.get(record.session.id);
     if (!current || current.sequence !== expectedSequence) return false;
     this.#records.set(record.session.id, cloneRecord(record));
@@ -76,7 +79,8 @@ export class InMemorySessionStore implements SessionStore {
   async purgeExpired(before: Date): Promise<number> {
     let deleted = 0;
     for (const [id, record] of this.#records) {
-      const lastActivity = record.session.state.receivedAt ?? record.session.createdAt;
+      const lastActivity =
+        record.session.state.receivedAt ?? record.session.createdAt;
       if (Date.parse(lastActivity) < before.getTime()) {
         this.#records.delete(id);
         deleted += 1;
@@ -166,7 +170,10 @@ export class PostgresSessionStore implements SessionStore {
     return result.rows.map((row) => row.id);
   }
 
-  async save(record: SessionRecord, expectedSequence: number): Promise<boolean> {
+  async save(
+    record: SessionRecord,
+    expectedSequence: number,
+  ): Promise<boolean> {
     const validated = cloneRecord(record);
     return this.#transaction(async (client) => {
       const result = await client.query(
@@ -204,23 +211,38 @@ export class PostgresSessionStore implements SessionStore {
   }
 
   async purgeExpired(before: Date): Promise<number> {
-    const result = await this.#pool.query("DELETE FROM sessions WHERE updated_at < $1", [before.toISOString()]);
+    const result = await this.#pool.query(
+      "DELETE FROM sessions WHERE updated_at < $1",
+      [before.toISOString()],
+    );
     return result.rowCount ?? 0;
   }
 
-  async #insertEvents(client: PoolClient, events: DecisionEvent[]): Promise<void> {
+  async #insertEvents(
+    client: PoolClient,
+    events: DecisionEvent[],
+  ): Promise<void> {
     for (const event of events) {
       await client.query(
         `INSERT INTO decision_events (
           id, session_id, sequence, event_type, occurred_at, payload
         ) VALUES ($1, $2, $3, $4, $5, $6::jsonb)
         ON CONFLICT (session_id, sequence) DO NOTHING`,
-        [event.id, event.sessionId, event.sequence, event.type, event.occurredAt, JSON.stringify(event)],
+        [
+          event.id,
+          event.sessionId,
+          event.sequence,
+          event.type,
+          event.occurredAt,
+          JSON.stringify(event),
+        ],
       );
     }
   }
 
-  async #transaction<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
+  async #transaction<T>(
+    operation: (client: PoolClient) => Promise<T>,
+  ): Promise<T> {
     const client = await this.#pool.connect();
     try {
       await client.query("BEGIN");
@@ -236,7 +258,9 @@ export class PostgresSessionStore implements SessionStore {
   }
 }
 
-export function createSessionStore(env: NodeJS.ProcessEnv = process.env): SessionStore {
+export function createSessionStore(
+  env: NodeJS.ProcessEnv = process.env,
+): SessionStore {
   const connectionString = env.DATABASE_URL?.trim();
   if (connectionString) return new PostgresSessionStore({ connectionString });
   if (env.NODE_ENV === "production") {

@@ -12,12 +12,21 @@ export function resolveWeatherFreshnessMaxAge(
   refreshIntervalMs = 0,
 ): number {
   const configured = env.WEATHER_FRESHNESS_MAX_AGE_MS?.trim();
-  const maxAge = configured ? Number(configured) : DEFAULT_WEATHER_FRESHNESS_MAX_AGE_MS;
-  if (!Number.isSafeInteger(maxAge) || maxAge < MINIMUM_WEATHER_FRESHNESS_MAX_AGE_MS) {
-    throw new Error(`WEATHER_FRESHNESS_MAX_AGE_MS must be an integer of at least ${MINIMUM_WEATHER_FRESHNESS_MAX_AGE_MS}`);
+  const maxAge = configured
+    ? Number(configured)
+    : DEFAULT_WEATHER_FRESHNESS_MAX_AGE_MS;
+  if (
+    !Number.isSafeInteger(maxAge) ||
+    maxAge < MINIMUM_WEATHER_FRESHNESS_MAX_AGE_MS
+  ) {
+    throw new Error(
+      `WEATHER_FRESHNESS_MAX_AGE_MS must be an integer of at least ${MINIMUM_WEATHER_FRESHNESS_MAX_AGE_MS}`,
+    );
   }
   if (maxAge < refreshIntervalMs) {
-    throw new Error("WEATHER_FRESHNESS_MAX_AGE_MS must be greater than or equal to WEATHER_REFRESH_INTERVAL_MS");
+    throw new Error(
+      "WEATHER_FRESHNESS_MAX_AGE_MS must be greater than or equal to WEATHER_REFRESH_INTERVAL_MS",
+    );
   }
   return maxAge;
 }
@@ -27,7 +36,10 @@ export function currentEnvironmentalStatus(
   maxAgeMs: number,
 ): EnvironmentalStatus {
   const observedAt = Date.parse(state.observedAt);
-  if (!Number.isFinite(observedAt)) throw new Error("Cannot calculate freshness from an invalid observation time");
+  if (!Number.isFinite(observedAt))
+    throw new Error(
+      "Cannot calculate freshness from an invalid observation time",
+    );
   return environmentalStatusSchema.parse({
     status: "current",
     reason: "observation_current",
@@ -36,7 +48,9 @@ export function currentEnvironmentalStatus(
   });
 }
 
-export function prototypeEnvironmentalStatus(checkedAt: string): EnvironmentalStatus {
+export function prototypeEnvironmentalStatus(
+  checkedAt: string,
+): EnvironmentalStatus {
   return environmentalStatusSchema.parse({
     status: "prototype",
     reason: "prototype_static",
@@ -63,10 +77,17 @@ export function resolveEnvironmentalStatus(
   now = new Date(),
 ): EnvironmentalStatus {
   if (state.source === "prototype-static") {
-    return status ?? prototypeEnvironmentalStatus(state.receivedAt ?? state.observedAt);
+    return (
+      status ??
+      prototypeEnvironmentalStatus(state.receivedAt ?? state.observedAt)
+    );
   }
   const resolved = status ?? currentEnvironmentalStatus(state, maxAgeMs);
-  if (resolved.status === "current" && resolved.staleAfter && Date.parse(resolved.staleAfter) <= now.getTime()) {
+  if (
+    resolved.status === "current" &&
+    resolved.staleAfter &&
+    Date.parse(resolved.staleAfter) <= now.getTime()
+  ) {
     return environmentalStatusSchema.parse({
       ...resolved,
       status: "stale",

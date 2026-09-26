@@ -13,9 +13,16 @@ test("session creation uses a configured live environmental snapshot", async () 
         observedAt: "2026-09-25T20:00:00.000Z",
         receivedAt: "2026-09-25T20:00:01.000Z",
         source: "weather",
-        provenance: { provider: "Open-Meteo", license: "CC BY 4.0", attributionUrl: "https://open-meteo.com/" },
+        provenance: {
+          provider: "Open-Meteo",
+          license: "CC BY 4.0",
+          attributionUrl: "https://open-meteo.com/",
+        },
         weather: { temperatureF: 51.4, windMph: 12.5, rainProbability: 0.35 },
-        daylight: { sunsetAt: "2026-09-25T22:30:00.000Z", remainingMinutes: 150 },
+        daylight: {
+          sunsetAt: "2026-09-25T22:30:00.000Z",
+          remainingMinutes: 150,
+        },
       };
     },
   };
@@ -23,17 +30,27 @@ test("session creation uses a configured live environmental snapshot", async () 
   const response = await app.inject({
     method: "POST",
     url: "/api/v1/sessions",
-    payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" },
+    payload: {
+      hikeId: "wachusett-summit",
+      selectedRouteId: "mountain-house-summit",
+    },
   });
 
   assert.equal(response.statusCode, 201);
   const body = sessionStartResponseSchema.parse(response.json());
-  assert.deepEqual(requestedLocation, { latitude: 42.4889, longitude: -71.8868 });
+  assert.deepEqual(requestedLocation, {
+    latitude: 42.4889,
+    longitude: -71.8868,
+  });
   assert.equal(body.session.state.source, "weather");
   assert.equal(body.session.environmentalStatus?.status, "current");
   assert.equal(body.session.state.receivedAt, "2026-09-25T20:00:01.000Z");
   assert.equal(body.session.state.provenance?.provider, "Open-Meteo");
-  assert.deepEqual(body.session.state.weather, { temperatureF: 51.4, windMph: 12.5, rainProbability: 0.35 });
+  assert.deepEqual(body.session.state.weather, {
+    temperatureF: 51.4,
+    windMph: 12.5,
+    rainProbability: 0.35,
+  });
   assert.equal(body.session.state.user.fatigue, "low");
   await app.close();
 });
@@ -48,7 +65,10 @@ test("session creation falls back explicitly when weather is unavailable", async
   const response = await app.inject({
     method: "POST",
     url: "/api/v1/sessions",
-    payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" },
+    payload: {
+      hikeId: "wachusett-summit",
+      selectedRouteId: "mountain-house-summit",
+    },
   });
 
   assert.equal(response.statusCode, 201);
@@ -64,11 +84,17 @@ test("session creation fails closed when production weather is unavailable", asy
       throw new Error("provider unavailable");
     },
   };
-  const app = await buildApp({ weatherEnv: { NODE_ENV: "production" }, weatherProvider: provider });
+  const app = await buildApp({
+    weatherEnv: { NODE_ENV: "production" },
+    weatherProvider: provider,
+  });
   const response = await app.inject({
     method: "POST",
     url: "/api/v1/sessions",
-    payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" },
+    payload: {
+      hikeId: "wachusett-summit",
+      selectedRouteId: "mountain-house-summit",
+    },
   });
 
   assert.equal(response.statusCode, 503);

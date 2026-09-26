@@ -29,7 +29,7 @@
 
 ## Quality
 
-- Format and lint automatically; exact tools are TBD.
+- Run `npm run quality` before every pull request. ESLint 10 with TypeScript, React Hooks, and React Refresh rules checks source correctness; Prettier 3 checks supported source and configuration files.
 - Add tests for changed domain behavior.
 - Keep `npm test`, `npm run check`, `npm run build`, and `npm run test:e2e` green locally and in pull-request CI.
 - Keep third-party GitHub Actions pinned to reviewed immutable commit SHAs.

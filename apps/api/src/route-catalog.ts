@@ -1,4 +1,8 @@
-import { hikeDetailSchema, routeFeatureSchema, type HikeDetail } from "@probably-this-way/contracts";
+import {
+  hikeDetailSchema,
+  routeFeatureSchema,
+  type HikeDetail,
+} from "@probably-this-way/contracts";
 import { wachusettRoutes } from "./generated/wachusett-routes.js";
 import type { WeatherLocation } from "./weather-adapter.js";
 
