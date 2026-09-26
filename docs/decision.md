@@ -317,3 +317,11 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** These boundaries satisfy every MVP acceptance criterion without pretending that multi-instance scale, personal accounts, or broad spatial search are already product requirements.
 - **Consequences:** Cloud products and secrets remain operator inputs. Any horizontal scaling, personal data, accounts, broad-catalog search, or server push is a separately scoped feature with its own security, privacy, storage, and operational design.
 - **Supersedes:** Unresolved MVP wording for an evaluation endpoint, LLM provider, PostGIS migration, end-user authentication, queue, distributed limiter/scheduler, streaming, breakpoints, and operational targets.
+## DEC-037 — Search only reviewed supported trails
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** The catalog loaded a default route with no visible search affordance, which made the product appear fixed and made its actual coverage unclear.
+- **Decision:** Add a prominent search form over the loaded hike and route names/location, return accessible route results, and state the exact three-trail Wachusett boundary on no match. Lock search during an active session. Do not query arbitrary trails until a reviewed ingestion and alternative-route pipeline exists.
+- **Reasoning:** Search is useful only when its results can enter the same authoritative evaluation contract. A clear supported-catalog search is more honest than returning worldwide names that cannot start a valid session.
+- **Consequences:** Users can quickly select any currently supported trail. Expanding geographic coverage remains a data-ingestion feature, not a UI-only change.

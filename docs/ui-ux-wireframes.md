@@ -63,3 +63,6 @@ After session start, a compact field-log panel appears below the recommendation.
 ## Trail Provenance State
 
 The selected-hike card links to the Massachusetts DCR geometry source and displays its dataset date. Route cards show `unknown` rather than inferring exposure or access. Known hard exclusions disable the route, replace its score with an Excluded label, and list reasons in a no-route alert when every option is blocked. Persistent safety copy tells users to check current DCR notices and posted closures because the checked-in geometry is not a live advisory feed.
+## Supported Trail Search
+
+A prominent field-index search sits before the selected-hike card. It searches the loaded supported route names, hike name, and location, shows distance and location in an accessible result list, and selects the route without starting a session. The control locks while a session is active. A no-match result states the exact Wachusett-only coverage boundary instead of implying worldwide discovery.

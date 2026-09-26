@@ -15,6 +15,7 @@ import {
 import { DecisionFeed } from "./components/DecisionFeed";
 import { RecommendationBanner } from "./components/RecommendationBanner";
 import { SessionHud } from "./components/SessionHud";
+import { TrailSearch } from "./components/TrailSearch";
 
 const TerrainMap = lazy(() =>
   import("./components/TerrainMap").then((module) => ({
@@ -250,6 +251,12 @@ export function App() {
             stays explainable, visibly sourced, and separate from official trail
             guidance.
           </p>
+          <TrailSearch
+            hike={hike}
+            selectedRouteId={selectedRouteId}
+            disabled={Boolean(session) || isEvaluating}
+            onSelectRoute={setSelectedRouteId}
+          />
           <div className="trail-card" aria-live="polite">
             {status === "loading" ? (
               <p className="system-message">Reading route catalog…</p>
