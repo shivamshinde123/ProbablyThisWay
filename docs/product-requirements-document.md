@@ -14,7 +14,7 @@ A hiker discovering a named trail anywhere OpenStreetMap has searchable line geo
 
 ## MVP Requirements
 
-- Search the internet trail index by trail name and location, preview attributed line geometry, and select a predefined evaluated hike.
+- Search the internet trail index by trail name and location, select attributed line geometry, and explicitly start an evaluated session for the chosen result.
 - Render its terrain, trail, and route alternatives.
 - Display weather, time, pace, fatigue, elevation, distance, daylight, and route progress when available. Hide or clearly mark unavailable values; live GPS is not required for the MVP.
 - Evaluate every candidate route through a defined, schema-constrained route-suitability request.
@@ -26,11 +26,11 @@ A hiker discovering a named trail anywhere OpenStreetMap has searchable line geo
 
 ## Out of Scope
 
-Live GPS tracking, wearables, automatic fatigue detection, offline maps, social features, emergency response, route sharing, recommendation scoring for arbitrary internet trails, and machine-learned pace prediction are not MVP commitments.
+Live GPS tracking, wearables, automatic fatigue detection, offline maps, social features, emergency response, route sharing, turn-by-turn navigation, authoritative access validation for arbitrary internet trails, and machine-learned pace prediction are not MVP commitments.
 
 ## Success Criteria
 
-A user can find and preview a named internet trail, or open a supported evaluated hiking area, inspect multiple valid routes and current context, receive the automatic initial evaluation, and understand which route is recommended and why. Subsequent evaluations run automatically after relevant supported inputs cross configured thresholds.
+A user can search for a named trail, select the result, start it, see every mapped candidate branch scored, receive a visible initial recommendation, and understand which provider or fallback produced the scores and why application policy chose the route. Subsequent evaluations run automatically after relevant supported inputs cross configured thresholds.
 
 ## Safety Requirement
 
@@ -38,7 +38,7 @@ The product is decision support, not an emergency or navigation guarantee. UI co
 
 ## Release Boundaries
 
-- Internet discovery coverage: direct line matches plus bounded nearby mapped paths when OpenStreetMap resolves a named hill, park, or trail area as a point/polygon. Results are attributed previews, not validated route alternatives.
+- Internet discovery coverage: direct line matches plus bounded nearby mapped paths when OpenStreetMap resolves a named hill, park, or trail area as a point/polygon. Selected results can be evaluated, but remain unreviewed geometry with unknown access, exposure, condition, and elevation.
 - Launch area: Wachusett Mountain State Reservation. The MVP uses the Massachusetts DCR Roads and Trails layer for Pine Hill, Mountain House, and Harrington summit corridors, plus the official DCR trail map for published metrics.
 - Live position data is post-MVP. Until it exists, route progress is omitted or marked unavailable rather than inferred from fabricated location data.
 - The repository is provider-neutral and supports one API replica behind the shipped Nginx proxy. Cloud, DNS, TLS, registry, secret-manager, backup, alerting, and metrics products are operator choices.

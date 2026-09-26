@@ -63,6 +63,8 @@ test("OpenRouter evaluation requests structured scores and preserves route order
   assert.equal(headers.get("X-OpenRouter-Title"), "ProbablyThisWay");
   const requestBody = JSON.parse(String(capturedInit?.body));
   assert.equal(requestBody.model, "openai/test-model");
+  assert.ok(requestBody.max_completion_tokens >= 1_200);
+  assert.equal(requestBody.reasoning.effort, "minimal");
   assert.equal(requestBody.response_format.type, "json_schema");
   assert.equal(requestBody.response_format.json_schema.strict, true);
   assert.deepEqual(

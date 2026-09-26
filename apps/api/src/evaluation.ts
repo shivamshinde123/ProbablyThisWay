@@ -10,13 +10,16 @@ import {
 const DEFAULT_OPENROUTER_API_URL =
   "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_OPENROUTER_MODEL = "openrouter/auto";
-const DEFAULT_OPENROUTER_TIMEOUT_MS = 10_000;
+const DEFAULT_OPENROUTER_TIMEOUT_MS = 30_000;
+const DEFAULT_OPENROUTER_MAX_TOKENS = 3_000;
 
 const openRouterResponseSchema = z.object({
+  model: z.string().optional(),
   choices: z
     .array(
       z.object({
-        message: z.object({ content: z.string().min(1) }),
+        finish_reason: z.string().nullable().optional(),
+        message: z.object({ content: z.string().nullable().optional() }),
       }),
     )
     .min(1),
@@ -29,7 +32,7 @@ const openRouterScoresSchema = z.object({
         suitability: z.number().min(0).max(1),
       }),
     )
-    .min(2),
+    .min(1),
 });
 
 type EvaluationInput = {
@@ -150,7 +153,8 @@ export async function evaluateWithOpenRouter(
     body: JSON.stringify({
       model: model.trim() || DEFAULT_OPENROUTER_MODEL,
       temperature: 0,
-      max_tokens: 600,
+      max_completion_tokens: DEFAULT_OPENROUTER_MAX_TOKENS,
+      reasoning: { effort: "minimal", exclude: true },
       provider: { require_parameters: true },
       messages: [
         {
@@ -199,8 +203,14 @@ export async function evaluateWithOpenRouter(
   });
   if (!response.ok) throw new Error(`OpenRouter returned ${response.status}`);
   const parsed = openRouterResponseSchema.parse(await response.json());
-  const content = parsed.choices[0]?.message.content;
-  if (!content) throw new Error("OpenRouter returned no structured content");
+  const choice = parsed.choices[0];
+  const content = choice?.message.content;
+  if (!content) {
+    const reason = choice?.finish_reason ?? "unknown";
+    throw new Error(
+      "OpenRouter returned no structured content (" + reason + ")",
+    );
+  }
   const scores = validateScores(input, content);
 
   return routeEvaluationSchema.parse({

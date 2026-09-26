@@ -6,7 +6,7 @@
 2. API loads trail geometry, terrain references, and candidate routes.
 3. At session start, the evaluation service loads the versioned route-suitability prompt and output schema.
 4. The state service requests and validates configured live weather/daylight. Outside production only, provider absence/failure produces a visibly labeled static fallback.
-5. OpenRouter evaluates every candidate route from the same snapshot and reviewed metadata.
+5. OpenRouter evaluates every validated candidate route from the same snapshot; reviewed and search-derived provenance remain distinguishable.
 6. Policy rejects hard-constraint violations, ranks remaining routes, and selects one or returns an explicit unavailable decision.
 7. API persists the evaluation and emits a decision event.
 8. Client updates route styling, cards, HUD, and feed.
@@ -46,14 +46,15 @@ The API applies a validated per-process/IP request budget to non-health routes, 
 
 ## Release Boundaries
 
-The supported topology is one API replica. Evaluation remains synchronous and bounded by provider timeouts; route geometry remains the reviewed source snapshot; sessions are anonymous capability URLs; and client updates use cursor polling. A queue, distributed scheduler/rate limiter, end-user accounts, PostGIS, and streaming transport are not incomplete MVP work—they are new designs required only before adding horizontal scale, personal data, arbitrary-trail evaluation, locally hosted spatial search, or real-time push. The deterministic baseline is a versioned prototype policy and must not be represented as safety-calibrated. Initial service objectives and operator alerts are defined in `deployment.md`.
+The supported topology is one API replica. Evaluation remains synchronous and bounded by provider timeouts; reviewed geometry remains versioned source while selected internet geometry is copied into the session record; sessions are anonymous capability URLs; and client updates use cursor polling. A queue, distributed scheduler/rate limiter, end-user accounts, PostGIS, locally hosted spatial search, and streaming transport are new designs required only before adding horizontal scale, personal data, a persistent trail catalog, or real-time push. The deterministic baseline is a versioned prototype policy and must not be represented as safety-calibrated. Initial service objectives and operator alerts are defined in `deployment.md`.
 
 ## Production Packaging
 
 The API and web workspaces build independently into pinned Node 22.23.3/Alpine 3.24 and Nginx 1.30.5/Alpine 3.24 images. Compose gates the API on a successful tracked migration and gates Nginx on API readiness. Browser requests use same-origin `/api/v1`; the controlled Nginx hop enables `TRUST_PROXY=true`, while direct deployments default it off. CI validates the topology and builds both images on every pull request.
+
 ## Implemented OpenRouter Adapter
 
-The API owns the OpenRouter credential and calls the configurable chat-completions endpoint with a ten-second timeout. `OPENROUTER_MODEL` defaults to `openrouter/auto` and may be pinned to any compatible OpenRouter model ID. The request uses a bounded system prompt, temperature zero, provider parameter enforcement, and strict JSON Schema requiring every reviewed route exactly once with a suitability number in `[0, 1]`. Zod and route-set validation reject malformed, duplicate, missing, or unknown results. New evaluations record provider provenance as `openrouter` or `deterministic-baseline`; the shared reader also accepts legacy `jev` records created before DEC-043. Network, timeout, HTTP, JSON, or validation failures do not block session startup; they degrade visibly to the baseline. Recommendation policy remains separate and is not implemented by this adapter.
+The API owns the OpenRouter credential and calls the configurable chat-completions endpoint with a 30-second timeout. `OPENROUTER_MODEL` defaults to `openrouter/auto` and may be pinned to any compatible OpenRouter model ID. The request uses a bounded system prompt, temperature zero, minimal excluded reasoning, a 3,000-token completion budget, provider parameter enforcement, and strict JSON Schema requiring every supplied candidate route exactly once with a suitability number in `[0, 1]`. Zod and route-set validation reject malformed, duplicate, missing, or unknown results. New evaluations record provider provenance as `openrouter` or `deterministic-baseline`; the shared reader also accepts legacy `jev` records created before DEC-043. Network, timeout, HTTP, JSON, or validation failures do not block session startup; they degrade visibly to the baseline. Recommendation policy remains separate and is not implemented by this adapter.
 
 ## Implemented Recommendation Policy
 
@@ -61,7 +62,7 @@ The API owns the OpenRouter credential and calls the configurable chat-completio
 
 ## Deterministic Explanation and Camera Behavior
 
-The recommendation policy creates explanation copy only from validated route metrics and the same hiking-state snapshot used for evaluation. It does not generate hidden reasoning or call an LLM. The client renders those facts directly. When the recommendation first arrives, Cesium computes a bounding sphere from that route's coordinates and flies to it once; `prefers-reduced-motion` changes the transition duration to zero.
+The recommendation policy creates explanation copy only from validated route metrics and the same hiking-state snapshot used for evaluation. It does not generate hidden reasoning or call an LLM. The client renders those facts directly. When a preview or recommendation first arrives, Cesium estimates the visible terrain height for its coordinates, builds the bounding sphere above the surface, and uses a minimum safe oblique range. This prevents depth-tested terrain from hiding a sea-level camera target. `prefers-reduced-motion` changes the transition duration to zero.
 
 ## Implemented Decision Events
 
@@ -95,7 +96,7 @@ Session is a discriminated union: active sessions have status active; ended sess
 
 ## Internet Trail Search Design
 
-Internet discovery uses a TrailSearchProvider boundary with OpenStreetMap Nominatim geocoding and bounded OSM map extracts. Only form submissions issue requests; autocomplete is intentionally absent. A per-process promise queue and next-request timestamp serialize uncached searches above the public service's one-request-per-second minimum interval, while a bounded 15-minute in-memory cache suppresses duplicates. Provider payloads are untrusted and Zod-validated. Direct line matches are returned immediately. A point or polygon match becomes the center of a small map window; private, sidewalk, and crossing ways are excluded, trail-like ways are ranked by tags, surface, distance, and length, and a clearly named nearby network is returned first. Dense-area 400 responses retry once with a smaller window. Results remain presentation-only because discovered geometry lacks the reviewed alternatives, restrictions, and metrics required by evaluation policy.
+Internet discovery uses a TrailSearchProvider boundary with OpenStreetMap Nominatim geocoding and bounded OSM map extracts. Only form submissions issue requests; autocomplete is intentionally absent. A per-process promise queue and next-request timestamp serialize uncached searches above the public service's one-request-per-second minimum interval, while a bounded 15-minute in-memory cache suppresses duplicates. Provider payloads are untrusted and Zod-validated. Direct line matches are returned immediately. A point or polygon match becomes the center of a small map window; private, sidewalk, and crossing ways are excluded, trail-like ways are ranked by tags, surface, distance, and length, and a clearly named nearby network is returned first. Dense-area 400 responses retry once with a smaller window. Selection remains presentation-only until the user explicitly starts a session. At start, `createInternetHike` turns a LineString into one candidate or a MultiLineString into separately named branches, calculates mapped length and a conservative time estimate, preserves source attribution, and marks access, legality, condition, exposure, and elevation as unknown. The exact generated `HikeDetail` is stored with the session and returned to the browser so evaluation scores, map highlighting, later reads, and reevaluations share one route set.
 
 ## Typography Readability
 

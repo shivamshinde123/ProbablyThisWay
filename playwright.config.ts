@@ -40,6 +40,7 @@ export default defineConfig({
         HOST: "127.0.0.1",
         PORT: apiPort,
         WEB_ORIGIN: webOrigin,
+        LOAD_ENV_FILE: "false",
       },
     },
     {

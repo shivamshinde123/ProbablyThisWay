@@ -85,7 +85,12 @@ export class WeatherRefresher {
           record = await this.#options.sessionStore.get(sessionId);
           if (!record) continue;
           if (record.session.status !== "active") continue;
-          const location = this.#options.locations[record.session.hikeId];
+          const coordinate = record.hike?.routes[0]?.geometry.coordinates[0];
+          const location =
+            this.#options.locations[record.session.hikeId] ??
+            (coordinate
+              ? { longitude: coordinate[0], latitude: coordinate[1] }
+              : undefined);
           if (!location)
             throw new Error(
               `Hike ${record.session.hikeId} has no weather location`,

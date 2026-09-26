@@ -99,6 +99,60 @@ test("POST /api/v1/sessions creates a typed static-state session", async () => {
   await app.close();
 });
 
+test("POST /api/v1/sessions evaluates a searched OpenStreetMap trail network", async () => {
+  const app = await buildApp();
+  const response = await app.inject({
+    method: "POST",
+    url: "/api/v1/sessions",
+    payload: {
+      internetTrail: {
+        id: "osm-newton-hill",
+        name: "Trails at Newton Hill",
+        location: "Worcester, Massachusetts, United States",
+        distanceMiles: 0.78,
+        geometry: {
+          type: "MultiLineString",
+          coordinates: [
+            [
+              [-71.8209, 42.2676],
+              [-71.8194, 42.2682],
+              [-71.8178, 42.2691],
+            ],
+            [
+              [-71.8194, 42.2682],
+              [-71.8187, 42.2671],
+              [-71.8179, 42.2664],
+            ],
+          ],
+        },
+        source: "OpenStreetMap via Nominatim",
+        sourceUrl: "https://www.openstreetmap.org/node/358271617",
+      },
+    },
+  });
+
+  assert.equal(response.statusCode, 201);
+  const body = sessionStartResponseSchema.parse(response.json());
+  assert.match(body.hike.id, /^internet-/);
+  assert.equal(body.hike.routes.length, 2);
+  assert.equal(body.hike.routes[0]?.properties.dataQuality, "preview");
+  assert.equal(body.hike.routes[0]?.properties.accessStatus, "unknown");
+  assert.equal(body.evaluation.scores.length, 2);
+  assert.equal(body.recommendation.status, "recommended");
+  assert.equal(
+    body.session.selectedRouteId,
+    body.hike.routes[0]?.properties.id,
+  );
+
+  const stored = await app.inject({
+    method: "GET",
+    url: `/api/v1/sessions/${body.session.id}`,
+  });
+  assert.equal(stored.statusCode, 200);
+  assert.equal(stored.json().hike.name, "Trails at Newton Hill");
+  assert.equal(stored.json().hike.routes.length, 2);
+  await app.close();
+});
 test("POST /api/v1/sessions rejects a route outside the hike", async () => {
   const app = await buildApp();
   const response = await app.inject({
