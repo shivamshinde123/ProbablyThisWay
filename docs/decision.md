@@ -381,3 +381,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** A provider-native adapter prevents sending incompatible payloads, keeps the API key server-side, allows model choice without code changes, and preserves the deterministic safety/policy boundary.
 - **Consequences:** Operators create a key at `https://openrouter.ai/settings/keys` and set `OPENROUTER_API_KEY`. OpenRouter/model usage may incur cost and variable latency. The model supplies scores only; hard constraints and final route selection remain deterministic application code.
 - **Supersedes:** DEC-017's hosted Jev adapter. Earlier Jev references in this chronological log describe superseded design history.
+## DEC-044 — Resolve named places to nearby paths and make terrain relief explicit
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Exact searches such as Newton Hill resolved to a point and were discarded by the line-only adapter. The terrain provider was active, but a uniform surface and steep camera made the map look flat.
+- **Decision:** Preserve normalized queries, return direct trail lines when available, and otherwise use a tightly bounded OpenStreetMap map extract around the matched place to return a clearly labeled nearby trail network and named paths. Exclude private and sidewalk/crossing geometry, retry dense areas with a smaller window, and keep the results preview-only. Add 1.8× vertical exaggeration, shallow oblique framing, and a visible Frame 3D terrain control.
+- **Reasoning:** People commonly search by a hill, reservation, or park name while OSM stores its trails as separate ways. A bounded fallback bridges those data shapes without pretending the paths are reviewed routes. Explicit visual relief and controls make the existing elevation data understandable.
+- **Consequences:** Search now finds Newton Hill and other Worcester places with nearby OSM paths, including unnamed segments under a transparent place-based label. Results still depend on OSM coverage. The map deliberately exaggerates rendered relief for legibility; evaluation continues to use reviewed ascent metrics, not visual tile height. Cesium static assets are copied with an explicit Windows-safe path strip so production requests resolve under /cesiumStatic instead of receiving undecodable fallback HTML.
+- **Refines:** DEC-039 and DEC-041.

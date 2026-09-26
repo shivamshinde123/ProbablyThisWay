@@ -5,8 +5,8 @@
 | Component | Responsibility | Depends on |
 |---|---|---|
 | `App.tsx` | Load the supported catalog, start one session, poll events, and compose the screen | Shared contracts and HTTP API |
-| `TrailSearch.tsx` | Search and select the currently supported route catalog with an explicit coverage boundary | Typed hike detail |
-| TerrainMap.tsx | Own Cesium lifecycle, keyless ArcGIS or token-based Cesium terrain, clamped route entities/labels, credits, and camera framing | Cesium and typed routes |
+| TrailSearch.tsx | Submit worldwide trail/place searches, combine reviewed matches with attributed internet results, and select preview geometry | Typed hike detail and trail-search API |
+| TerrainMap.tsx | Own Cesium lifecycle, keyless ArcGIS or token-based elevation terrain, vertical exaggeration, clamped route entities/labels, credits, and explicit oblique camera framing | Cesium and typed routes |
 | `SessionHud.tsx` | Show current weather/daylight/user state, source attribution, and freshness | Session state |
 | `RecommendationBanner.tsx` | Show recommendation or no-route outcome, evidence, and safety copy | Typed policy result |
 | `DecisionFeed.tsx` | Show recent ordered decision events and polling state | Events response |
@@ -47,12 +47,12 @@ The browser depends on shared contracts and public API responses. Provider and d
 
 ## Session Lifecycle Additions
 
-- App owns start/end request state. While a session is active it replaces the start control with a visible End field session action; a successful end clears live-session presentation and unlocks TrailSearch.
+- App owns start/end request state. While a session is active it replaces the start control with a visible End field session action. Trail discovery remains available during the session; internet previews remain ineligible for session start. A successful end clears live-session presentation.
 - POST /api/v1/sessions/:sessionId/end performs the lifecycle transition through SessionStore compare-and-swap persistence.
 - SessionStore persists both the typed JSON session and relational lifecycle status. WeatherRefresher queries only active session IDs and rechecks status after loading.
 
 ## Internet Trail Discovery Components
 
-- NominatimTrailSearchProvider serializes outbound requests, enforces a delay above the public one-request-per-second ceiling, caches duplicate queries for 15 minutes, validates provider GeoJSON, and retains only named linear trail-like objects.
+- NominatimTrailSearchProvider serializes searches, enforces a delay above the public one-request-per-second ceiling, caches duplicate queries for 15 minutes, validates provider payloads, returns direct trail-like lines, and resolves point/area matches to a bounded nearby OpenStreetMap path extract.
 - GET /api/v1/trails/search validates submitted queries and isolates provider failures behind a structured 502 response.
 - TerrainMap renders selected internet LineString or MultiLineString geometry as an orange preview and frames it with the camera.

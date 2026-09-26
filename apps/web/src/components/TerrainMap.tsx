@@ -13,6 +13,7 @@ import {
   HeightReference,
   Ion,
   LabelStyle,
+  Material,
   Math as CesiumMath,
   Terrain,
   VerticalOrigin,
@@ -83,6 +84,14 @@ export function TerrainMap({
       });
       viewerRef.current = viewer;
       viewer.scene.globe.baseColor = Color.fromCssColorString("#10241c");
+      viewer.scene.globe.maximumScreenSpaceError = 4;
+      viewer.scene.verticalExaggeration = 1.8;
+      const contourMaterial = Material.fromType(Material.ElevationContourType);
+      contourMaterial.uniforms.color =
+        Color.fromCssColorString("#a7bd88").withAlpha(0.42);
+      contourMaterial.uniforms.spacing = 20;
+      contourMaterial.uniforms.width = 1.25;
+      viewer.scene.globe.material = contourMaterial;
       viewer.scene.globe.enableLighting = false;
       viewer.scene.globe.depthTestAgainstTerrain = true;
       viewer.scene.backgroundColor = Color.fromCssColorString("#07110e");
@@ -91,7 +100,7 @@ export function TerrainMap({
         destination: Cartesian3.fromDegrees(-71.888, 42.4848, 4_500),
         orientation: {
           heading: CesiumMath.toRadians(8),
-          pitch: CesiumMath.toRadians(-38),
+          pitch: CesiumMath.toRadians(-30),
           roll: 0,
         },
         duration: 0,
@@ -269,7 +278,7 @@ export function TerrainMap({
           duration: reduceMotion ? 0 : 1.6,
           offset: new HeadingPitchRange(
             CesiumMath.toRadians(8),
-            CesiumMath.toRadians(-48),
+            CesiumMath.toRadians(-28),
             Math.max(1_000, sphere.radius * 3.2),
           ),
         });
@@ -293,7 +302,7 @@ export function TerrainMap({
         duration: reduceMotion ? 0 : 1.6,
         offset: new HeadingPitchRange(
           CesiumMath.toRadians(8),
-          CesiumMath.toRadians(-48),
+          CesiumMath.toRadians(-28),
           Math.max(1_500, sphere.radius * 3.2),
         ),
       });
@@ -308,6 +317,41 @@ export function TerrainMap({
     status,
   ]);
 
+  function showObliqueView() {
+    const viewer = viewerRef.current;
+    if (!viewer || viewer.isDestroyed()) return;
+    const internetCoordinates = internetTrail
+      ? internetTrail.geometry.type === "LineString"
+        ? internetTrail.geometry.coordinates
+        : internetTrail.geometry.coordinates.flat()
+      : [];
+    const focusRoute = routes.find(
+      (route) =>
+        route.properties.id === (recommendedRouteId ?? selectedRouteId),
+    );
+    const positions =
+      internetCoordinates.length > 0
+        ? internetCoordinates.map(([longitude, latitude]) =>
+            Cartesian3.fromDegrees(longitude, latitude),
+          )
+        : (focusRoute?.geometry.coordinates.map(
+            ([longitude, latitude, height]) =>
+              Cartesian3.fromDegrees(longitude, latitude, height),
+          ) ?? []);
+    if (positions.length === 0) return;
+    const sphere = BoundingSphere.fromPoints(positions);
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    viewer.camera.flyToBoundingSphere(sphere, {
+      duration: reduceMotion ? 0 : 1.2,
+      offset: new HeadingPitchRange(
+        CesiumMath.toRadians(18),
+        CesiumMath.toRadians(-24),
+        Math.max(1_200, sphere.radius * 4.6),
+      ),
+    });
+  }
   const focusedName =
     internetTrail?.name ??
     routes.find(
@@ -351,10 +395,20 @@ export function TerrainMap({
       </div>
       <div className="map-mode" data-status={status}>
         <span />
-        {status === "starting" ? "Initializing terrain" : null}
-        {status === "cesium" ? "Cesium World Terrain" : null}
-        {status === "global" ? "Global elevation terrain" : null}
-        {status === "error" ? "Elevation unavailable · ellipsoid shown" : null}
+        {status === "starting" ? "Initializing 3D terrain" : null}
+        {status === "cesium" ? "3D · Cesium World Terrain" : null}
+        {status === "global" ? "3D · Global elevation terrain" : null}
+        {status === "error" ? "3D ellipsoid · elevation unavailable" : null}
+      </div>
+      <div className="map-3d-controls">
+        <button
+          type="button"
+          disabled={status === "starting"}
+          onClick={showObliqueView}
+        >
+          Frame 3D terrain
+        </button>
+        <span>Drag to orbit · wheel to zoom</span>
       </div>
       <div className="map-caption">
         {focusedName ?? "Loading route alternatives"}

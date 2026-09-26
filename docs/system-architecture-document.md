@@ -44,8 +44,8 @@ The API combines session orchestration, live weather initialization and periodic
 
 ## Internet Discovery Boundary
 
-The browser submits a search to the Fastify API; it never calls the public geocoder directly. The API serializes and caches Nominatim requests, validates GeoJSON through shared contracts, and returns attributed preview geometry. This discovery path does not write to PostgreSQL and does not enter the OpenRouter/policy pipeline. Reviewed route snapshots remain the only source for field-session alternatives and recommendations.
+The browser submits a search to the Fastify API; it never calls public OpenStreetMap services directly. The API serializes and caches searches, validates Nominatim GeoJSON, returns direct line matches, or uses a bounded OSM map extract to find nearby trail-like ways for point/area matches. Shared contracts validate every attributed preview. This discovery path does not write to PostgreSQL and does not enter the OpenRouter/policy pipeline. Reviewed route snapshots remain the only source for field-session alternatives and recommendations.
 
 ## Terrain Provider Boundary
 
-Terrain rendering is a browser integration. Cesium World Terrain is selected only when a scoped ion token is configured; otherwise Cesium loads the public ArcGIS World Elevation Terrain3D ImageServer. Route evaluation does not consume rendered tile heights: reviewed ascent metrics remain the decision input. Provider credits are part of the map UI, and terrain failure degrades only visualization.
+Terrain rendering is a browser integration. Cesium World Terrain is selected only when a scoped ion token is configured; otherwise Cesium loads the public ArcGIS World Elevation Terrain3D ImageServer. The globe applies moderate vertical exaggeration and an oblique framing control so relief is visually explicit. Route evaluation does not consume rendered tile heights: reviewed ascent metrics remain the decision input. Provider credits are part of the map UI, and terrain failure degrades only visualization.

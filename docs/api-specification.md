@@ -13,7 +13,7 @@
 
 ### GET /trails/search?q={query}
 
-Runs a submitted-query internet search through the server-side OpenStreetMap Nominatim adapter. Queries must contain 2-120 characters. Response 200 contains the normalized query, OpenStreetMap attribution/link, and up to eight named line-mapped results with ID, name, location, mapped distance, LineString or MultiLineString geometry, source, and source URL.
+Runs a submitted-query internet search through the server-side OpenStreetMap adapter. Queries must contain 2-120 characters. Direct line matches are returned from Nominatim. When a name resolves to a point or area, such as a hill or park, the API requests a small bounded map extract and returns the nearby mapped trail network first, followed by named nearby paths. Response 200 contains the whitespace-normalized query, OpenStreetMap attribution/link, and up to eight results with ID, name, location, mapped distance, LineString or MultiLineString geometry, source, and source URL.
 
 The endpoint does not autocomplete. The adapter serializes uncached public-service requests to no more than one per second, caches duplicate queries for 15 minutes, and sends an identifying application user agent. Invalid queries return 422 invalid_trail_query; upstream timeout, HTTP, or schema failures return 502 trail_search_unavailable. Internet results are map previews and are not eligible for evaluated field sessions until a reviewed alternative-route dataset exists.
 ### `GET /hikes`

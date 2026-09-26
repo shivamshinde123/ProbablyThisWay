@@ -38,7 +38,7 @@ The product is decision support, not an emergency or navigation guarantee. UI co
 
 ## Release Boundaries
 
-- Internet discovery coverage: named linear trail objects returned by OpenStreetMap Nominatim. Results are attributed previews, not validated route alternatives.
+- Internet discovery coverage: direct line matches plus bounded nearby mapped paths when OpenStreetMap resolves a named hill, park, or trail area as a point/polygon. Results are attributed previews, not validated route alternatives.
 - Launch area: Wachusett Mountain State Reservation. The MVP uses the Massachusetts DCR Roads and Trails layer for Pine Hill, Mountain House, and Harrington summit corridors, plus the official DCR trail map for published metrics.
 - Live position data is post-MVP. Until it exists, route progress is omitted or marked unavailable rather than inferred from fabricated location data.
 - The repository is provider-neutral and supports one API replica behind the shipped Nginx proxy. Cloud, DNS, TLS, registry, secret-manager, backup, alerting, and metrics products are operator choices.

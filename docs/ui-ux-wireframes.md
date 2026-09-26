@@ -65,11 +65,11 @@ After session start, a compact field-log panel appears below the recommendation.
 The selected-hike card links to the Massachusetts DCR geometry source and displays its dataset date. Route cards show `unknown` rather than inferring exposure or access. Known hard exclusions disable the route, replace its score with an Excluded label, and list reasons in a no-route alert when every option is blocked. Persistent safety copy tells users to check current DCR notices and posted closures because the checked-in geometry is not a live advisory feed.
 ## Supported Trail Search
 
-A prominent field-index search sits before the selected-hike card. On submit it combines immediate reviewed-route matches with named linear trail results from the OpenStreetMap internet index. Each result identifies whether it is reviewed or an internet preview and shows location and mapped distance. Selecting an internet result camera-frames its geometry, updates the selected card, links to the source object, and explicitly disables field-session start because arbitrary results do not yet have reviewed alternatives. The control locks while a session is active, shows searching/error/empty states, and displays OpenStreetMap attribution.
+A prominent field-index search sits before the selected-hike card. On submit it combines immediate reviewed-route matches with direct OpenStreetMap trail lines or a place-labeled network of nearby mapped paths when the query resolves to a hill, park, or area. Each result identifies whether it is reviewed or an internet preview and shows location and mapped distance. Selecting an internet result camera-frames its geometry, updates the selected card, links to the source object, and explicitly disables field-session start because arbitrary results do not yet have reviewed alternatives. Search remains available while a reviewed-route session is active, shows searching/error/empty states, and displays OpenStreetMap attribution.
 
 ## Active Session Control
 
-While a field session is active, the start action is replaced by a full-width outlined End field session button. During the request it reads Ending field session… and cannot be pressed twice. Success removes the live HUD, recommendation, and decision feed while preserving the selected trail; search and route selection become available immediately.
+While a field session is active, the start action is replaced by a full-width outlined End field session button. During the request it reads Ending field session… and cannot be pressed twice. Success removes the live HUD, recommendation, and decision feed while preserving the selected trail; trail discovery remains available throughout the lifecycle.
 
 ## Readable Typography Scale
 
@@ -77,4 +77,4 @@ Operational labels and metadata use an 11 px minimum, compact controls use 12-15
 
 ## Terrain Status and Attribution
 
-The map status explicitly reads Global elevation terrain for the keyless default or Cesium World Terrain for the token-based source. Initialization and failure states remain visible. Elevation-provider credits stay on the map and cannot be hidden by the application chrome. Trail lines, endpoint markers, and labels follow the terrain surface.
+The map status explicitly identifies 3D Global elevation terrain for the keyless default or 3D Cesium World Terrain for the token-based source. Initialization and failure states remain visible. Elevation-provider credits stay on the map and cannot be hidden by the application chrome. Trail lines, endpoint markers, and labels follow the terrain surface. Moderate vertical exaggeration, a shallow oblique camera, and a visible Frame 3D terrain control make relief apparent; nearby text explains orbit and zoom interaction.

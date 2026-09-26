@@ -10,6 +10,7 @@ const cesiumSource = normalizePath(
   ),
 );
 const cesiumBuildDirectory = "cesiumStatic";
+const cesiumDirectories = ["Workers", "ThirdParty", "Assets", "Widgets"];
 
 export default defineConfig(({ command }) => ({
   define: {
@@ -20,12 +21,14 @@ export default defineConfig(({ command }) => ({
   plugins: [
     react(),
     viteStaticCopy({
-      targets: ["Workers", "ThirdParty", "Assets", "Widgets"].map(
-        (directory) => ({
-          src: `${cesiumSource}/${directory}`,
-          dest: cesiumBuildDirectory,
-        }),
-      ),
+      targets: cesiumDirectories.map((directory) => {
+        const sourceDirectory = `${cesiumSource}/${directory}`;
+        return {
+          src: `${sourceDirectory}/**/*`,
+          dest: `${cesiumBuildDirectory}/${directory}`,
+          rename: { stripBase: 5 },
+        };
+      }),
     }),
   ],
   server: { port: 5173, fs: { allow: [webSource, cesiumSource] } },

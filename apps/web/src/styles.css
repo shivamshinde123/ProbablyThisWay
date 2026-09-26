@@ -1287,3 +1287,79 @@ h1 em {
   font-size: 14px;
   line-height: 1.5;
 }
+.map-3d-controls {
+  position: absolute;
+  top: 94px;
+  left: 20px;
+  z-index: 4;
+  display: grid;
+  gap: 7px;
+  justify-items: start;
+  pointer-events: none;
+}
+
+.map-3d-controls button {
+  pointer-events: auto;
+  padding: 10px 13px;
+  border: 1px solid var(--signal);
+  color: var(--ink);
+  background: var(--signal);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.map-3d-controls button:hover {
+  box-shadow: 0 0 18px rgba(183, 255, 106, 0.32);
+}
+
+.map-3d-controls button:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
+.map-3d-controls span {
+  padding: 5px 7px;
+  color: #c8d0c5;
+  background: rgba(7, 17, 14, 0.78);
+  font-family: sans-serif;
+  font-size: 13px;
+}
+
+.trail-search-results {
+  max-height: min(460px, 55vh);
+  overflow-y: auto;
+}
+
+.trail-search-results button small,
+.trail-search-results button b {
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .map-3d-controls {
+    top: 92px;
+    left: 12px;
+  }
+
+  .map-3d-controls span {
+    display: none;
+  }
+}
+.trail-search-heading span,
+.trail-search-heading small {
+  font-size: 13px;
+}
+
+.trail-search-heading strong {
+  font-size: 28px;
+}
+
+.trail-search-form input {
+  font-size: 16px;
+}
+
+.trail-search-form button {
+  font-size: 14px;
+}
