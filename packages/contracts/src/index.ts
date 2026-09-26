@@ -33,3 +33,13 @@ export const createSessionRequestSchema = z.object({ hikeId: z.string().min(1), 
 export type CreateSessionRequest = z.infer<typeof createSessionRequestSchema>;
 export const sessionSchema = z.object({ id: z.string().uuid(), hikeId: z.string(), selectedRouteId: z.string(), status: z.literal("active"), createdAt: z.string().datetime(), state: hikingStateSchema });
 export type Session = z.infer<typeof sessionSchema>;
+export const routeSuitabilitySchema = z.object({ routeId: z.string().min(1), suitability: z.number().min(0).max(1) });
+export type RouteSuitability = z.infer<typeof routeSuitabilitySchema>;
+export const routeEvaluationSchema = z.object({
+  id: z.string().uuid(), sessionId: z.string().uuid(), status: z.literal("completed"), createdAt: z.string().datetime(),
+  questionSetVersion: z.literal("route-suitability-v1"), provider: z.enum(["jev", "deterministic-baseline"]),
+  scores: z.array(routeSuitabilitySchema).min(2),
+});
+export type RouteEvaluation = z.infer<typeof routeEvaluationSchema>;
+export const sessionStartResponseSchema = z.object({ session: sessionSchema, evaluation: routeEvaluationSchema });
+export type SessionStartResponse = z.infer<typeof sessionStartResponseSchema>;

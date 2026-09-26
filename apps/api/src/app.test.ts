@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { hikeDetailSchema } from "@probably-this-way/contracts";
+import { hikeDetailSchema, routeEvaluationSchema, sessionStartResponseSchema } from "@probably-this-way/contracts";
 import { buildApp } from "./app.js";
+
+delete process.env.JEV_API_KEY;
 
 test("GET /api/v1/hikes/:hikeId returns three contract-valid route alternatives", async () => {
   const app = await buildApp();
@@ -25,10 +27,16 @@ test("POST /api/v1/sessions creates a typed static-state session", async () => {
   const app = await buildApp();
   const response = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" } });
   assert.equal(response.statusCode, 201);
-  const body = response.json();
-  assert.equal(body.selectedRouteId, "balanced-traverse");
-  assert.equal(body.state.source, "prototype-static");
-  assert.equal(body.state.daylight.remainingMinutes, 159);
+  const body = sessionStartResponseSchema.parse(response.json());
+  assert.equal(body.session.selectedRouteId, "balanced-traverse");
+  assert.equal(body.session.state.source, "prototype-static");
+  assert.equal(body.session.state.daylight.remainingMinutes, 159);
+  assert.equal(body.evaluation.provider, "deterministic-baseline");
+  assert.equal(body.evaluation.scores.length, 3);
+  assert.ok(body.evaluation.scores.every((score) => score.suitability >= 0 && score.suitability <= 1));
+  const latest = await app.inject({ method: "GET", url: `/api/v1/sessions/${body.session.id}/evaluations/latest` });
+  assert.equal(latest.statusCode, 200);
+  assert.deepEqual(routeEvaluationSchema.parse(latest.json()), body.evaluation);
   await app.close();
 });
 
@@ -37,5 +45,12 @@ test("POST /api/v1/sessions rejects a route outside the hike", async () => {
   const response = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "unknown" } });
   assert.equal(response.statusCode, 422);
   assert.equal(response.json().error.code, "invalid_route");
+  await app.close();
+});
+test("GET latest evaluation returns a structured 404 for an unknown session", async () => {
+  const app = await buildApp();
+  const response = await app.inject({ method: "GET", url: "/api/v1/sessions/00000000-0000-4000-8000-000000000000/evaluations/latest" });
+  assert.equal(response.statusCode, 404);
+  assert.equal(response.json().error.code, "evaluation_not_found");
   await app.close();
 });

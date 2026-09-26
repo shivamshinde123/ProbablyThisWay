@@ -27,7 +27,7 @@ Response `200` includes `routes[].properties` with `id`, `name`, `source`, `data
 
 Request: `{ "hikeId": "wachusett-summit", "selectedRouteId": "balanced-traverse" }`
 
-Response `201` contains the session ID, selected route, status, timestamps, and a typed hiking-state snapshot. The current implementation returns `source: "prototype-static"`; it must not be presented as live observed data.
+Response `201` is `{ "session": Session, "evaluation": RouteEvaluation }`. The session contains its ID, selected route, status, timestamps, and typed hiking-state snapshot. The current implementation returns `source: "prototype-static"`; it must not be presented as live observed data.
 
 ### `GET /sessions/{sessionId}`
 
@@ -62,3 +62,11 @@ Use `400` invalid input, `404` unknown resource, `409` stale/conflicting state, 
 ## Pending Contracts
 
 Exact JSON Schemas, authentication method, pagination limits, and real-time transport are TBD.
+
+## Implemented Route Evaluation Contract
+
+`POST /sessions` runs the initial route evaluation and returns `{ "session": Session, "evaluation": RouteEvaluation }`. `RouteEvaluation` includes an ID, session ID, timestamp, `questionSetVersion`, provider provenance, and one `{ routeId, suitability }` score per route. Suitability is bounded from `0` to `1`.
+
+`GET /sessions/{sessionId}/evaluations/latest` returns the stored evaluation or a structured `404` with code `evaluation_not_found`. The current store is process memory and is replaced by persistence in a later stage.
+
+When `JEV_API_KEY` is configured, the server sends the shared hiking state and one typed Noul suitability question per valid route to the Jev endpoint. Missing credentials, timeout, transport errors, or invalid Jev responses use the explicitly labeled `deterministic-baseline` provider. The fallback is development continuity, not a claim of Jev inference.
