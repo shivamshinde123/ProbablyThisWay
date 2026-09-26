@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { hikeDetailSchema, latestDecisionSchema, routeEvaluationSchema, sessionStartResponseSchema, stateUpdateResponseSchema } from "@probably-this-way/contracts";
+import { decisionEventsResponseSchema, hikeDetailSchema, latestDecisionSchema, routeEvaluationSchema, sessionStartResponseSchema, stateUpdateResponseSchema } from "@probably-this-way/contracts";
 import { buildApp } from "./app.js";
 import { selectRouteRecommendation } from "./policy.js";
 
@@ -150,5 +150,60 @@ test("PATCH state returns a structured 404 for an unknown session", async () => 
   });
   assert.equal(response.statusCode, 404);
   assert.equal(response.json().error.code, "session_not_found");
+  await app.close();
+});
+
+test("decision events expose an ordered cursor feed for session start and re-evaluation", async () => {
+  const app = await buildApp();
+  const createdResponse = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" } });
+  const created = sessionStartResponseSchema.parse(createdResponse.json());
+
+  const initialResponse = await app.inject({ method: "GET", url: "/api/v1/sessions/" + created.session.id + "/events" });
+  assert.equal(initialResponse.statusCode, 200);
+  const initial = decisionEventsResponseSchema.parse(initialResponse.json());
+  assert.equal(initial.nextCursor, 1);
+  assert.equal(initial.items.length, 1);
+  assert.equal(initial.items[0]?.type, "session_started");
+  assert.deepEqual(initial.items[0]?.crossedThresholds, []);
+
+  const updateResponse = await app.inject({
+    method: "PATCH",
+    url: "/api/v1/sessions/" + created.session.id + "/state",
+    payload: {
+      observedAt: new Date(Date.parse(created.session.state.observedAt) + 60_000).toISOString(),
+      source: "weather",
+      changes: { windMph: 13 },
+    },
+  });
+  assert.equal(updateResponse.statusCode, 202);
+
+  const nextResponse = await app.inject({ method: "GET", url: "/api/v1/sessions/" + created.session.id + "/events?after=1" });
+  assert.equal(nextResponse.statusCode, 200);
+  const next = decisionEventsResponseSchema.parse(nextResponse.json());
+  assert.equal(next.nextCursor, 2);
+  assert.equal(next.items.length, 1);
+  assert.equal(next.items[0]?.type, "recommendation_updated");
+  assert.deepEqual(next.items[0]?.crossedThresholds, ["windMph"]);
+  assert.equal(next.items[0]?.state.weather.windMph, 13);
+
+  const emptyResponse = await app.inject({ method: "GET", url: "/api/v1/sessions/" + created.session.id + "/events?after=2" });
+  const empty = decisionEventsResponseSchema.parse(emptyResponse.json());
+  assert.deepEqual(empty.items, []);
+  assert.equal(empty.nextCursor, 2);
+  await app.close();
+});
+
+test("decision events reject invalid cursors and unknown sessions", async () => {
+  const app = await buildApp();
+  const createdResponse = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" } });
+  const created = sessionStartResponseSchema.parse(createdResponse.json());
+
+  const invalid = await app.inject({ method: "GET", url: "/api/v1/sessions/" + created.session.id + "/events?after=-1" });
+  assert.equal(invalid.statusCode, 422);
+  assert.equal(invalid.json().error.code, "invalid_cursor");
+
+  const missing = await app.inject({ method: "GET", url: "/api/v1/sessions/00000000-0000-4000-8000-000000000000/events" });
+  assert.equal(missing.statusCode, 404);
+  assert.equal(missing.json().error.code, "session_not_found");
   await app.close();
 });

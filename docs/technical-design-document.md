@@ -55,3 +55,7 @@ The API owns Jev credentials and calls the configured decision endpoint with a f
 ## Deterministic Explanation and Camera Behavior
 
 The recommendation policy creates explanation copy only from validated route metrics and the same hiking-state snapshot used for evaluation. It does not generate hidden reasoning or call an LLM. The client renders those facts directly. When the recommendation first arrives, Cesium computes a bounding sphere from that route's coordinates and flies to it once; `prefers-reduced-motion` changes the transition duration to zero.
+
+## Implemented Decision Events
+
+A session publishes `session_started` after the initial decision and `recommendation_updated` only after a current-sequence threshold evaluation succeeds. Event sequence is contiguous and independent of state-update sequence. `GET /sessions/{sessionId}/events` performs cursor filtering and returns the last delivered sequence as `nextCursor`. The client validates every batch and uses recursive five-second polling so requests do not overlap. Failed reads mark the feed as retrying without discarding the last valid decision.

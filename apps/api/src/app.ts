@@ -3,12 +3,15 @@ import Fastify from "fastify";
 import { randomUUID } from "node:crypto";
 import {
   createSessionRequestSchema,
+  decisionEventSchema,
+  decisionEventsResponseSchema,
   hikeDetailSchema,
   hikeSummarySchema,
   latestDecisionSchema,
   sessionStartResponseSchema,
   stateUpdateResponseSchema,
   updateSessionStateRequestSchema,
+  type DecisionEvent,
   type HikeDetail,
   type HikingState,
   type LatestDecision,
@@ -37,6 +40,8 @@ type SessionRecord = {
   decision: LatestDecision;
   sequence: number;
   lastEvaluatedState: HikingState;
+  eventSequence: number;
+  events: DecisionEvent[];
 };
 
 function applyStateUpdate(state: HikingState, update: UpdateSessionStateRequest): HikingState {
@@ -88,7 +93,14 @@ export async function buildApp() {
     const evaluation = await evaluateRoutes({ sessionId: session.id, state: session.state, routes: hike.routes });
     const recommendation = selectRouteRecommendation(evaluation, hike.routes, session.state);
     const decision = latestDecisionSchema.parse({ evaluation, recommendation });
-    sessions.set(session.id, { session, decision, sequence: 0, lastEvaluatedState: session.state });
+    const initialEvent = decisionEventSchema.parse({
+      id: randomUUID(), sessionId: session.id, sequence: 1, type: "session_started",
+      occurredAt: decision.recommendation.decidedAt, state: session.state, decision, crossedThresholds: [],
+    });
+    sessions.set(session.id, {
+      session, decision, sequence: 0, lastEvaluatedState: session.state,
+      eventSequence: 1, events: [initialEvent],
+    });
     return reply.code(201).send(sessionStartResponseSchema.parse({ session, evaluation, recommendation }));
   });
 
@@ -130,6 +142,12 @@ export async function buildApp() {
     if (record.sequence === sequence) {
       record.decision = decision;
       record.lastEvaluatedState = nextState;
+      record.eventSequence += 1;
+      record.events.push(decisionEventSchema.parse({
+        id: randomUUID(), sessionId: record.session.id, sequence: record.eventSequence,
+        type: "recommendation_updated", occurredAt: decision.recommendation.decidedAt,
+        state: nextState, decision, crossedThresholds,
+      }));
     }
 
     return reply.code(202).send(stateUpdateResponseSchema.parse({
@@ -138,6 +156,19 @@ export async function buildApp() {
     }));
   });
 
+  app.get<{ Params: { sessionId: string }; Querystring: { after?: string } }>("/api/v1/sessions/:sessionId/events", async (request, reply) => {
+    const record = sessions.get(request.params.sessionId);
+    if (!record) return reply.code(404).send({ error: { code: "session_not_found", message: "Session not found", details: {} } });
+
+    const after = request.query.after === undefined ? 0 : Number(request.query.after);
+    if (!Number.isSafeInteger(after) || after < 0) {
+      return reply.code(422).send({ error: { code: "invalid_cursor", message: "Event cursor must be a non-negative integer", details: {} } });
+    }
+
+    const items = record.events.filter((event) => event.sequence > after);
+    const nextCursor = items.at(-1)?.sequence ?? after;
+    return decisionEventsResponseSchema.parse({ items, nextCursor });
+  });
   app.get<{ Params: { sessionId: string } }>("/api/v1/sessions/:sessionId/evaluations/latest", async (request, reply) => {
     const record = sessions.get(request.params.sessionId);
     if (!record) return reply.code(404).send({ error: { code: "evaluation_not_found", message: "Evaluation not found", details: {} } });

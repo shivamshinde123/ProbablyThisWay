@@ -46,4 +46,4 @@ Add GiST indexes to geometry/geography, B-tree indexes to foreign keys and chron
 
 ## Current Prototype Storage
 
-The implemented API uses a process-memory session record containing the current session snapshot, latest decision, accepted-update sequence, and last evaluated snapshot. It mirrors the ordering model above but is not durable and is cleared on restart. PostgreSQL/PostGIS migrations remain a production-stage requirement.
+The implemented API uses a process-memory session record containing the current session snapshot, latest decision, accepted-update sequence, last evaluated snapshot, independent event sequence, and ordered decision events. It mirrors the ordering model above but is not durable and is cleared on restart. PostgreSQL/PostGIS migrations remain a production-stage requirement.

@@ -59,3 +59,9 @@ npm workspaces manage the monorepo. Add planned domain, database, and test direc
 - `apps/api/src/thresholds.ts` — deterministic material-change detector.
 - `apps/api/src/thresholds.test.ts` — threshold boundary tests.
 - `apps/api/src/app.ts` — in-memory session state, ordered updates, and re-evaluation orchestration.
+
+### Decision Feed Files
+
+- `apps/web/src/components/DecisionFeed.tsx` — accessible compact decision-event history.
+- `apps/web/src/App.tsx` — cursor polling and atomic event application.
+- `apps/api/src/app.ts` — process-memory event append and cursor endpoint.

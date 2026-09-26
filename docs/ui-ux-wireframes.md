@@ -55,3 +55,7 @@ After session evaluation, the highest-ranked valid route changes to signal green
 - Below `900px`, the map occupies approximately 58% of the small viewport height before the decision panel.
 - The camera frames a recommendation over 1.6 seconds unless reduced motion is requested.
 - Error text provides a retry path through the unchanged session-start action.
+
+## Decision Signal Feed
+
+After session start, a compact field-log panel appears below the recommendation. It shows connection state, newest-first event sequence, decision type, recommended route, material triggers, and local time. It is an observational surface only: it contains no refresh, evaluation, or simulation control. On narrow screens it remains in normal document flow beneath the recommendation.

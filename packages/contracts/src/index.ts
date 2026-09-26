@@ -76,3 +76,19 @@ export const stateUpdateResponseSchema = z.object({
   decision: latestDecisionSchema.optional(),
 });
 export type StateUpdateResponse = z.infer<typeof stateUpdateResponseSchema>;
+export const decisionEventSchema = z.object({
+  id: z.string().uuid(),
+  sessionId: z.string().uuid(),
+  sequence: z.number().int().positive(),
+  type: z.enum(["session_started", "recommendation_updated"]),
+  occurredAt: z.string().datetime(),
+  state: hikingStateSchema,
+  decision: latestDecisionSchema,
+  crossedThresholds: z.array(z.string()),
+});
+export type DecisionEvent = z.infer<typeof decisionEventSchema>;
+export const decisionEventsResponseSchema = z.object({
+  items: z.array(decisionEventSchema),
+  nextCursor: z.number().int().nonnegative(),
+});
+export type DecisionEventsResponse = z.infer<typeof decisionEventsResponseSchema>;
