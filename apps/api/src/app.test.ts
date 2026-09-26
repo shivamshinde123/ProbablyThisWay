@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { decisionEventsResponseSchema, hikeDetailSchema, latestDecisionSchema, routeEvaluationSchema, sessionStartResponseSchema, stateUpdateResponseSchema } from "@probably-this-way/contracts";
 import { buildApp } from "./app.js";
 import { selectRouteRecommendation } from "./policy.js";
+import { InMemorySessionStore } from "./session-store.js";
 
 delete process.env.JEV_API_KEY;
 
@@ -259,5 +260,48 @@ test("PATCH state enforces configured adapter credentials before session lookup"
   });
   assert.equal(accepted.statusCode, 202);
   assert.equal(stateUpdateResponseSchema.parse(accepted.json()).accepted, true);
+  await app.close();
+});
+
+test("health routes separate liveness from dependency readiness", async () => {
+  class UnreadyStore extends InMemorySessionStore {
+    override async readiness(): Promise<void> { throw new Error("database unavailable"); }
+  }
+  const app = await buildApp({ sessionStore: new UnreadyStore() });
+  assert.equal((await app.inject({ method: "GET", url: "/api/v1/health/live" })).statusCode, 200);
+  const readiness = await app.inject({ method: "GET", url: "/api/v1/health/ready" });
+  assert.equal(readiness.statusCode, 503);
+  assert.deepEqual(readiness.json(), { service: "probably-this-way-api", status: "unavailable" });
+  await app.close();
+});
+
+test("API applies configured CORS origins and request limits", async () => {
+  const app = await buildApp({ operationalEnv: {
+    CORS_ALLOWED_ORIGINS: "https://app.example.com,https://preview.example.com",
+    RATE_LIMIT_MAX: "2",
+    RATE_LIMIT_WINDOW_MS: "60000",
+  } });
+  const allowed = await app.inject({ method: "GET", url: "/api/v1/hikes", headers: { origin: "https://preview.example.com" } });
+  assert.equal(allowed.headers["access-control-allow-origin"], "https://preview.example.com");
+  const second = await app.inject({ method: "GET", url: "/api/v1/hikes" });
+  assert.equal(second.statusCode, 200);
+  const limited = await app.inject({ method: "GET", url: "/api/v1/hikes" });
+  assert.equal(limited.statusCode, 429);
+  assert.equal(limited.headers["x-ratelimit-limit"], "2");
+  await app.close();
+});
+
+test("decision event pagination validates and applies page limits", async () => {
+  const app = await buildApp();
+  const createdResponse = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "mountain-house-summit" } });
+  const created = sessionStartResponseSchema.parse(createdResponse.json());
+  const invalid = await app.inject({ method: "GET", url: "/api/v1/sessions/" + created.session.id + "/events?limit=101" });
+  assert.equal(invalid.statusCode, 422);
+  assert.equal(invalid.json().error.code, "invalid_limit");
+  const page = await app.inject({ method: "GET", url: "/api/v1/sessions/" + created.session.id + "/events?limit=1" });
+  assert.equal(page.statusCode, 200);
+  const parsed = decisionEventsResponseSchema.parse(page.json());
+  assert.equal(parsed.items.length, 1);
+  assert.equal(parsed.nextCursor, 1);
   await app.close();
 });

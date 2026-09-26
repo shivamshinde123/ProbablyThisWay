@@ -20,18 +20,17 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "npm run dev -w @probably-this-way/api",
+      command: "node apps/api/dist/server.js",
       url: "http://127.0.0.1:3001/api/v1/health",
       reuseExistingServer: false,
       timeout: 120_000,
       env: { ...process.env, HOST: "127.0.0.1", PORT: "3001", WEB_ORIGIN: "http://127.0.0.1:5173" },
     },
     {
-      command: "npm run dev -w @probably-this-way/web -- --host 127.0.0.1",
+      command: "node node_modules/vite/bin/vite.js preview apps/web --host 127.0.0.1 --port 5173",
       url: "http://127.0.0.1:5173",
       reuseExistingServer: false,
       timeout: 120_000,
-      env: { ...process.env, VITE_API_BASE_URL: "http://127.0.0.1:3001/api/v1" },
     },
   ],
   projects: [

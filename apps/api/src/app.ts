@@ -1,4 +1,5 @@
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import { randomUUID } from "node:crypto";
 import {
@@ -30,6 +31,7 @@ import {
 import { createWeatherProvider, type WeatherProvider } from "./weather-adapter.js";
 import { hikeDetails, hikeWeatherLocations } from "./route-catalog.js";
 import { WeatherRefresher, resolveWeatherRefreshInterval } from "./weather-refresh.js";
+import { resolveOperationalConfig } from "./operational-config.js";
 
 function applyStateUpdate(state: HikingState, update: UpdateSessionStateRequest): HikingState {
   const { changes } = update;
@@ -59,10 +61,13 @@ export async function buildApp(options: {
   sessionStore?: SessionStore;
   weatherEnv?: NodeJS.ProcessEnv;
   weatherProvider?: WeatherProvider | null;
+  operationalEnv?: NodeJS.ProcessEnv;
 } = {}) {
   const adapterAuth = resolveAdapterAuthConfig(options.adapterAuthEnv ?? process.env);
   const sessionStore = options.sessionStore ?? createSessionStore(process.env);
   const weatherEnv = options.weatherEnv ?? process.env;
+  const operationalEnv = options.operationalEnv ?? process.env;
+  const operational = resolveOperationalConfig(operationalEnv);
   const weatherProvider = options.weatherProvider === null
     ? undefined
     : options.weatherProvider ?? createWeatherProvider(weatherEnv);
@@ -71,8 +76,13 @@ export async function buildApp(options: {
   const weatherFreshnessMaxAge = weatherProvider
     ? resolveWeatherFreshnessMaxAge(weatherEnv, weatherRefreshInterval)
     : DEFAULT_WEATHER_FRESHNESS_MAX_AGE_MS;
-  const app = Fastify({ logger: true });
-  await app.register(cors, { origin: process.env.WEB_ORIGIN ?? "http://localhost:5173" });
+  const app = Fastify({ logger: { level: operational.logLevel } });
+  await app.register(cors, { origin: operational.allowedOrigins });
+  await app.register(rateLimit, {
+    global: true,
+    max: operational.rateLimitMax,
+    timeWindow: operational.rateLimitWindowMs,
+  });
 
   const weatherRefresher = weatherProvider
     ? new WeatherRefresher({
@@ -110,7 +120,18 @@ export async function buildApp(options: {
     await sessionStore.close();
   });
 
-  app.get("/api/v1/health", async () => ({ service: "probably-this-way-api", status: "ok" }));
+  const healthRouteOptions = { config: { rateLimit: false } } as const;
+  app.get("/api/v1/health", healthRouteOptions, async () => ({ service: "probably-this-way-api", status: "ok" }));
+  app.get("/api/v1/health/live", healthRouteOptions, async () => ({ service: "probably-this-way-api", status: "ok" }));
+  app.get("/api/v1/health/ready", healthRouteOptions, async (_request, reply) => {
+    try {
+      await sessionStore.readiness();
+      return { service: "probably-this-way-api", status: "ready" };
+    } catch (error) {
+      app.log.error({ err: error }, "Readiness check failed");
+      return reply.code(503).send({ service: "probably-this-way-api", status: "unavailable" });
+    }
+  });
   app.get("/api/v1/hikes", async () => ({ items: Object.values(hikeDetails).map((hike) => hikeSummarySchema.parse(hike)) }));
   app.get<{ Params: { hikeId: string } }>("/api/v1/hikes/:hikeId", async (request, reply) => {
     const hike = hikeDetails[request.params.hikeId];
@@ -207,7 +228,7 @@ export async function buildApp(options: {
     return reply.code(202).send(result.response);
   });
 
-  app.get<{ Params: { sessionId: string }; Querystring: { after?: string } }>("/api/v1/sessions/:sessionId/events", async (request, reply) => {
+  app.get<{ Params: { sessionId: string }; Querystring: { after?: string; limit?: string } }>("/api/v1/sessions/:sessionId/events", async (request, reply) => {
     const record = await sessionStore.get(request.params.sessionId);
     if (!record) return reply.code(404).send({ error: { code: "session_not_found", message: "Session not found", details: {} } });
 
@@ -216,7 +237,12 @@ export async function buildApp(options: {
       return reply.code(422).send({ error: { code: "invalid_cursor", message: "Event cursor must be a non-negative integer", details: {} } });
     }
 
-    const items = record.events.filter((event) => event.sequence > after);
+    const limit = request.query.limit === undefined ? operational.eventPageSize : Number(request.query.limit);
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+      return reply.code(422).send({ error: { code: "invalid_limit", message: "Event limit must be an integer from 1 to 100", details: {} } });
+    }
+
+    const items = record.events.filter((event) => event.sequence > after).slice(0, limit);
     const nextCursor = items.at(-1)?.sequence ?? after;
     const environmentalStatus = resolveEnvironmentalStatus(
       record.session.environmentalStatus, record.session.state, weatherFreshnessMaxAge,

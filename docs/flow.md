@@ -322,8 +322,9 @@ typed routes + suitability scores
 
 ```text
 npm run test:e2e
-  -> Playwright starts Fastify on 127.0.0.1:3001
-  -> Playwright starts Vite on 127.0.0.1:5173
+  -> build production API and web artifacts
+  -> Playwright starts the compiled Fastify server on 127.0.0.1:3001
+  -> Playwright starts Vite preview on 127.0.0.1:5173
   -> desktop Chromium + Pixel 7 projects
        -> load DCR route catalog
        -> verify no simulation control
@@ -333,4 +334,18 @@ npm run test:e2e
        -> intercept event poll with typed stale status
        -> verify last-valid-value warning
   -> retain failure artifacts under output/playwright/
+```
+
+## Operational Request Flow
+
+```text
+request
+  -> CORS allowlist
+  -> per-IP process-local rate limit (health routes excluded)
+  -> route validation and handler
+  -> structured completion/error log
+
+/health/live -> process response
+/health/ready -> SessionStore.readiness -> 200 ready or 503 unavailable
+/sessions/:id/events -> validate after + limit -> return at most 100 events
 ```

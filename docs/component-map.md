@@ -111,3 +111,10 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 |---|---|---|
 | `playwright.config.ts` | Start isolated API and web servers and run deterministic desktop/mobile projects | Chromium, Fastify, Vite |
 | `tests/e2e/core-flow.spec.ts` | Verify the integrated user flow and stale-state behavior at the browser boundary | Public API and rendered UI contracts |
+## Operational Guardrail Components
+
+| Component | Responsibility | Depends on |
+|---|---|---|
+| `operational-config.ts` | Validate logging, CORS, rate-limit, and event-page settings | Environment and Zod |
+| Fastify rate-limit hook | Bound non-health traffic by client IP | `@fastify/rate-limit` process-local store |
+| Liveness/readiness routes | Separate process health from session-store availability | `SessionStore.readiness` |
