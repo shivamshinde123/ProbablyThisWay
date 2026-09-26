@@ -31,6 +31,8 @@ The 3D map is primary. Conditions and recommendations must be glanceable, route 
 - **Choose hike:** map placeholder and supported-hike picker.
 - **Loading:** terrain skeleton/progress and non-blocking panel placeholders.
 - **Ready:** all alternatives visible; recommendation has color plus pattern/weight, not color alone.
+- **Route preview playing:** a directional pointer and soft pulse travel over the recommended route, the completed segment glows, and a compact progress panel offers Pause and Replay from start.
+- **Route preview paused/complete:** progress remains visible; the primary action changes to Resume preview or Play again. Copy states that the motion is an animated guide rather than live GPS.
 - **Updating:** retain the last valid route and show evaluation progress.
 - **Stale/offline:** display data age and affected inputs.
 - **Error:** provider refresh failures appear as an orange `Refresh failed` HUD signal with `showing last valid observation`; the observational UI contains no manual retry control.
@@ -47,6 +49,8 @@ All controls require labels, keyboard access, visible focus, adequate contrast, 
 ## Implemented Recommendation State
 
 After session evaluation, the highest-ranked valid route changes to signal green on both the map and route list. The original pre-session choice remains orange when different, and other routes remain moss. A compact recommendation panel shows route name, suitability, policy version, and a reminder to compare against official guidance and actual field conditions.
+
+The map automatically previews the recommended geometry from start to finish. The pointer rotates with the line direction, its halo pulses, and the traveled portion gains a luminous overlay. A glass field-instrument panel at the lower-left reports percentage and playback state without covering the upper route label. Keyboard-accessible pause/resume and restart controls remain available. With reduced motion enabled, the route does not auto-animate and the control reveals the final position without motion.
 
 ## Phase 7 Responsive and Motion Details
 

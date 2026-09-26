@@ -1630,3 +1630,199 @@ h1 em {
     flex-shrink: 0;
   }
 }
+
+/* Animated recommended-route playback */
+.route-playback {
+  position: absolute;
+  left: 20px;
+  bottom: 202px;
+  z-index: 7;
+  width: min(420px, calc(100% - 40px));
+  padding: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(183, 255, 106, 0.34);
+  background:
+    linear-gradient(135deg, rgba(183, 255, 106, 0.08), transparent 52%),
+    rgba(7, 17, 14, 0.92);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.38),
+    inset 3px 0 0 var(--signal);
+  backdrop-filter: blur(14px);
+}
+
+.route-playback::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(216, 255, 159, 0.08) 45%,
+    transparent 68%
+  );
+  transform: translateX(-100%);
+}
+
+.route-playback[data-state="playing"]::before {
+  animation: route-playback-scan 2.4s linear infinite;
+}
+
+.route-playback-heading {
+  position: relative;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.route-playback-heading > div {
+  display: grid;
+  gap: 4px;
+}
+
+.route-playback-kicker {
+  color: var(--orange);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.route-playback-heading strong {
+  color: var(--paper);
+  font-family: "Instrument Serif", serif;
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.route-playback-percent {
+  color: var(--signal);
+  font-family: "Instrument Serif", serif;
+  font-size: 29px;
+  line-height: 0.9;
+  text-shadow: 0 0 18px rgba(183, 255, 106, 0.42);
+}
+
+.route-playback-track {
+  position: relative;
+  height: 4px;
+  margin: 12px 0;
+  overflow: visible;
+  background: rgba(140, 155, 117, 0.24);
+}
+
+.route-playback-track span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  min-width: 4px;
+  background: linear-gradient(90deg, var(--orange), #d8ff9f);
+  box-shadow: 0 0 14px rgba(183, 255, 106, 0.7);
+  transition: width 90ms linear;
+}
+
+.route-playback-track span::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -5px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: 0 0 18px var(--signal);
+  transform: translateY(-50%);
+}
+
+.route-playback[data-state="playing"] .route-playback-track span::after {
+  animation: route-playback-pulse 900ms ease-in-out infinite;
+}
+
+.route-playback-actions {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.route-playback-actions button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(183, 255, 106, 0.45);
+  color: var(--paper);
+  background: rgba(16, 36, 28, 0.88);
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.route-playback-actions button:first-child {
+  color: var(--ink);
+  background: var(--signal);
+}
+
+.route-playback-actions button:hover:not(:disabled) {
+  border-color: var(--paper);
+  box-shadow: 0 0 16px rgba(183, 255, 106, 0.24);
+}
+
+.route-playback-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.route-playback-actions small {
+  justify-self: end;
+  color: #9daa9f;
+  font-family: sans-serif;
+  font-size: 11px;
+  text-align: right;
+}
+
+@keyframes route-playback-scan {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes route-playback-pulse {
+  50% {
+    box-shadow:
+      0 0 0 5px rgba(183, 255, 106, 0.13),
+      0 0 22px var(--signal);
+    transform: translateY(-50%) scale(1.08);
+  }
+}
+
+@media (max-width: 700px) {
+  .route-playback {
+    right: 10px;
+    bottom: 220px;
+    left: 10px;
+    width: auto;
+    padding: 12px;
+  }
+
+  .route-playback-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .route-playback-actions small {
+    grid-column: 1 / -1;
+    justify-self: start;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-playback::before,
+  .route-playback-track span::after {
+    animation: none !important;
+  }
+
+  .route-playback-track span {
+    transition: none;
+  }
+}

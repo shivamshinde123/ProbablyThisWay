@@ -151,6 +151,32 @@ test("searches, starts, evaluates, frames, and ends a Newton Hill trail", async 
     page.getByLabel(/highlighting recommended route Trails at Newton Hill/),
   ).toBeVisible();
 
+  const playback = page.getByRole("region", {
+    name: "Animated route preview",
+  });
+  const playbackProgress = page.getByRole("progressbar", {
+    name: "Route preview progress",
+  });
+  await expect(playback).toBeVisible();
+  await expect(playback).toContainText("Animated guide · not live GPS");
+  await expect
+    .poll(async () => Number(await playbackProgress.getAttribute("aria-valuenow")))
+    .toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Pause preview" }).click();
+  await expect(playback).toContainText("Preview paused");
+  const pausedProgress = await playbackProgress.getAttribute("aria-valuenow");
+  await page.waitForTimeout(300);
+  await expect(playbackProgress).toHaveAttribute(
+    "aria-valuenow",
+    pausedProgress ?? "0",
+  );
+  await page.getByRole("button", { name: "Resume preview" }).click();
+  await expect(playback).toContainText("Moving to trail end");
+  await page.getByRole("button", { name: "Replay from start" }).click();
+  await expect
+    .poll(async () => Number(await playbackProgress.getAttribute("aria-valuenow")))
+    .toBeLessThan(10);
+
   await page.getByRole("button", { name: "End field session" }).click();
   await expect(page.getByText("Search for your trail")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Trails at Newton Hill" })).toHaveCount(0);
