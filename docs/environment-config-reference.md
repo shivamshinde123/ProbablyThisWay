@@ -9,7 +9,7 @@ Implemented variables and planned integrations are listed below. Planned entries
 | `HOST` | No | No | API bind host; defaults to `127.0.0.1` |
 | `WEB_ORIGIN` | No | No | Browser origin allowed by API CORS; defaults to `http://localhost:5173` |
 | `VITE_API_BASE_URL` | No | No | Browser API base URL; defaults to `http://localhost:3001/api/v1` |
-| `DATABASE_URL` | TBD | Yes | PostgreSQL/PostGIS connection; unused until durable persistence is implemented |
+| `DATABASE_URL` | Yes in production | Yes | PostgreSQL connection used by the durable session/event store; omission selects the in-memory store only outside production |
 | `VITE_CESIUM_ION_ACCESS_TOKEN` | No | No | Scoped browser token enabling Cesium World Terrain; without it the map uses an ellipsoid preview |
 | `WEATHER_API_BASE_URL` | TBD | No | Weather provider endpoint |
 | `WEATHER_API_KEY` | TBD | Yes | Weather provider credential |

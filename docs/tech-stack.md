@@ -17,8 +17,8 @@
 - Web build tooling: Vite.
 - HTTP framework: Fastify.
 - Validation library: Zod, shared through the contracts workspace.
-- ORM/query layer: TBD; it must preserve PostGIS support.
-- Test frameworks: TBD; TypeScript checks and production builds are the initial quality gates.
+- Database query layer: `node-postgres` with parameterized SQL and explicit transactions; no ORM.
+- Test framework: Node test runner through `tsx`, plus TypeScript checks and production builds.
 - Hosting, CI/CD, logging, and metrics: TBD.
 - LLM provider/model for question selection and explanations: TBD.
 

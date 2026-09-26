@@ -11,16 +11,15 @@ import {
   sessionStartResponseSchema,
   stateUpdateResponseSchema,
   updateSessionStateRequestSchema,
-  type DecisionEvent,
   type HikeDetail,
   type HikingState,
-  type LatestDecision,
   type Session,
   type UpdateSessionStateRequest,
 } from "@probably-this-way/contracts";
 import { isAuthorizedAdapter, resolveAdapterAuthConfig } from "./adapter-auth.js";
 import { evaluateRoutes } from "./evaluation.js";
 import { selectRouteRecommendation } from "./policy.js";
+import { createSessionStore, type SessionStore } from "./session-store.js";
 import { detectRelevantThresholds } from "./thresholds.js";
 
 const shared = { source: "prototype-seed", dataQuality: "preview" } as const;
@@ -34,15 +33,6 @@ const hikeDetails: Record<string, HikeDetail> = {
       { type: "Feature", geometry: { type: "LineString", coordinates: [[-71.8976,42.4898,310],[-71.9021,42.4918,325],[-71.9030,42.4960,360],[-71.8990,42.4991,420],[-71.8942,42.5010,485]] }, properties: { ...shared, id: "lower-return", name: "Lower Return", distanceMiles: 2.4, elevationGainFeet: 575, estimatedMinutes: 95, exposure: "low" } },
     ],
   },
-};
-
-type SessionRecord = {
-  session: Session;
-  decision: LatestDecision;
-  sequence: number;
-  lastEvaluatedState: HikingState;
-  eventSequence: number;
-  events: DecisionEvent[];
 };
 
 function applyStateUpdate(state: HikingState, update: UpdateSessionStateRequest): HikingState {
@@ -66,11 +56,12 @@ function applyStateUpdate(state: HikingState, update: UpdateSessionStateRequest)
   };
 }
 
-export async function buildApp(options: { adapterAuthEnv?: NodeJS.ProcessEnv } = {}) {
+export async function buildApp(options: { adapterAuthEnv?: NodeJS.ProcessEnv; sessionStore?: SessionStore } = {}) {
   const adapterAuth = resolveAdapterAuthConfig(options.adapterAuthEnv ?? process.env);
-  const sessions = new Map<string, SessionRecord>();
+  const sessionStore = options.sessionStore ?? createSessionStore(process.env);
   const app = Fastify({ logger: true });
   await app.register(cors, { origin: process.env.WEB_ORIGIN ?? "http://localhost:5173" });
+  app.addHook("onClose", async () => sessionStore.close());
 
   app.get("/api/v1/health", async () => ({ service: "probably-this-way-api", status: "ok" }));
   app.get("/api/v1/hikes", async () => ({ items: Object.values(hikeDetails).map((hike) => hikeSummarySchema.parse(hike)) }));
@@ -99,7 +90,7 @@ export async function buildApp(options: { adapterAuthEnv?: NodeJS.ProcessEnv } =
       id: randomUUID(), sessionId: session.id, sequence: 1, type: "session_started",
       occurredAt: decision.recommendation.decidedAt, state: session.state, decision, crossedThresholds: [],
     });
-    sessions.set(session.id, {
+    await sessionStore.create({
       session, decision, sequence: 0, lastEvaluatedState: session.state,
       eventSequence: 1, events: [initialEvent],
     });
@@ -107,7 +98,7 @@ export async function buildApp(options: { adapterAuthEnv?: NodeJS.ProcessEnv } =
   });
 
   app.get<{ Params: { sessionId: string } }>("/api/v1/sessions/:sessionId", async (request, reply) => {
-    const record = sessions.get(request.params.sessionId);
+    const record = await sessionStore.get(request.params.sessionId);
     if (!record) return reply.code(404).send({ error: { code: "session_not_found", message: "Session not found", details: {} } });
     return { session: record.session, hike: hikeDetails[record.session.hikeId], decision: record.decision, sequence: record.sequence };
   });
@@ -120,7 +111,7 @@ export async function buildApp(options: { adapterAuthEnv?: NodeJS.ProcessEnv } =
         .send({ error: { code: "adapter_unauthorized", message: "Valid adapter credentials are required", details: {} } });
     }
 
-    const record = sessions.get(request.params.sessionId);
+    const record = await sessionStore.get(request.params.sessionId);
     if (!record) return reply.code(404).send({ error: { code: "session_not_found", message: "Session not found", details: {} } });
 
     const parsed = updateSessionStateRequestSchema.safeParse(request.body);
@@ -131,11 +122,15 @@ export async function buildApp(options: { adapterAuthEnv?: NodeJS.ProcessEnv } =
 
     const nextState = applyStateUpdate(record.session.state, parsed.data);
     const crossedThresholds = detectRelevantThresholds(record.lastEvaluatedState, nextState);
-    record.sequence += 1;
+    const expectedSequence = record.sequence;
+    record.sequence = expectedSequence + 1;
     const sequence = record.sequence;
     record.session = { ...record.session, state: nextState };
 
     if (crossedThresholds.length === 0) {
+      if (!(await sessionStore.save(record, expectedSequence))) {
+        return reply.code(409).send({ error: { code: "state_update_conflict", message: "Session state changed; retry with a newer observation", details: {} } });
+      }
       return reply.code(202).send(stateUpdateResponseSchema.parse({
         accepted: true, evaluationQueued: false, reason: "no_relevant_threshold_crossed",
         sequence, crossedThresholds,
@@ -148,25 +143,26 @@ export async function buildApp(options: { adapterAuthEnv?: NodeJS.ProcessEnv } =
     const recommendation = selectRouteRecommendation(evaluation, hike.routes, nextState);
     const decision = latestDecisionSchema.parse({ evaluation, recommendation });
 
-    if (record.sequence === sequence) {
-      record.decision = decision;
-      record.lastEvaluatedState = nextState;
-      record.eventSequence += 1;
-      record.events.push(decisionEventSchema.parse({
-        id: randomUUID(), sessionId: record.session.id, sequence: record.eventSequence,
-        type: "recommendation_updated", occurredAt: decision.recommendation.decidedAt,
-        state: nextState, decision, crossedThresholds,
-      }));
+    record.decision = decision;
+    record.lastEvaluatedState = nextState;
+    record.eventSequence += 1;
+    record.events.push(decisionEventSchema.parse({
+      id: randomUUID(), sessionId: record.session.id, sequence: record.eventSequence,
+      type: "recommendation_updated", occurredAt: decision.recommendation.decidedAt,
+      state: nextState, decision, crossedThresholds,
+    }));
+    if (!(await sessionStore.save(record, expectedSequence))) {
+      return reply.code(409).send({ error: { code: "state_update_conflict", message: "Session state changed; retry with a newer observation", details: {} } });
     }
 
     return reply.code(202).send(stateUpdateResponseSchema.parse({
       accepted: true, evaluationQueued: true, reason: "relevant_threshold_crossed",
-      sequence, crossedThresholds, ...(record.sequence === sequence ? { decision } : {}),
+      sequence, crossedThresholds, decision,
     }));
   });
 
   app.get<{ Params: { sessionId: string }; Querystring: { after?: string } }>("/api/v1/sessions/:sessionId/events", async (request, reply) => {
-    const record = sessions.get(request.params.sessionId);
+    const record = await sessionStore.get(request.params.sessionId);
     if (!record) return reply.code(404).send({ error: { code: "session_not_found", message: "Session not found", details: {} } });
 
     const after = request.query.after === undefined ? 0 : Number(request.query.after);
@@ -179,7 +175,7 @@ export async function buildApp(options: { adapterAuthEnv?: NodeJS.ProcessEnv } =
     return decisionEventsResponseSchema.parse({ items, nextCursor });
   });
   app.get<{ Params: { sessionId: string } }>("/api/v1/sessions/:sessionId/evaluations/latest", async (request, reply) => {
-    const record = sessions.get(request.params.sessionId);
+    const record = await sessionStore.get(request.params.sessionId);
     if (!record) return reply.code(404).send({ error: { code: "evaluation_not_found", message: "Evaluation not found", details: {} } });
     return record.decision;
   });

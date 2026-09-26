@@ -39,7 +39,7 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 | Component | Responsibility | Depends on |
 |---|---|---|
 | `evaluation.ts` | Invoke Jev with typed route questions or produce the labeled deterministic baseline | Hiking state, valid route alternatives, server environment |
-| Evaluation store | Retain the latest result for the current process | Session ID |
+| `SessionStore` | Persist the current session, latest decision, sequences, and ordered events | PostgreSQL or in-memory adapter |
 | Route score display | Render bounded suitability and provider provenance without selecting a recommendation | Typed route evaluation |
 
 ## Implemented Recommendation Components
@@ -60,7 +60,7 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 
 | Component | Responsibility | Depends on |
 |---|---|---|
-| `app.ts` session store | Retain current session, latest decision, sequence, and last evaluated snapshot for the process lifetime | Shared contracts |
+| `session-store.ts` | Provide validated create/read/compare-and-swap persistence | Shared contracts and optional PostgreSQL pool |
 | `PATCH /sessions/:sessionId/state` | Validate ordering and merge supported observations | Session store, threshold detector |
 | `thresholds.ts` | Report material field changes against explicit deterministic thresholds | Two typed hiking-state snapshots |
 
@@ -68,7 +68,7 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 
 | Component | Responsibility | Depends on |
 |---|---|---|
-| In-memory event log | Append contiguous typed decision events per session | Session record and latest decision |
+| PostgreSQL/in-memory event store | Append contiguous typed decision events atomically with session transitions | `SessionStore` and latest decision |
 | `GET /sessions/:sessionId/events` | Return events strictly after a validated cursor | Event log and shared response schema |
 | `DecisionFeed.tsx` | Render the latest four chronological decision signals and connection state | Typed decision events |
 | `App.tsx` event poller | Poll every five seconds and atomically update state, scores, and recommendation | Events endpoint |
