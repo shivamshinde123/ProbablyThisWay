@@ -17,6 +17,7 @@
 - Web build tooling: Vite.
 - HTTP framework: Fastify.
 - Validation library: Zod, shared through the contracts workspace.
+- Weather integration: Open-Meteo Forecast API through a server-side, provider-shaped adapter.
 - Database query layer: `node-postgres` with parameterized SQL and explicit transactions; no ORM.
 - Test framework: Node test runner through `tsx`, plus TypeScript checks and production builds.
 - Hosting, CI/CD, logging, and metrics: TBD.

@@ -21,6 +21,9 @@ export function SessionHud({ session }: SessionHudProps) {
       <div><dt>Pace</dt><dd>{state.user.paceMph} mph</dd></div>
       <div><dt>Fatigue</dt><dd>{state.user.fatigue}</dd></div>
     </dl>
-    <p>{sourceLabels[state.source]} · observed {new Date(state.observedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+    <p>
+      {sourceLabels[state.source]} · observed {new Date(state.observedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+      {state.provenance ? <> · Data: <a href={state.provenance.attributionUrl} target="_blank" rel="noreferrer">{state.provenance.provider}</a> ({state.provenance.license})</> : null}
+    </p>
   </section>;
 }

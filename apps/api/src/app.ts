@@ -21,6 +21,7 @@ import { evaluateRoutes } from "./evaluation.js";
 import { selectRouteRecommendation } from "./policy.js";
 import { createSessionStore, type SessionStore } from "./session-store.js";
 import { detectRelevantThresholds } from "./thresholds.js";
+import { createWeatherProvider, type WeatherLocation, type WeatherProvider } from "./weather-adapter.js";
 
 const shared = { source: "prototype-seed", dataQuality: "preview" } as const;
 const hikeDetails: Record<string, HikeDetail> = {
@@ -33,6 +34,9 @@ const hikeDetails: Record<string, HikeDetail> = {
       { type: "Feature", geometry: { type: "LineString", coordinates: [[-71.8976,42.4898,310],[-71.9021,42.4918,325],[-71.9030,42.4960,360],[-71.8990,42.4991,420],[-71.8942,42.5010,485]] }, properties: { ...shared, id: "lower-return", name: "Lower Return", distanceMiles: 2.4, elevationGainFeet: 575, estimatedMinutes: 95, exposure: "low" } },
     ],
   },
+};
+const hikeWeatherLocations: Record<string, WeatherLocation> = {
+  "wachusett-summit": { latitude: 42.4898, longitude: -71.8976 },
 };
 
 function applyStateUpdate(state: HikingState, update: UpdateSessionStateRequest): HikingState {
@@ -56,9 +60,19 @@ function applyStateUpdate(state: HikingState, update: UpdateSessionStateRequest)
   };
 }
 
-export async function buildApp(options: { adapterAuthEnv?: NodeJS.ProcessEnv; sessionStore?: SessionStore } = {}) {
+export async function buildApp(options: {
+  adapterAuthEnv?: NodeJS.ProcessEnv;
+  sessionStore?: SessionStore;
+  weatherEnv?: NodeJS.ProcessEnv;
+  weatherProvider?: WeatherProvider | null;
+} = {}) {
   const adapterAuth = resolveAdapterAuthConfig(options.adapterAuthEnv ?? process.env);
   const sessionStore = options.sessionStore ?? createSessionStore(process.env);
+  const weatherEnv = options.weatherEnv ?? process.env;
+  const weatherProvider = options.weatherProvider === null
+    ? undefined
+    : options.weatherProvider ?? createWeatherProvider(weatherEnv);
+  const liveWeatherRequired = weatherEnv.NODE_ENV === "production";
   const app = Fastify({ logger: true });
   await app.register(cors, { origin: process.env.WEB_ORIGIN ?? "http://localhost:5173" });
   app.addHook("onClose", async () => sessionStore.close());
@@ -79,9 +93,29 @@ export async function buildApp(options: { adapterAuthEnv?: NodeJS.ProcessEnv; se
     if (!hike || !route) return reply.code(422).send({ error: { code: "invalid_route", message: "Selected route is not available for this hike", details: {} } });
 
     const now = new Date();
+    let state: HikingState = {
+      observedAt: now.toISOString(), source: "prototype-static",
+      weather: { temperatureF: 54, windMph: 8, rainProbability: 0.18 },
+      daylight: { sunsetAt: new Date(now.getTime() + 159 * 60_000).toISOString(), remainingMinutes: 159 },
+      user: { paceMph: 2.1, fatigue: "low" },
+    };
+    if (weatherProvider) {
+      try {
+        const location = hikeWeatherLocations[hike.id];
+        if (!location) throw new Error(`Hike ${hike.id} has no weather location`);
+        const environmental = await weatherProvider.getCurrent(location);
+        state = { ...environmental, user: state.user };
+      } catch (error) {
+        request.log.warn({ error, hikeId: hike.id }, "Weather lookup failed");
+        if (liveWeatherRequired) {
+          return reply.code(503).send({ error: { code: "weather_unavailable", message: "Live weather is temporarily unavailable", details: {} } });
+        }
+        request.log.warn({ hikeId: hike.id }, "Using prototype-static state outside production");
+      }
+    }
     const session: Session = {
       id: randomUUID(), hikeId: hike.id, selectedRouteId: route.properties.id, status: "active", createdAt: now.toISOString(),
-      state: { observedAt: now.toISOString(), source: "prototype-static", weather: { temperatureF: 54, windMph: 8, rainProbability: 0.18 }, daylight: { sunsetAt: new Date(now.getTime() + 159 * 60_000).toISOString(), remainingMinutes: 159 }, user: { paceMph: 2.1, fatigue: "low" } },
+      state,
     };
     const evaluation = await evaluateRoutes({ sessionId: session.id, state: session.state, routes: hike.routes });
     const recommendation = selectRouteRecommendation(evaluation, hike.routes, session.state);

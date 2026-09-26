@@ -5,7 +5,7 @@
 1. Client requests supported hikes and selects one.
 2. API loads trail geometry, terrain references, and candidate routes.
 3. At session start, the question service loads a deterministic approved Jev question set. If the optional LLM integration is enabled, it may select a bounded subset; unavailable or invalid LLM output falls back to the approved default set.
-4. The state service assembles the current hiking-state snapshot.
+4. The state service requests and validates configured live weather/daylight, or produces a visibly labeled static fallback when the provider is absent or unavailable.
 5. Jev evaluates each candidate route using the same snapshot and questions.
 6. Policy rejects hard-constraint violations, ranks remaining routes, and selects one.
 7. API persists the evaluation and emits a decision event.
@@ -63,3 +63,9 @@ A session publishes `session_started` after the initial decision and `recommenda
 ## Implemented Adapter Authentication
 
 `resolveAdapterAuthConfig` trims and validates `STATE_ADAPTER_TOKEN` during application construction. Configured credentials shorter than 32 characters are rejected, and production construction fails without a token. The state-update route validates the bearer scheme and performs a length check followed by Node's constant-time `timingSafeEqual` comparison before accessing session state. Local development remains credential-optional; end-user authentication is not part of this boundary.
+
+## Implemented Weather Adapter
+
+`OpenMeteoWeatherProvider` accepts only HTTPS remote endpoints (with HTTP allowed for localhost tests), adds supported-hike coordinates and explicit Fahrenheit/mph/UTC query parameters, and aborts after four seconds. Zod validates the provider payload before normalization. Precipitation percentage becomes a 0-1 probability; UTC sunset becomes a non-negative remaining-minute value. The session preserves provider, license, and attribution URL in the shared state contract, and the HUD renders that credit.
+
+Weather is opt-in outside production and required in production through `WEATHER_API_BASE_URL`; `WEATHER_API_KEY` is forwarded only when configured for a paid endpoint. Development/test missing configuration or provider failure uses the explicit prototype-static snapshot. Production missing configuration fails startup, while fetch, status, timeout, timestamp, or schema failure returns `503 weather_unavailable` so fabricated conditions cannot drive a production recommendation.

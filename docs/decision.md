@@ -194,3 +194,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** A narrow persistence boundary keeps the HTTP and policy layers independent of the driver, while database compare-and-swap semantics prevent lost updates across processes.
 - **Consequences:** Deployments must provision PostgreSQL and apply `001_session_persistence.sql` before API startup. The first migration stores contract-valid JSON payloads beside queryable identity, status, sequence, and time columns. PostGIS-backed normalized route data, migration version tracking, retention policy, and live PostgreSQL integration coverage remain follow-up work.
 - **Supersedes:** The process-memory-only consequences recorded in DEC-020 and DEC-021.
+
+## DEC-024 — Initialize sessions from validated live weather when configured
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** Session evaluations used only a static environmental fixture even though the product requires current supported inputs and forbids simulated-condition controls.
+- **Decision:** Add a server-side Open-Meteo adapter that requests current temperature, 10-meter wind, precipitation probability, day/night status, and daily sunset for cataloged hike coordinates. Make it opt-in through `WEATHER_API_BASE_URL`, support an optional server-only commercial API key, enforce HTTPS and a four-second timeout, validate the response, normalize explicit units, preserve provider/license attribution, and fail closed in production when configuration or a runtime lookup is unavailable while retaining the clearly labeled static fallback outside production.
+- **Reasoning:** This creates a real environmental boundary without exposing provider details or controls to the browser, while deterministic fallback keeps local development and transient provider failures usable and honest.
+- **Consequences:** New sessions can begin with live attributed conditions. The free Open-Meteo endpoint is suitable only within its terms and call limits; commercial deployment must use an appropriate plan. Development remains usable without network access, while production cannot evaluate a new session from fabricated conditions. Automatic periodic refresh, stored receive time, freshness ceilings, caching, and additional providers remain future work.
