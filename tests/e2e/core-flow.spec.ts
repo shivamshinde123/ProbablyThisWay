@@ -162,13 +162,31 @@ test("searches, starts, evaluates, frames, and ends a Newton Hill trail", async 
   await expect(
     page.getByLabel(/highlighting recommended route Trails at Newton Hill/),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: /Why Trails at Newton Hill .* was chosen/,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Private model chain-of-thought is not requested or shown/),
+  ).toBeVisible();
+  const decisionTrace = page.getByRole("list", {
+    name: "Complete route decision trace",
+  });
+  await expect(decisionTrace.locator(":scope > li")).toHaveCount(4);
+  await expect(decisionTrace).toContainText("Shared snapshot validated");
+  await expect(decisionTrace).toContainText(
+    "Deterministic fallback scores accepted",
+  );
+  await expect(decisionTrace).toContainText("Eligibility policy applied");
+  await expect(decisionTrace).toContainText("Highest eligible score selected");
 
   const playback = page.getByRole("region", {
     name: "Animated route preview",
   });
-  const playbackProgress = page.getByRole("progressbar", {
-    name: "Route preview progress",
-  });
+  const playbackProgress = playback.locator(
+    '[aria-label="Route preview progress"]',
+  );
   await expect(playback).toBeVisible();
   await expect(playback).toContainText("Animated guide · not live GPS");
   const decisionReplay = page.getByRole("list", {
@@ -179,8 +197,31 @@ test("searches, starts, evaluates, frames, and ends a Newton Hill trail", async 
     "Candidate scores received",
   );
   await expect
-    .poll(async () => Number(await playbackProgress.getAttribute("aria-valuenow")))
+    .poll(async () =>
+      Number(await playbackProgress.getAttribute("aria-valuenow")),
+    )
     .toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Replay from start" }).click();
+  await expect
+    .poll(async () =>
+      Number(await playbackProgress.getAttribute("aria-valuenow")),
+    )
+    .toBeLessThan(10);
+  const beforeCollapse = Number(
+    await playbackProgress.getAttribute("aria-valuenow"),
+  );
+  await page.getByRole("button", { name: "Collapse", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Expand", exact: true }),
+  ).toHaveAttribute("aria-expanded", "false");
+  await expect(decisionReplay).toBeHidden();
+  await expect
+    .poll(async () =>
+      Number(await playbackProgress.getAttribute("aria-valuenow")),
+    )
+    .toBeGreaterThan(beforeCollapse);
+  await page.getByRole("button", { name: "Expand", exact: true }).click();
+  await expect(decisionReplay).toBeVisible();
   await page.getByRole("button", { name: "Pause preview" }).click();
   await expect(playback).toContainText("Preview paused");
   const pausedProgress = await playbackProgress.getAttribute("aria-valuenow");
@@ -192,14 +233,18 @@ test("searches, starts, evaluates, frames, and ends a Newton Hill trail", async 
   await page.getByRole("button", { name: "Resume preview" }).click();
   await expect(playback).toContainText("Moving to trail end");
   await expect
-    .poll(async () => Number(await playbackProgress.getAttribute("aria-valuenow")))
+    .poll(async () =>
+      Number(await playbackProgress.getAttribute("aria-valuenow")),
+    )
     .toBeGreaterThan(25);
   await expect(decisionReplay.locator('li[data-state="active"]')).toContainText(
     "Score leader identified",
   );
   await page.getByRole("button", { name: "Replay from start" }).click();
   await expect
-    .poll(async () => Number(await playbackProgress.getAttribute("aria-valuenow")))
+    .poll(async () =>
+      Number(await playbackProgress.getAttribute("aria-valuenow")),
+    )
     .toBeLessThan(10);
   await expect(decisionReplay.locator('li[data-state="active"]')).toContainText(
     "Candidate scores received",
@@ -207,17 +252,18 @@ test("searches, starts, evaluates, frames, and ends a Newton Hill trail", async 
 
   await page.getByRole("button", { name: "Collapse trail panel" }).click();
   await page.getByRole("button", { name: "Full model response" }).click();
-  await expect(page.getByRole("button", { name: "Collapse trail panel" })).toHaveAttribute(
-    "aria-expanded",
-    "true",
-  );
+  await expect(
+    page.getByRole("button", { name: "Collapse trail panel" }),
+  ).toHaveAttribute("aria-expanded", "true");
   await expect(
     page.getByRole("heading", { name: "Deterministic fallback scores" }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "End field session" }).click();
   await expect(page.getByText("Search for your trail")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Trails at Newton Hill" })).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Trails at Newton Hill" }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Analyze & start trail" }),
   ).toBeVisible();

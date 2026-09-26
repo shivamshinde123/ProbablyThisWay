@@ -221,6 +221,13 @@ export function App() {
   const excludedRouteIds = new Set(
     recommendation?.excludedRoutes.map((route) => route.routeId) ?? [],
   );
+  const evaluationProviderName =
+    evaluation?.provider === "openrouter"
+      ? "OpenRouter"
+      : evaluation?.provider === "jev"
+        ? "Legacy Jev"
+        : "Deterministic fallback";
+  const eligibleRouteCount = Math.max(0, routes.length - excludedRouteIds.size);
   const isEvaluating = status === "starting";
   const isEnding = status === "ending";
   function showModelResponse() {
@@ -441,6 +448,137 @@ export function App() {
                   ? "OpenRouter scored every mapped candidate. Application policy selected the highest eligible route."
                   : "OpenRouter was not configured or did not return a valid response, so the local auditable baseline scored these routes."}
               </p>
+              {recommendation && session ? (
+                <section
+                  className="decision-explanation"
+                  aria-labelledby="decision-explanation-title"
+                >
+                  <div className="decision-explanation-heading">
+                    <span>Complete decision explanation</span>
+                    <h3 id="decision-explanation-title">
+                      {recommendation.status === "recommended"
+                        ? `Why ${recommendedRoute?.properties.name ?? "this route"} was chosen`
+                        : "Why no route was selected"}
+                    </h3>
+                  </div>
+                  <p className="reasoning-boundary">
+                    Private model chain-of-thought is not requested or shown.
+                    This is the complete auditable trace: validated inputs,
+                    provider scores, policy checks, exclusions, and the final
+                    explanation.
+                  </p>
+                  <dl className="decision-inputs">
+                    <div>
+                      <dt>Temperature</dt>
+                      <dd>{session.state.weather.temperatureF}°F</dd>
+                    </div>
+                    <div>
+                      <dt>Wind</dt>
+                      <dd>{session.state.weather.windMph} mph</dd>
+                    </div>
+                    <div>
+                      <dt>Rain</dt>
+                      <dd>
+                        {Math.round(
+                          session.state.weather.rainProbability * 100,
+                        )}
+                        %
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Daylight</dt>
+                      <dd>{session.state.daylight.remainingMinutes} min</dd>
+                    </div>
+                    <div>
+                      <dt>Pace</dt>
+                      <dd>{session.state.user.paceMph} mph</dd>
+                    </div>
+                    <div>
+                      <dt>Fatigue</dt>
+                      <dd>{session.state.user.fatigue}</dd>
+                    </div>
+                  </dl>
+                  <ol
+                    className="decision-trace"
+                    aria-label="Complete route decision trace"
+                  >
+                    <li>
+                      <span>01</span>
+                      <div>
+                        <strong>Shared snapshot validated</strong>
+                        <p>
+                          One weather, daylight, pace, and fatigue snapshot was
+                          applied to all {routes.length} mapped candidates.
+                        </p>
+                      </div>
+                    </li>
+                    <li>
+                      <span>02</span>
+                      <div>
+                        <strong>
+                          {evaluationProviderName} scores accepted
+                        </strong>
+                        <p>
+                          {evaluation.scores.length} schema-valid suitability
+                          {evaluation.scores.length === 1
+                            ? " score was"
+                            : " scores were"}{" "}
+                          returned. Every exact score remains visible below.
+                        </p>
+                      </div>
+                    </li>
+                    <li>
+                      <span>03</span>
+                      <div>
+                        <strong>Eligibility policy applied</strong>
+                        <p>
+                          {recommendation.policyVersion} retained{" "}
+                          {eligibleRouteCount}
+                          {eligibleRouteCount === 1 ? " route" : " routes"} and
+                          excluded {recommendation.excludedRoutes.length}.
+                        </p>
+                        {recommendation.excludedRoutes.length > 0 ? (
+                          <ul>
+                            {recommendation.excludedRoutes.map((excluded) => {
+                              const routeName = routes.find(
+                                (route) =>
+                                  route.properties.id === excluded.routeId,
+                              )?.properties.name;
+                              return (
+                                <li key={excluded.routeId}>
+                                  <strong>
+                                    {routeName ?? excluded.routeId}:
+                                  </strong>{" "}
+                                  {excluded.reasons.join("; ")}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : null}
+                      </div>
+                    </li>
+                    <li>
+                      <span>04</span>
+                      <div>
+                        <strong>
+                          {recommendation.status === "recommended"
+                            ? "Highest eligible score selected"
+                            : "No eligible route remained"}
+                        </strong>
+                        <p>{recommendation.explanation}</p>
+                        <dl className="decision-factor-list">
+                          {recommendation.factors.map((factor) => (
+                            <div key={factor.label}>
+                              <dt>{factor.label}</dt>
+                              <dd>{factor.value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </div>
+                    </li>
+                  </ol>
+                </section>
+              ) : null}
               <div
                 className="route-options"
                 aria-label="Evaluated route scores"
