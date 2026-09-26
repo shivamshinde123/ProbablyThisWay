@@ -6,7 +6,7 @@
 |---|---|---|
 | Frontend | React | Application UI and state composition |
 | Language | TypeScript | Typed frontend and service code |
-| 3D map | CesiumJS | Terrain, trails, route overlays, and camera controls |
+| 3D map | CesiumJS with Vite static asset copying | Terrain, trails, route overlays, camera controls, and optional World Terrain |
 | Backend | Node.js | API and orchestration layer |
 | Decision engine | Jev | Structured route suitability evaluation |
 | Database | PostgreSQL with PostGIS | Relational and geospatial persistence |

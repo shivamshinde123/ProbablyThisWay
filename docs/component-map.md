@@ -6,7 +6,7 @@
 |---|---|---|
 | `AppShell` | Layout and global error boundary | Session controller |
 | `HikeSelector` | Choose a predefined hike | Hike API |
-| `TerrainMap` | Cesium scene and camera | Terrain config |
+| `TerrainMap` | Own the Cesium viewer lifecycle, camera, terrain mode, route overlay, and cleanup | CesiumJS and terrain config |
 | `TrailLayer` | Render primary trail | Trail GeoJSON |
 | `RouteLayer` | Render alternatives and recommendation styles | Route/evaluation data |
 | `MapLabels` | Route names and suitability labels | Route projections |
