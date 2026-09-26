@@ -141,7 +141,9 @@ validated route scores
       -> reset animated route preview to the chosen route start
       -> move directional pointer by cumulative line distance
       -> update glowing completed segment + accessible percentage
+      -> advance provider score -> score leader -> policy -> selected route replay
       -> pause/resume/replay locally without changing session state
+      -> keep full model scores mounted and reachable from the replay panel
 ```
 
 The user's pre-session choice remains orange when it differs from the recommendation. Other routes remain moss. Route selection stays locked after session start.

@@ -417,3 +417,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** Motion makes route direction and extent immediately legible while explicit labeling and local-only playback prevent the visualization from being mistaken for measured user progress.
 - **Consequences:** Playback state is ephemeral and never affects session state, evaluation, or policy. Recommendation/viewer changes must cancel animation frames and clean up Cesium entities. Actual hike progress still requires a future consented location source.
 - **Refines:** DEC-007 by distinguishing an illustrative route preview from prohibited fabricated live progress.
+
+## DEC-047 — Pair explicit map navigation with synchronized decision replay
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Native Cesium gestures were not discoverable enough, and the complete model response lived below the fold while the map animation showed only geometry.
+- **Decision:** Keep Cesium rotate, translate, zoom, tilt, and look inputs enabled and add visible keyboard-accessible zoom in/out, screen-relative pan, and terrain-frame controls. During route playback, advance four fact-based stages—validated provider scores, score leader, deterministic eligibility policy, and confirmed recommendation. Keep the full scored-route response mounted after analysis and provide an action that expands, scrolls to, and focuses it.
+- **Reasoning:** Explicit controls make spatial exploration discoverable across mouse, touch, and keyboard use. Replaying the actual evaluation boundary alongside route motion connects the visual recommendation to its evidence without suggesting that the LLM made the final policy decision.
+- **Consequences:** The compact replay may truncate long route names visually, but the persistent full response remains available. Camera controls and replay state stay browser-local and do not affect session decisions.
+- **Refines:** DEC-043, DEC-045, and DEC-046.

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   InternetTrailResult,
+  RouteEvaluation,
   RouteFeature,
+  RouteRecommendation,
 } from "@probably-this-way/contracts";
 import {
   ArcGISTiledElevationTerrainProvider,
@@ -26,7 +28,6 @@ import "cesium/Build/Cesium/Widgets/widgets.css";
 type MapCoordinate = readonly [number, number, number?];
 type PlaybackState = "idle" | "playing" | "paused" | "complete";
 type PlaybackVisual = {
-  routeId: string;
   coordinates: readonly MapCoordinate[];
   markerPosition: ConstantPositionProperty;
   markerRotation: ConstantProperty;
@@ -136,6 +137,9 @@ type TerrainMapProps = {
   selectedRouteId?: string;
   recommendedRouteId?: string;
   recommendationSuitability?: number;
+  evaluation?: RouteEvaluation;
+  recommendation?: RouteRecommendation;
+  onShowModelResponse?: () => void;
   internetTrail?: InternetTrailResult;
 };
 
@@ -144,6 +148,9 @@ export function TerrainMap({
   selectedRouteId,
   recommendedRouteId,
   recommendationSuitability,
+  evaluation,
+  recommendation,
+  onShowModelResponse,
   internetTrail,
 }: TerrainMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -160,6 +167,7 @@ export function TerrainMap({
   const [status, setStatus] = useState<MapStatus>("starting");
   const [playbackState, setPlaybackState] = useState<PlaybackState>("idle");
   const [playbackProgress, setPlaybackProgress] = useState(0);
+  const [playbackRun, setPlaybackRun] = useState(0);
 
   const updatePlaybackVisual = useCallback((progress: number) => {
     const viewer = viewerRef.current;
@@ -235,6 +243,15 @@ export function TerrainMap({
       viewer.scene.globe.material = contourMaterial;
       viewer.scene.globe.enableLighting = false;
       viewer.scene.globe.depthTestAgainstTerrain = true;
+      const cameraController = viewer.scene.screenSpaceCameraController;
+      cameraController.enableInputs = true;
+      cameraController.enableRotate = true;
+      cameraController.enableTranslate = true;
+      cameraController.enableZoom = true;
+      cameraController.enableTilt = true;
+      cameraController.enableLook = true;
+      cameraController.minimumZoomDistance = 20;
+      cameraController.maximumZoomDistance = 20_000_000;
       viewer.scene.backgroundColor = Color.fromCssColorString("#07110e");
       if (viewer.scene.skyAtmosphere) viewer.scene.skyAtmosphere.show = false;
       viewer.camera.flyTo({
@@ -432,7 +449,6 @@ export function TerrainMap({
         },
       });
       playbackVisualRef.current = {
-        routeId: focusRoute.properties.id,
         coordinates: focusRoute.geometry.coordinates,
         markerPosition,
         markerRotation,
@@ -549,7 +565,13 @@ export function TerrainMap({
         window.cancelAnimationFrame(playbackFrameRef.current);
       playbackFrameRef.current = undefined;
     };
-  }, [playbackState, recommendedRouteId, status, updatePlaybackVisual]);
+  }, [
+    playbackState,
+    playbackRun,
+    recommendedRouteId,
+    status,
+    updatePlaybackVisual,
+  ]);
 
   function toggleRoutePlayback() {
     if (!recommendedRouteId) return;
@@ -583,10 +605,28 @@ export function TerrainMap({
     playbackProgressRef.current = 0;
     setPlaybackProgress(0);
     updatePlaybackVisual(0);
+    setPlaybackRun((run) => run + 1);
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
     setPlaybackState(reduceMotion ? "paused" : "playing");
+  }
+
+  function moveCamera(
+    operation: "zoom-in" | "zoom-out" | "left" | "right" | "up" | "down",
+  ) {
+    const viewer = viewerRef.current;
+    if (!viewer || viewer.isDestroyed()) return;
+    const height = viewer.camera.positionCartographic.height;
+    const zoomAmount = Math.max(30, Math.min(100_000, height * 0.22));
+    const panAmount = Math.max(20, Math.min(50_000, height * 0.12));
+    if (operation === "zoom-in") viewer.camera.zoomIn(zoomAmount);
+    if (operation === "zoom-out") viewer.camera.zoomOut(zoomAmount);
+    if (operation === "left") viewer.camera.moveLeft(panAmount);
+    if (operation === "right") viewer.camera.moveRight(panAmount);
+    if (operation === "up") viewer.camera.moveUp(panAmount);
+    if (operation === "down") viewer.camera.moveDown(panAmount);
+    viewer.scene.requestRender();
   }
 
   function showObliqueView() {
@@ -621,6 +661,43 @@ export function TerrainMap({
       ? internetTrail.geometry.coordinates[0]
       : (internetTrail?.geometry.coordinates[0]?.[0] ??
         focusedRoute?.geometry.coordinates[0]);
+  const topScore = evaluation?.scores.reduce((best, score) =>
+    score.suitability > best.suitability ? score : best,
+  );
+  const topRouteName = routes.find(
+    (route) => route.properties.id === topScore?.routeId,
+  )?.properties.name;
+  const providerLabel =
+    evaluation?.provider === "openrouter"
+      ? "OpenRouter"
+      : evaluation?.provider === "jev"
+        ? "Legacy Jev"
+        : "Deterministic fallback";
+  const decisionSteps =
+    evaluation && recommendation?.status === "recommended"
+      ? [
+          {
+            label: "Candidate scores received",
+            detail: `${providerLabel} · ${evaluation.scores.length} validated ${evaluation.scores.length === 1 ? "score" : "scores"}`,
+          },
+          {
+            label: "Score leader identified",
+            detail: `${topRouteName ?? "Top candidate"} · ${Math.round((topScore?.suitability ?? 0) * 100)}% scored fit`,
+          },
+          {
+            label: "Application policy checked",
+            detail: `${recommendation.policyVersion} · ${recommendation.excludedRoutes.length} excluded`,
+          },
+          {
+            label: "Recommended route confirmed",
+            detail: `${focusedName ?? "Chosen route"} · ${Math.round(recommendation.suitability * 100)}% fit`,
+          },
+        ]
+      : [];
+  const activeDecisionStep = Math.min(
+    decisionSteps.length - 1,
+    Math.floor(playbackProgress * decisionSteps.length),
+  );
   return (
     <div className="terrain-map">
       <div
@@ -661,13 +738,79 @@ export function TerrainMap({
       </div>
       <div className="map-3d-controls">
         <button
+          className="map-fit-control"
           type="button"
           disabled={status === "starting"}
           onClick={showObliqueView}
         >
           Frame 3D terrain
         </button>
-        <span>Drag to orbit · wheel to zoom</span>
+        <div
+          className="map-navigation"
+          role="group"
+          aria-label="Map navigation controls"
+        >
+          <div className="map-zoom-controls">
+            <button
+              type="button"
+              aria-label="Zoom in"
+              title="Zoom in"
+              disabled={status === "starting"}
+              onClick={() => moveCamera("zoom-in")}
+            >
+              +
+            </button>
+            <button
+              type="button"
+              aria-label="Zoom out"
+              title="Zoom out"
+              disabled={status === "starting"}
+              onClick={() => moveCamera("zoom-out")}
+            >
+              −
+            </button>
+          </div>
+          <div className="map-pan-controls">
+            <button
+              type="button"
+              aria-label="Pan up"
+              title="Pan up"
+              disabled={status === "starting"}
+              onClick={() => moveCamera("up")}
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              aria-label="Pan left"
+              title="Pan left"
+              disabled={status === "starting"}
+              onClick={() => moveCamera("left")}
+            >
+              ←
+            </button>
+            <span aria-hidden="true">PAN</span>
+            <button
+              type="button"
+              aria-label="Pan right"
+              title="Pan right"
+              disabled={status === "starting"}
+              onClick={() => moveCamera("right")}
+            >
+              →
+            </button>
+            <button
+              type="button"
+              aria-label="Pan down"
+              title="Pan down"
+              disabled={status === "starting"}
+              onClick={() => moveCamera("down")}
+            >
+              ↓
+            </button>
+          </div>
+        </div>
+        <span>Drag to orbit · scroll to zoom · shift-drag to pan</span>
       </div>
       {recommendedRouteId && focusedRoute ? (
         <section
@@ -705,6 +848,36 @@ export function TerrainMap({
           >
             <span style={{ width: playbackProgress * 100 + "%" }} />
           </div>
+          {decisionSteps.length > 0 ? (
+            <div className="decision-replay">
+              <div className="decision-replay-heading">
+                <span>Decision replay</span>
+                <strong>{providerLabel} → application policy</strong>
+              </div>
+              <ol aria-label="Model and policy decision replay">
+                {decisionSteps.map((step, index) => {
+                  const stepState =
+                    index < activeDecisionStep
+                      ? "complete"
+                      : index === activeDecisionStep
+                        ? "active"
+                        : "upcoming";
+                  return (
+                    <li key={step.label} data-state={stepState}>
+                      <span>{String(index + 1).padStart(2, "0")}</span>
+                      <div>
+                        <strong>{step.label}</strong>
+                        <small>{step.detail}</small>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+              <p className="decision-replay-live" aria-live="polite">
+                {decisionSteps[activeDecisionStep]?.label}
+              </p>
+            </div>
+          ) : null}
           <div className="route-playback-actions">
             <button type="button" onClick={toggleRoutePlayback}>
               {playbackState === "playing"
@@ -720,6 +893,11 @@ export function TerrainMap({
             >
               Replay from start
             </button>
+            {onShowModelResponse ? (
+              <button type="button" onClick={onShowModelResponse}>
+                Full model response
+              </button>
+            ) : null}
             <small>Animated guide · not live GPS</small>
           </div>
         </section>

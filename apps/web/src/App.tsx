@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   createSessionRequestSchema,
   decisionEventsResponseSchema,
@@ -36,6 +36,7 @@ const isRouteBlocked = (route: RouteFeature) =>
   );
 
 export function App() {
+  const modelResponseRef = useRef<HTMLElement>(null);
   const [catalogHike, setCatalogHike] = useState<HikeDetail>();
   const [hike, setHike] = useState<HikeDetail>();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -222,6 +223,18 @@ export function App() {
   );
   const isEvaluating = status === "starting";
   const isEnding = status === "ending";
+  function showModelResponse() {
+    setSidebarCollapsed(false);
+    window.requestAnimationFrame(() => {
+      modelResponseRef.current?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "start",
+      });
+      modelResponseRef.current?.focus({ preventScroll: true });
+    });
+  }
   let sessionLabel = "Field system · standby";
   if (session) sessionLabel = "Session active";
   if (recommendation)
@@ -257,6 +270,9 @@ export function App() {
                   ? recommendation.suitability
                   : undefined
               }
+              evaluation={evaluation}
+              recommendation={recommendation}
+              onShowModelResponse={showModelResponse}
               internetTrail={internetTrail}
             />
           </Suspense>
@@ -398,8 +414,11 @@ export function App() {
           </div>
           {evaluation ? (
             <section
+              ref={modelResponseRef}
+              id="model-response"
               className="model-response"
               aria-labelledby="model-response-title"
+              tabIndex={-1}
             >
               <div className="model-response-heading">
                 <div>
