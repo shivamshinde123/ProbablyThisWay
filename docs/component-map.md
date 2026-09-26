@@ -72,3 +72,10 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 | `GET /sessions/:sessionId/events` | Return events strictly after a validated cursor | Event log and shared response schema |
 | `DecisionFeed.tsx` | Render the latest four chronological decision signals and connection state | Typed decision events |
 | `App.tsx` event poller | Poll every five seconds and atomically update state, scores, and recommendation | Events endpoint |
+
+## Implemented Adapter Authentication
+
+| Component | Responsibility | Depends on |
+|---|---|---|
+| `adapter-auth.ts` | Validate startup configuration and compare bearer credentials in constant time | Node crypto and server environment |
+| State-update auth gate | Reject unauthorized mutation before session lookup or body validation | Adapter auth config |

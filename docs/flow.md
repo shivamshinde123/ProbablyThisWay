@@ -17,7 +17,7 @@ The `ProbablyThisWay` repository is an npm-workspaces monorepo. The React/Vite c
 | `apps/api/src/app.ts` | HTTP request | Configure Fastify and serve health/hike routes |
 | `packages/contracts/src/index.ts` | API or web import | Validate and type shared request/response data |
 | Session creation API | User starts a hike session | Load hike data, initialize questions/state, and run the first evaluation |
-| State update API | Supported input arrives; authentication pending | Normalize/persist state and invoke threshold detection |
+| State update API | Bearer-authenticated supported input arrives | Authenticate, normalize/persist state, and invoke threshold detection |
 | Evaluation worker/service (planned) | Future queued threshold evaluation | Score routes, apply policy, persist and publish the decision |
 | `GET /sessions/:sessionId/events` | Client cursor poll | Return ordered typed decision events after a cursor |
 
@@ -49,6 +49,7 @@ The `ProbablyThisWay` repository is an npm-workspaces monorepo. The React/Vite c
 
 ```text
 PATCH /api/v1/sessions/{sessionId}/state
+  -> validate adapter bearer credential before resource lookup
   -> validate source, timestamp, and non-empty supported changes
   -> reject stale observation
   -> merge changes into the current in-memory session state

@@ -35,7 +35,9 @@ Returns `{ "session": Session, "hike": HikeDetail, "decision": LatestDecision, "
 
 ### `PATCH /sessions/{sessionId}/state`
 
-Accepts normalized updates from supported adapter source types or explicit user-entered facts. Authentication is not implemented yet, so production callers are not authorized by the current prototype. This endpoint does not support simulated-condition actions.
+Accepts normalized updates from supported adapter source types or explicit user-entered facts. This endpoint does not support simulated-condition actions.
+
+When `STATE_ADAPTER_TOKEN` is configured, callers must send `Authorization: Bearer <token>`. Missing or invalid credentials return `401 adapter_unauthorized` with a `WWW-Authenticate` challenge before session lookup or request validation. The token must contain at least 32 characters. Local development may omit it; API startup fails when `NODE_ENV=production` and the token is absent.
 
 Request: `{ "observedAt": "...", "source": "weather", "changes": { "windMph": 18 } }`
 
@@ -45,7 +47,7 @@ Response `202`: `{ "accepted": true, "evaluationQueued": false, "reason": "no_re
 
 The detector compares the accumulated current state with the last evaluated snapshot. It triggers at temperature change >= 10 F, wind change >= 5 mph, rain-probability change >= 0.15, remaining-daylight change >= 10 minutes, relative pace change >= 15%, or any fatigue change. A triggering response sets `evaluationQueued: true`, lists the crossed fields, and includes `decision` when that request remains the newest sequence. Evaluation currently completes synchronously inside the request; the field name preserves the future queued-worker contract.
 
-Unknown sessions return `404 session_not_found`, invalid updates return `422 invalid_state_update`, and observations not newer than the current snapshot return `409 stale_state_update`. The endpoint currently has no authentication and must not be exposed as a trusted production adapter boundary until authentication is implemented.
+Unknown sessions return `404 session_not_found`, invalid updates return `422 invalid_state_update`, and observations not newer than the current snapshot return `409 stale_state_update`. The endpoint is protected by the configured adapter bearer credential. This shared-secret boundary authenticates adapters, not end users; rotate and distribute it through deployment secret management.
 
 ### Planned: `POST /sessions/{sessionId}/evaluations`
 
@@ -63,11 +65,11 @@ Each event includes its ID, session ID, type (`session_started` or `recommendati
 
 ## Status Codes
 
-Use `400` invalid input, `404` unknown resource, `409` stale/conflicting state, `422` valid JSON with unusable domain data, `429` rate limited, and `5xx` service/integration failure.
+Use `400` invalid input, `401` missing or invalid credentials, `404` unknown resource, `409` stale/conflicting state, `422` valid JSON with unusable domain data, `429` rate limited, and `5xx` service/integration failure.
 
 ## Pending Contracts
 
-Schemas for the internal evaluation endpoint, authentication, pagination limits, and real-time transport are TBD.
+Schemas for the internal evaluation endpoint, end-user authentication, pagination limits, and real-time transport are TBD.
 
 ## Implemented Route Evaluation Contract
 

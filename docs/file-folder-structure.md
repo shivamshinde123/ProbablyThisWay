@@ -65,3 +65,8 @@ npm workspaces manage the monorepo. Add planned domain, database, and test direc
 - `apps/web/src/components/DecisionFeed.tsx` — accessible compact decision-event history.
 - `apps/web/src/App.tsx` — cursor polling and atomic event application.
 - `apps/api/src/app.ts` — process-memory event append and cursor endpoint.
+
+### Adapter Authentication Files
+
+- `apps/api/src/adapter-auth.ts` — startup validation and constant-time bearer verification.
+- `apps/api/src/adapter-auth.test.ts` — local, configured, weak-token, and production fail-closed tests.
