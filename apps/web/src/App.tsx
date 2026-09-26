@@ -285,7 +285,7 @@ export function App() {
             hike={hike}
             selectedRouteId={selectedRouteId}
             selectedInternetTrailId={internetTrail?.id}
-            disabled={Boolean(session) || isEvaluating}
+            disabled={isEvaluating}
             onSelectRoute={(routeId) => {
               internetTrailSelectedRef.current = false;
               setInternetTrail(undefined);

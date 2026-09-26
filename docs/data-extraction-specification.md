@@ -41,7 +41,7 @@ Run `npm run data:refresh:dcr` to query the explicit reviewed DCR feature IDs. G
 
 ## Runtime Internet Trail Search
 
-Submitted trail searches use the OpenStreetMap Nominatim search API with full GeoJSON geometry and a simplification tolerance. The adapter accepts only LineString and MultiLineString objects whose type or name is trail-like, computes mapped line length locally with the haversine formula, preserves a direct OpenStreetMap object URL, and emits mandatory attribution. Point-only trailheads and non-linear areas are excluded because they cannot be rendered as trail paths. Search results are discovery previews; they do not inherit the reviewed DCR legal, condition, restriction, elevation, or alternative-route guarantees.
+Submitted trail searches first use OpenStreetMap Nominatim with full GeoJSON geometry and a simplification tolerance. Direct trail-like LineString and MultiLineString objects are retained. When the match is a point or non-linear place, the adapter centers a small OSM map extract on it, excludes private/no-access ways and sidewalk/crossing footways, ranks trail-like ways by tags, surface, distance, and length, and returns a place-labeled nearby network plus named paths. Dense extracts retry with a smaller bound. Mapped length is computed locally with the haversine formula, direct OSM object URLs and mandatory attribution are preserved, and all provider payloads are validated. Search results remain discovery previews without reviewed DCR legal, condition, restriction, elevation, or alternative-route guarantees.
 
 ## Rendered Elevation Terrain
 

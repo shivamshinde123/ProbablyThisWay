@@ -17,7 +17,7 @@
 - Web build tooling: Vite.
 - HTTP framework: Fastify.
 - Validation library: Zod, shared through the contracts workspace.
-- Trail discovery: OpenStreetMap data through a server-side Nominatim adapter with request serialization, caching, GeoJSON validation, and visible attribution.
+- Trail discovery: OpenStreetMap Nominatim plus bounded OSM map extracts through a server-side adapter with request serialization, caching, payload validation, nearby-path ranking, and visible attribution.
 - Weather integration: Open-Meteo Forecast API through a server-side, provider-shaped adapter.
 - Database query layer: `node-postgres` with parameterized SQL and explicit transactions; no ORM.
 - Test framework: Node test runner through `tsx`, Playwright desktop/mobile Chromium flows, TypeScript checks, and production builds.

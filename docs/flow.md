@@ -399,7 +399,7 @@ Adapter updates and racing weather transitions check lifecycle status and stop w
 
 ## Implemented Internet Trail Search Flow
 
-Browser submit → GET /api/v1/trails/search → validate query → check 15-minute cache → serialize public Nominatim request at one-per-second maximum → request simplified full GeoJSON → validate provider response → retain named trail-like lines → compute mapped distance → return attributed results → select result → render and camera-frame preview in TerrainMap.
+Browser submit → GET /api/v1/trails/search → trim and collapse query whitespace → check 15-minute cache → serialize public search at one-per-second maximum → request and validate Nominatim GeoJSON → return direct trail-like lines when present; otherwise center a bounded OSM map extract on the point/area match → validate nodes/ways → exclude non-trail/private/sidewalk geometry → rank nearby paths → return the place-labeled trail network plus named paths → select result → render exaggerated relief and an obliquely framed preview in TerrainMap.
 
 The preview path stops before session creation. Choosing a reviewed route clears the internet preview and restores the evaluated-session path.
 

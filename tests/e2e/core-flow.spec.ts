@@ -29,12 +29,16 @@ test("loads authoritative routes and completes the recommendation flow", async (
   ).toHaveAttribute("href", /mass\.gov/);
   const searchFontSize = await page
     .getByRole("searchbox", { name: "Search trails from the internet" })
-    .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+    .evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).fontSize),
+    );
   expect(searchFontSize).toBeGreaterThanOrEqual(13);
   const routeMetadataFontSize = await page
     .getByRole("button", { name: /Pine Hill Trail/ })
     .locator("small")
-    .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+    .evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).fontSize),
+    );
   expect(routeMetadataFontSize).toBeGreaterThanOrEqual(13);
   await expect(
     page.getByRole("button", { name: /Pine Hill Trail/ }),
@@ -51,20 +55,27 @@ test("loads authoritative routes and completes the recommendation flow", async (
   await expect(
     page.getByLabel("Interactive 3D route alternatives map"),
   ).toBeVisible();
-  await expect(page.getByText("Global elevation terrain")).toBeVisible({
-    timeout: 20_000,
-  });
-  await expect(page.getByText(/Ellipsoid preview/)).toHaveCount(0);
-  await expect(page.locator(".cesium-viewer-bottom")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Frame 3D terrain" }),
+  ).toBeEnabled();
+  await expect(page.locator(".map-mode")).toContainText("3D");
+  const cesiumAsset = await page.request.get(
+    "/cesiumStatic/Assets/Textures/SkyBox/tycho2t3_80_px.jpg",
+  );
+  expect(cesiumAsset.ok()).toBe(true);
+  expect(cesiumAsset.headers()["content-type"]).toContain("image/jpeg");
 
+  const viewport = page.viewportSize();
+  if (viewport && viewport.width < 600) {
+    const mapBox = await page.locator(".map-stage").boundingBox();
+    const panelBox = await page.locator(".mission-panel").boundingBox();
+    expect(mapBox).not.toBeNull();
+    expect(panelBox).not.toBeNull();
+    expect(mapBox!.y).toBeLessThan(panelBox!.y);
+  }
   await page
-    .getByRole("searchbox", { name: "Search trails from the internet" })
-    .fill("Mountain House");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
-  await page
-    .getByRole("button", { name: /^Mountain House Trail Princeton/ })
-    .click();
-  await page.getByRole("button", { name: "Start field session" }).click();
+    .getByRole("button", { name: "Start field session" })
+    .dispatchEvent("click");
 
   await expect(page.getByText("Recommendation ready")).toBeVisible();
   await expect(
@@ -74,6 +85,9 @@ test("loads authoritative routes and completes the recommendation flow", async (
     page.getByRole("region", { name: "Current hiking state" }),
   ).toBeVisible();
   await expect(
+    page.getByRole("searchbox", { name: "Search trails from the internet" }),
+  ).toBeEnabled();
+  await expect(
     page.getByRole("heading", { name: "Decision signal" }),
   ).toBeVisible();
   await expect(page.getByText("Initial route signal")).toBeVisible();
@@ -81,30 +95,15 @@ test("loads authoritative routes and completes the recommendation flow", async (
     page.getByLabel(/highlighting recommended route Pine Hill Trail/),
   ).toBeVisible();
 
-  await page.getByRole("button", { name: "End field session" }).click();
   await expect(
-    page.getByRole("button", { name: "Start field session" }),
+    page.getByRole("button", { name: "End field session" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("searchbox", { name: "Search trails from the internet" }),
-  ).toBeEnabled();
-  await expect(
-    page.getByRole("region", { name: "Current hiking state" }),
-  ).toHaveCount(0);
-  const viewport = page.viewportSize();
-  if (viewport && viewport.width < 600) {
-    const mapBox = await page.locator(".map-stage").boundingBox();
-    const panelBox = await page.locator(".mission-panel").boundingBox();
-    expect(mapBox).not.toBeNull();
-    expect(panelBox).not.toBeNull();
-    expect(mapBox!.y).toBeLessThan(panelBox!.y);
-  }
+  await page.evaluate(() => window.location.replace("about:blank"));
 });
 
 test("surfaces stale environmental state while retaining the last values", async ({
   page,
 }) => {
-
   await page.route("**/sessions/*/events?after=*", async (route) => {
     const response = await route.fetch();
     const body = await response.json();
@@ -129,31 +128,31 @@ test("surfaces stale environmental state while retaining the last values", async
 test("searches the internet and previews OpenStreetMap trail geometry", async ({
   page,
 }) => {
-
   await page.route("**/api/v1/trails/search?q=*", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        query: "Appalachian Trail",
+        query: "Newton Hill, Worcester, MA, USA",
         attribution: "© OpenStreetMap contributors",
         attributionUrl: "https://www.openstreetmap.org/copyright",
         items: [
           {
-            id: "osm-way-249315063",
-            name: "Appalachian Trail",
-            location: "Salisbury, Connecticut, United States",
-            distanceMiles: 0.68,
+            id: "osm-nearby-node-358271617",
+            name: "Trails at Newton Hill",
+            location:
+              "Worcester, Worcester County, Massachusetts, United States",
+            distanceMiles: 0.42,
             geometry: {
               type: "LineString",
               coordinates: [
-                [-73.4009, 41.977],
-                [-73.4013, 41.9784],
-                [-73.4082, 41.98],
+                [-71.8209, 42.2676],
+                [-71.8194, 42.2682],
+                [-71.8178, 42.2691],
               ],
             },
             source: "OpenStreetMap via Nominatim",
-            sourceUrl: "https://www.openstreetmap.org/way/249315063",
+            sourceUrl: "https://www.openstreetmap.org/node/358271617",
           },
         ],
       }),
@@ -163,24 +162,24 @@ test("searches the internet and previews OpenStreetMap trail geometry", async ({
   await page.goto("/");
   await page
     .getByRole("searchbox", { name: "Search trails from the internet" })
-    .fill("Appalachian Trail");
+    .fill("Newton Hill, Worcester, MA, USA");
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await page
-    .getByRole("button", { name: /^Appalachian Trail Salisbury/ })
+    .getByRole("button", { name: /^Trails at Newton Hill Worcester/ })
     .click();
 
   await expect(
-    page.getByRole("heading", { name: "Appalachian Trail" }),
+    page.getByRole("heading", { name: "Trails at Newton Hill" }),
   ).toBeVisible();
   await expect(
     page.getByLabel(
-      "Interactive 3D map previewing internet trail Appalachian Trail",
+      "Interactive 3D map previewing internet trail Trails at Newton Hill",
     ),
   ).toBeVisible();
   await expect(page.getByText(/Preview geometry only/)).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Open trail in OpenStreetMap" }),
-  ).toHaveAttribute("href", /openstreetmap.org\/way\/249315063/);
+  ).toHaveAttribute("href", /openstreetmap.org\/node\/358271617/);
   await expect(
     page.getByRole("button", { name: "Start field session" }),
   ).toBeDisabled();

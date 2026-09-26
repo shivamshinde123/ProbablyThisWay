@@ -98,6 +98,7 @@ export async function buildApp(
     options.trailSearchProvider ??
     new NominatimTrailSearchProvider({
       baseUrl: process.env.TRAIL_SEARCH_API_BASE_URL?.trim() || undefined,
+      mapApiBaseUrl: process.env.TRAIL_MAP_API_BASE_URL?.trim() || undefined,
     });
   const operational = resolveOperationalConfig(operationalEnv);
   const retention = resolveRetentionConfig(operationalEnv);
