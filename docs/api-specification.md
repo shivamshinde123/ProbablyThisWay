@@ -33,6 +33,11 @@ Response `201` is `{ "session": Session, "evaluation": RouteEvaluation, "recomme
 
 Returns `{ "session": Session, "hike": HikeDetail, "decision": LatestDecision, "sequence": 0 }` from the configured session store. Unknown IDs return `404 session_not_found`.
 
+### POST /sessions/{sessionId}/end
+
+Ends an active field session and returns a Session response object. The returned session has status ended and an endedAt UTC timestamp. The operation is idempotent: repeating it returns the original ended session without changing endedAt. Unknown IDs return 404 session_not_found; a concurrent write returns 409 session_update_conflict.
+
+Ended sessions are retained under the normal retention policy but no longer receive adapter state updates or automatic weather refreshes. State updates after ending return 409 session_ended.
 ### `PATCH /sessions/{sessionId}/state`
 
 Accepts normalized updates from supported adapter source types or explicit user-entered facts. This endpoint does not support simulated-condition actions.

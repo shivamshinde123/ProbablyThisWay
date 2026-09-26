@@ -16,6 +16,7 @@ import { detectRelevantThresholds } from "./thresholds.js";
 export type SessionStateTransition =
   | { status: "accepted"; response: StateUpdateResponse }
   | { status: "conflict" }
+  | { status: "ended" }
   | { status: "stale" };
 
 export async function updateEnvironmentalStatus(options: {
@@ -46,6 +47,7 @@ export async function transitionSessionState(options: {
   sessionStore: SessionStore;
 }): Promise<SessionStateTransition> {
   const { record, nextState, hike, sessionStore } = options;
+  if (record.session.status !== "active") return { status: "ended" };
   if (
     Date.parse(nextState.observedAt) <=
     Date.parse(record.session.state.observedAt)

@@ -179,15 +179,17 @@ export class PostgresSessionStore implements SessionStore {
       const result = await client.query(
         `UPDATE sessions SET
           session_payload = $1::jsonb,
-          last_evaluated_state = $2::jsonb,
-          latest_decision = $3::jsonb,
-          state_sequence = $4,
-          event_sequence = $5,
+          status = $2,
+          last_evaluated_state = $3::jsonb,
+          latest_decision = $4::jsonb,
+          state_sequence = $5,
+          event_sequence = $6,
           updated_at = NOW()
-        WHERE id = $6 AND state_sequence = $7
+        WHERE id = $7 AND state_sequence = $8
         RETURNING id`,
         [
           JSON.stringify(validated.session),
+          validated.session.status,
           JSON.stringify(validated.lastEvaluatedState),
           JSON.stringify(validated.decision),
           validated.sequence,

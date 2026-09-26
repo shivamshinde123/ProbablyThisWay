@@ -325,3 +325,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Add a prominent search form over the loaded hike and route names/location, return accessible route results, and state the exact three-trail Wachusett boundary on no match. Lock search during an active session. Do not query arbitrary trails until a reviewed ingestion and alternative-route pipeline exists.
 - **Reasoning:** Search is useful only when its results can enter the same authoritative evaluation contract. A clear supported-catalog search is more honest than returning worldwide names that cannot start a valid session.
 - **Consequences:** Users can quickly select any currently supported trail. Expanding geographic coverage remains a data-ingestion feature, not a UI-only change.
+
+## DEC-038 — Make session ending explicit, persistent, and idempotent
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Starting a field session locked search and route controls with no user-visible way to leave the active state.
+- **Decision:** Add a visible end-session action backed by an idempotent API transition from active to ended, persist endedAt, and exclude ended sessions from state adapters and automatic weather refresh. Keep ended records under the existing retention policy.
+- **Reasoning:** A UI-only reset would leave server work running and create inconsistent state. A persisted lifecycle transition gives the user a reliable stop control and lets every writer enforce the same boundary.
+- **Consequences:** Ending clears the client’s live-session surfaces and unlocks search without deleting history. Restarting creates a new session ID. Concurrent writes resolve through the existing compare-and-swap sequence.

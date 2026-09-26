@@ -53,3 +53,7 @@ The repository is an npm-workspaces monorepo. This map reflects the implemented 
 - Unit and contract tests stay beside source; cross-process browser tests stay under `tests/e2e`.
 - `apps/api/src/generated/wachusett-routes.ts` changes only through the import command plus review of source provenance.
 - Build output belongs in ignored `dist` or `output` directories and is never edited by hand.
+
+## Session Lifecycle Migration
+
+- apps/api/migrations/003_session_lifecycle.sql — permits persisted active and ended session states.

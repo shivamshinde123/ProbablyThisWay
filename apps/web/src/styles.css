@@ -361,6 +361,30 @@ h1 em {
     transform 0.2s ease,
     background 0.2s ease;
 }
+.secondary-action {
+  width: 100%;
+  min-height: 54px;
+  border: 1px solid var(--signal);
+  background: transparent;
+  color: var(--signal);
+  font: 700 0.76rem/1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  cursor: pointer;
+}
+
+.secondary-action:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--signal) 12%, transparent);
+}
+
+.secondary-action:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
 .primary-action:hover:not(:disabled) {
   transform: translateY(-2px);
   background: #ff7657;

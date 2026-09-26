@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   decisionEventsResponseSchema,
+  endSessionResponseSchema,
   hikeDetailSchema,
   latestDecisionSchema,
   routeEvaluationSchema,
@@ -485,5 +486,52 @@ test("decision event pagination validates and applies page limits", async () => 
   const parsed = decisionEventsResponseSchema.parse(page.json());
   assert.equal(parsed.items.length, 1);
   assert.equal(parsed.nextCursor, 1);
+  await app.close();
+});
+
+test("POST session end is persistent, idempotent, and rejects later state updates", async () => {
+  const store = new InMemorySessionStore();
+  const app = await buildApp({ sessionStore: store, weatherProvider: null });
+  const created = await app.inject({
+    method: "POST",
+    url: "/api/v1/sessions",
+    payload: {
+      hikeId: "wachusett-summit",
+      selectedRouteId: "mountain-house-summit",
+    },
+  });
+  const started = sessionStartResponseSchema.parse(created.json());
+
+  const ended = await app.inject({
+    method: "POST",
+    url: "/api/v1/sessions/" + started.session.id + "/end",
+  });
+  assert.equal(ended.statusCode, 200);
+  const first = endSessionResponseSchema.parse(ended.json());
+  assert.equal(first.session.status, "ended");
+  if (first.session.status !== "ended")
+    throw new Error("Expected ended session");
+  assert.ok(first.session.endedAt);
+  assert.deepEqual(await store.listActiveSessionIds(), []);
+
+  const endedAgain = await app.inject({
+    method: "POST",
+    url: "/api/v1/sessions/" + started.session.id + "/end",
+  });
+  assert.equal(endedAgain.statusCode, 200);
+  const second = endSessionResponseSchema.parse(endedAgain.json());
+  assert.deepEqual(second, first);
+
+  const update = await app.inject({
+    method: "PATCH",
+    url: "/api/v1/sessions/" + started.session.id + "/state",
+    payload: {
+      observedAt: new Date(Date.now() + 60_000).toISOString(),
+      source: "user-input",
+      changes: { fatigue: "moderate" },
+    },
+  });
+  assert.equal(update.statusCode, 409);
+  assert.equal(update.json().error.code, "session_ended");
   await app.close();
 });

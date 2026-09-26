@@ -13,7 +13,7 @@ PostgreSQL is the implemented durable store for sessions and decision events. Th
 | `id` | `uuid` | Primary key |
 | `hike_id` | `text` | Current catalog identifier |
 | `selected_route_id` | `text` | Selected route identifier |
-| `status` | `text` | Constrained to `active` |
+| status | text | Constrained to active or ended; used by active-session refresh queries |
 | `created_at` | `timestamptz` | Session creation time |
 | `session_payload` | `jsonb` | Contract-valid current `Session`, including optional environmental freshness status for legacy-row compatibility |
 | `last_evaluated_state` | `jsonb` | Baseline for cumulative threshold detection |
@@ -33,7 +33,7 @@ PostgreSQL is the implemented durable store for sessions and decision events. Th
 | `occurred_at` | `timestamptz` | Event time |
 | `payload` | `jsonb` | Contract-valid `DecisionEvent` |
 
-An index on `(session_id, occurred_at)` supports chronological event reads. `002_retention_index.sql` adds `sessions_updated_at_idx` for bounded retention sweeps.
+An index on `(session_id, occurred_at)` supports chronological event reads. `002_retention_index.sql` adds `sessions_updated_at_idx` for bounded retention sweeps. `003_session_lifecycle.sql` expands the status constraint to active and ended.
 
 ### `schema_migrations`
 
