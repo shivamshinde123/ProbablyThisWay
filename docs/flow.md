@@ -361,3 +361,16 @@ request
 /health/ready -> SessionStore.readiness -> 200 ready or 503 unavailable
 /sessions/:id/events -> validate after + limit -> return at most 100 events
 ```
+
+## Retention Flow
+
+```text
+API process starts
+  -> validate retention age and sweep cadence
+  -> every sweep interval calculate now - retention age
+  -> SessionStore.purgeExpired(cutoff)
+      -> delete sessions last updated before cutoff
+      -> PostgreSQL cascades deletion to decision_events
+  -> log and retry on the next interval after failure
+  -> stop scheduler during graceful shutdown
+```

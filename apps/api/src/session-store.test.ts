@@ -62,3 +62,16 @@ test("production requires a database connection", () => {
     /DATABASE_URL is required/,
   );
 });
+
+test("in-memory retention removes only records older than the cutoff", async () => {
+  const store = new InMemorySessionStore();
+  const old = makeRecord();
+  const recent = makeRecord();
+  recent.session.createdAt = "2026-10-02T12:00:00.000Z";
+  await store.create(old);
+  await store.create(recent);
+
+  assert.equal(await store.purgeExpired(new Date("2026-10-01T00:00:00.000Z")), 1);
+  assert.equal(await store.get(old.session.id), undefined);
+  assert.ok(await store.get(recent.session.id));
+});

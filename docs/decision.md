@@ -282,3 +282,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** Explicit immutable history and a real database check make deploy-time schema changes repeatable without introducing an ORM.
 - **Consequences:** Migration files are append-only after application. Local PostgreSQL integration tests skip when `TEST_DATABASE_URL` is absent; CI always runs them. Migration `002` adds the index required for a later retention sweep.
 - **Supersedes:** The migration-version-tracking and live-PostgreSQL-testing follow-ups in DEC-023.
+## DEC-033 — Retain inactive session data for 30 days
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Durable session snapshots and decision events previously had no deletion policy.
+- **Decision:** Delete sessions whose last successful write is older than 30 days by default, sweep every six hours, and cascade deletion to their decision events. Allow bounded environment overrides from 1-365 days and 1 minute-24 hours.
+- **Reasoning:** The MVP needs short-lived operational continuity, not indefinite behavioral history. Using the last write protects active sessions while limiting stored state.
+- **Consequences:** Expired session URLs return not found and cannot be restored by the application. Every API replica may sweep safely because deletion is idempotent. Personal GPS history remains out of scope.
+- **Supersedes:** The retention-policy follow-ups in DEC-020, DEC-023, and the technical design.

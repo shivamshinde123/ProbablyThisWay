@@ -35,6 +35,7 @@ export interface SessionStore {
   listActiveSessionIds(): Promise<string[]>;
   save(record: SessionRecord, expectedSequence: number): Promise<boolean>;
   readiness(): Promise<void>;
+  purgeExpired(before: Date): Promise<number>;
   close(): Promise<void>;
 }
 
@@ -71,6 +72,18 @@ export class InMemorySessionStore implements SessionStore {
   }
 
   async readiness(): Promise<void> {}
+
+  async purgeExpired(before: Date): Promise<number> {
+    let deleted = 0;
+    for (const [id, record] of this.#records) {
+      const lastActivity = record.session.state.receivedAt ?? record.session.createdAt;
+      if (Date.parse(lastActivity) < before.getTime()) {
+        this.#records.delete(id);
+        deleted += 1;
+      }
+    }
+    return deleted;
+  }
 
   async close(): Promise<void> {}
 }
@@ -188,6 +201,11 @@ export class PostgresSessionStore implements SessionStore {
 
   async readiness(): Promise<void> {
     await this.#pool.query("SELECT 1");
+  }
+
+  async purgeExpired(before: Date): Promise<number> {
+    const result = await this.#pool.query("DELETE FROM sessions WHERE updated_at < $1", [before.toISOString()]);
+    return result.rowCount ?? 0;
   }
 
   async #insertEvents(client: PoolClient, events: DecisionEvent[]): Promise<void> {

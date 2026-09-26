@@ -51,7 +51,11 @@ Run `npm run db:migrate -w @probably-this-way/api` before starting an API proces
 
 ## Planned Geospatial Tables
 
-Authoritative production route ingestion will add normalized `hikes`, `trails`, `routes`, `hiking_state_snapshots`, `evaluations`, and `route_scores` tables plus PostGIS geometry/geography columns and GiST indexes. Their exact migration remains TBD. Session/event deletion is still governed by the retention policy described in the technical design.
+Authoritative production route ingestion will add normalized `hikes`, `trails`, `routes`, `hiking_state_snapshots`, `evaluations`, and `route_scores` tables plus PostGIS geometry/geography columns and GiST indexes. Their exact migration remains TBD.
+
+## Retention
+
+The API deletes a session when its last successful database write is older than `SESSION_RETENTION_DAYS` (30 days by default). The sweep runs every six hours by default. `decision_events` rows are removed by the session foreign key's `ON DELETE CASCADE`. The in-memory development store follows the same age rule. Retention queries use `sessions_updated_at_idx`.
 
 ## Route Snapshot Storage
 

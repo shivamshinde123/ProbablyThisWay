@@ -118,3 +118,11 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 | `operational-config.ts` | Validate logging, CORS, rate-limit, and event-page settings | Environment and Zod |
 | Fastify rate-limit hook | Bound non-health traffic by client IP | `@fastify/rate-limit` process-local store |
 | Liveness/readiness routes | Separate process health from session-store availability | `SessionStore.readiness` |
+
+## Retention Components
+
+| Component | Responsibility | Depends on |
+|---|---|---|
+| `retention.ts` | Validate retention settings and schedule cutoff sweeps | `SessionStore.purgeExpired` |
+| In-memory/PostgreSQL stores | Delete records older than the cutoff | Session activity timestamps; database cascade |
+| `sessions_updated_at_idx` | Keep PostgreSQL age scans indexable | Migration 002 |
