@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   InternetTrailResult,
+  RouteEvaluation,
   RouteFeature,
+  RouteRecommendation,
 } from "@probably-this-way/contracts";
 import {
   ArcGISTiledElevationTerrainProvider,
@@ -9,17 +11,98 @@ import {
   Cartesian3,
   Cartographic,
   Color,
+  ConstantPositionProperty,
+  ConstantProperty,
   HeadingPitchRange,
   HeightReference,
   Ion,
   Material,
   Math as CesiumMath,
+  PolylineGlowMaterialProperty,
   Terrain,
+  VerticalOrigin,
   Viewer,
 } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
 type MapCoordinate = readonly [number, number, number?];
+type PlaybackState = "idle" | "playing" | "paused" | "complete";
+type PlaybackVisual = {
+  coordinates: readonly MapCoordinate[];
+  markerPosition: ConstantPositionProperty;
+  markerRotation: ConstantProperty;
+  haloPosition: ConstantPositionProperty;
+  haloSize: ConstantProperty;
+  progressPositions: ConstantProperty;
+};
+
+const ROUTE_PLAYBACK_DURATION_MS = 16_000;
+const ROUTE_POINTER_IMAGE =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='52' viewBox='0 0 44 52'%3E%3Cpath d='M22 2 40 46 22 38 4 46Z' fill='%2307110e' stroke='%23e7eadf' stroke-width='3'/%3E%3Cpath d='M22 8 33 38 22 33 11 38Z' fill='%23b7ff6a'/%3E%3Ccircle cx='22' cy='34' r='3' fill='%23ff5c35'/%3E%3C/svg%3E";
+
+function segmentLength(start: MapCoordinate, end: MapCoordinate): number {
+  const averageLatitude = CesiumMath.toRadians((start[1] + end[1]) / 2);
+  const longitude = (end[0] - start[0]) * Math.cos(averageLatitude);
+  const latitude = end[1] - start[1];
+  return Math.hypot(longitude, latitude);
+}
+
+function sampleRoute(
+  coordinates: readonly MapCoordinate[],
+  progress: number,
+): {
+  coordinate: MapCoordinate;
+  completed: MapCoordinate[];
+  rotation: number;
+} {
+  const boundedProgress = Math.max(0, Math.min(1, progress));
+  if (coordinates.length < 2) {
+    const coordinate = coordinates[0] ?? [0, 0, 0];
+    return {
+      coordinate,
+      completed: [coordinate, coordinate],
+      rotation: 0,
+    };
+  }
+
+  const lengths = coordinates
+    .slice(1)
+    .map((coordinate, index) => segmentLength(coordinates[index]!, coordinate));
+  const totalLength = lengths.reduce((sum, length) => sum + length, 0);
+  const target = totalLength * boundedProgress;
+  let traversed = 0;
+
+  for (let index = 0; index < lengths.length; index += 1) {
+    const length = lengths[index]!;
+    const start = coordinates[index]!;
+    const end = coordinates[index + 1]!;
+    if (traversed + length >= target || index === lengths.length - 1) {
+      const segmentProgress =
+        length === 0 ? 0 : Math.min(1, (target - traversed) / length);
+      const coordinate: MapCoordinate = [
+        start[0] + (end[0] - start[0]) * segmentProgress,
+        start[1] + (end[1] - start[1]) * segmentProgress,
+        (start[2] ?? 0) + ((end[2] ?? 0) - (start[2] ?? 0)) * segmentProgress,
+      ];
+      const completed = [...coordinates.slice(0, index + 1), coordinate];
+      if (completed.length === 1) completed.push(coordinate);
+      const averageLatitude = CesiumMath.toRadians((start[1] + end[1]) / 2);
+      const bearing = Math.atan2(
+        (end[0] - start[0]) * Math.cos(averageLatitude),
+        end[1] - start[1],
+      );
+      return { coordinate, completed, rotation: -bearing };
+    }
+    traversed += length;
+  }
+
+  const coordinate = coordinates.at(-1)!;
+  return {
+    coordinate,
+    completed: [...coordinates],
+    rotation: 0,
+  };
+}
 
 function frameTerrainCoordinates(
   viewer: Viewer,
@@ -54,6 +137,9 @@ type TerrainMapProps = {
   selectedRouteId?: string;
   recommendedRouteId?: string;
   recommendationSuitability?: number;
+  evaluation?: RouteEvaluation;
+  recommendation?: RouteRecommendation;
+  onShowModelResponse?: () => void;
   internetTrail?: InternetTrailResult;
 };
 
@@ -62,15 +148,51 @@ export function TerrainMap({
   selectedRouteId,
   recommendedRouteId,
   recommendationSuitability,
+  evaluation,
+  recommendation,
+  onShowModelResponse,
   internetTrail,
 }: TerrainMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
   const routeEntityIdsRef = useRef<string[]>([]);
+  const playbackEntityIdsRef = useRef<string[]>([]);
+  const playbackVisualRef = useRef<PlaybackVisual | undefined>(undefined);
+  const playbackFrameRef = useRef<number | undefined>(undefined);
+  const playbackElapsedRef = useRef(0);
+  const playbackProgressRef = useRef(0);
   const usesElevationTerrainRef = useRef(false);
   const focusedRecommendationRef = useRef<string | undefined>(undefined);
   const focusedInternetTrailRef = useRef<string | undefined>(undefined);
   const [status, setStatus] = useState<MapStatus>("starting");
+  const [playbackState, setPlaybackState] = useState<PlaybackState>("idle");
+  const [playbackProgress, setPlaybackProgress] = useState(0);
+  const [playbackRun, setPlaybackRun] = useState(0);
+
+  const updatePlaybackVisual = useCallback((progress: number) => {
+    const viewer = viewerRef.current;
+    const visual = playbackVisualRef.current;
+    if (!viewer || viewer.isDestroyed() || !visual) return;
+    const sample = sampleRoute(visual.coordinates, progress);
+    const position = Cartesian3.fromDegrees(
+      sample.coordinate[0],
+      sample.coordinate[1],
+      usesElevationTerrainRef.current ? 0 : sample.coordinate[2],
+    );
+    visual.markerPosition.setValue(position);
+    visual.haloPosition.setValue(position);
+    visual.markerRotation.setValue(sample.rotation);
+    visual.haloSize.setValue(30 + Math.sin(progress * Math.PI * 14) * 5);
+    visual.progressPositions.setValue(
+      Cartesian3.fromDegreesArray(
+        sample.completed.flatMap(([longitude, latitude]) => [
+          longitude,
+          latitude,
+        ]),
+      ),
+    );
+    viewer.scene.requestRender();
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current || viewerRef.current) return;
@@ -121,6 +243,15 @@ export function TerrainMap({
       viewer.scene.globe.material = contourMaterial;
       viewer.scene.globe.enableLighting = false;
       viewer.scene.globe.depthTestAgainstTerrain = true;
+      const cameraController = viewer.scene.screenSpaceCameraController;
+      cameraController.enableInputs = true;
+      cameraController.enableRotate = true;
+      cameraController.enableTranslate = true;
+      cameraController.enableZoom = true;
+      cameraController.enableTilt = true;
+      cameraController.enableLook = true;
+      cameraController.minimumZoomDistance = 20;
+      cameraController.maximumZoomDistance = 20_000_000;
       viewer.scene.backgroundColor = Color.fromCssColorString("#07110e");
       if (viewer.scene.skyAtmosphere) viewer.scene.skyAtmosphere.show = false;
       viewer.camera.flyTo({
@@ -157,6 +288,8 @@ export function TerrainMap({
     }
     return () => {
       if (statusTimer !== undefined) window.clearTimeout(statusTimer);
+      if (playbackFrameRef.current !== undefined)
+        window.cancelAnimationFrame(playbackFrameRef.current);
       removeTerrainReady?.();
       removeTerrainError?.();
       removeProviderError?.();
@@ -170,7 +303,12 @@ export function TerrainMap({
     const viewer = viewerRef.current;
     if (!viewer || viewer.isDestroyed() || status === "starting") return;
     routeEntityIdsRef.current.forEach((id) => viewer.entities.removeById(id));
+    playbackEntityIdsRef.current.forEach((id) =>
+      viewer.entities.removeById(id),
+    );
     routeEntityIdsRef.current = [];
+    playbackEntityIdsRef.current = [];
+    playbackVisualRef.current = undefined;
     const routePriority = (route: RouteFeature) =>
       route.properties.id === recommendedRouteId
         ? 2
@@ -246,6 +384,80 @@ export function TerrainMap({
       });
     }
 
+    if (focusRoute && focusRoute.properties.id === recommendedRouteId) {
+      const initial = sampleRoute(
+        focusRoute.geometry.coordinates,
+        playbackProgressRef.current,
+      );
+      const initialPosition = Cartesian3.fromDegrees(
+        initial.coordinate[0],
+        initial.coordinate[1],
+        usesElevationTerrainRef.current ? 0 : initial.coordinate[2],
+      );
+      const markerPosition = new ConstantPositionProperty(initialPosition);
+      const haloPosition = new ConstantPositionProperty(initialPosition);
+      const markerRotation = new ConstantProperty(initial.rotation);
+      const haloSize = new ConstantProperty(30);
+      const progressPositions = new ConstantProperty(
+        Cartesian3.fromDegreesArray(
+          initial.completed.flatMap(([longitude, latitude]) => [
+            longitude,
+            latitude,
+          ]),
+        ),
+      );
+      const progressId = "route-playback-progress";
+      const haloId = "route-playback-halo";
+      const markerId = "route-playback-marker";
+      playbackEntityIdsRef.current.push(progressId, haloId, markerId);
+      viewer.entities.add({
+        id: progressId,
+        polyline: {
+          positions: progressPositions,
+          width: 11,
+          material: new PolylineGlowMaterialProperty({
+            color: Color.fromCssColorString("#d8ff9f"),
+            glowPower: 0.24,
+            taperPower: 0.72,
+          }),
+          clampToGround: true,
+        },
+      });
+      viewer.entities.add({
+        id: haloId,
+        position: haloPosition,
+        point: {
+          color: Color.fromCssColorString("#b7ff6a").withAlpha(0.18),
+          outlineColor: Color.fromCssColorString("#b7ff6a").withAlpha(0.58),
+          outlineWidth: 2,
+          pixelSize: haloSize,
+          heightReference: HeightReference.CLAMP_TO_GROUND,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+      });
+      viewer.entities.add({
+        id: markerId,
+        position: markerPosition,
+        billboard: {
+          image: ROUTE_POINTER_IMAGE,
+          width: 31,
+          height: 37,
+          rotation: markerRotation,
+          verticalOrigin: VerticalOrigin.CENTER,
+          heightReference: HeightReference.CLAMP_TO_GROUND,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+      });
+      playbackVisualRef.current = {
+        coordinates: focusRoute.geometry.coordinates,
+        markerPosition,
+        markerRotation,
+        haloPosition,
+        haloSize,
+        progressPositions,
+      };
+    }
+
     const internetCoordinates = internetLines.flat();
     const internetEndpoint = internetCoordinates.at(-1);
     if (internetTrail && internetEndpoint) {
@@ -292,6 +504,8 @@ export function TerrainMap({
         reduceMotion ? 0 : 1.2,
       );
     }
+    if (playbackVisualRef.current)
+      updatePlaybackVisual(playbackProgressRef.current);
     viewer.scene.requestRender();
   }, [
     routes,
@@ -300,7 +514,120 @@ export function TerrainMap({
     recommendationSuitability,
     internetTrail,
     status,
+    updatePlaybackVisual,
   ]);
+
+  useEffect(() => {
+    if (playbackFrameRef.current !== undefined)
+      window.cancelAnimationFrame(playbackFrameRef.current);
+    playbackElapsedRef.current = 0;
+    playbackProgressRef.current = 0;
+    updatePlaybackVisual(0);
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const resetFrame = window.requestAnimationFrame(() => {
+      setPlaybackProgress(0);
+      setPlaybackState(
+        recommendedRouteId ? (reduceMotion ? "paused" : "playing") : "idle",
+      );
+    });
+    return () => window.cancelAnimationFrame(resetFrame);
+  }, [recommendedRouteId, updatePlaybackVisual]);
+
+  useEffect(() => {
+    if (playbackState !== "playing" || !recommendedRouteId) return;
+    const startedAt = performance.now() - playbackElapsedRef.current;
+    let displayedPercent = Math.round(playbackProgressRef.current * 100);
+    const tick = (now: number) => {
+      playbackElapsedRef.current = now - startedAt;
+      const progress = Math.min(
+        1,
+        playbackElapsedRef.current / ROUTE_PLAYBACK_DURATION_MS,
+      );
+      playbackProgressRef.current = progress;
+      updatePlaybackVisual(progress);
+      const percent = Math.round(progress * 100);
+      if (percent !== displayedPercent) {
+        displayedPercent = percent;
+        setPlaybackProgress(progress);
+      }
+      if (progress >= 1) {
+        setPlaybackState("complete");
+        playbackFrameRef.current = undefined;
+        return;
+      }
+      playbackFrameRef.current = window.requestAnimationFrame(tick);
+    };
+    playbackFrameRef.current = window.requestAnimationFrame(tick);
+    return () => {
+      if (playbackFrameRef.current !== undefined)
+        window.cancelAnimationFrame(playbackFrameRef.current);
+      playbackFrameRef.current = undefined;
+    };
+  }, [
+    playbackState,
+    playbackRun,
+    recommendedRouteId,
+    status,
+    updatePlaybackVisual,
+  ]);
+
+  function toggleRoutePlayback() {
+    if (!recommendedRouteId) return;
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (reduceMotion) {
+      playbackElapsedRef.current = ROUTE_PLAYBACK_DURATION_MS;
+      playbackProgressRef.current = 1;
+      setPlaybackProgress(1);
+      updatePlaybackVisual(1);
+      setPlaybackState("complete");
+      return;
+    }
+    if (playbackState === "playing") {
+      setPlaybackState("paused");
+      return;
+    }
+    if (playbackState === "complete") {
+      playbackElapsedRef.current = 0;
+      playbackProgressRef.current = 0;
+      setPlaybackProgress(0);
+      updatePlaybackVisual(0);
+    }
+    setPlaybackState("playing");
+  }
+
+  function replayRoutePlayback() {
+    if (!recommendedRouteId) return;
+    playbackElapsedRef.current = 0;
+    playbackProgressRef.current = 0;
+    setPlaybackProgress(0);
+    updatePlaybackVisual(0);
+    setPlaybackRun((run) => run + 1);
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    setPlaybackState(reduceMotion ? "paused" : "playing");
+  }
+
+  function moveCamera(
+    operation: "zoom-in" | "zoom-out" | "left" | "right" | "up" | "down",
+  ) {
+    const viewer = viewerRef.current;
+    if (!viewer || viewer.isDestroyed()) return;
+    const height = viewer.camera.positionCartographic.height;
+    const zoomAmount = Math.max(30, Math.min(100_000, height * 0.22));
+    const panAmount = Math.max(20, Math.min(50_000, height * 0.12));
+    if (operation === "zoom-in") viewer.camera.zoomIn(zoomAmount);
+    if (operation === "zoom-out") viewer.camera.zoomOut(zoomAmount);
+    if (operation === "left") viewer.camera.moveLeft(panAmount);
+    if (operation === "right") viewer.camera.moveRight(panAmount);
+    if (operation === "up") viewer.camera.moveUp(panAmount);
+    if (operation === "down") viewer.camera.moveDown(panAmount);
+    viewer.scene.requestRender();
+  }
 
   function showObliqueView() {
     const viewer = viewerRef.current;
@@ -324,6 +651,7 @@ export function TerrainMap({
     ).matches;
     frameTerrainCoordinates(viewer, coordinates, reduceMotion ? 0 : 1.2);
   }
+
   const focusedRoute = routes.find(
     (route) => route.properties.id === (recommendedRouteId ?? selectedRouteId),
   );
@@ -333,6 +661,43 @@ export function TerrainMap({
       ? internetTrail.geometry.coordinates[0]
       : (internetTrail?.geometry.coordinates[0]?.[0] ??
         focusedRoute?.geometry.coordinates[0]);
+  const topScore = evaluation?.scores.reduce((best, score) =>
+    score.suitability > best.suitability ? score : best,
+  );
+  const topRouteName = routes.find(
+    (route) => route.properties.id === topScore?.routeId,
+  )?.properties.name;
+  const providerLabel =
+    evaluation?.provider === "openrouter"
+      ? "OpenRouter"
+      : evaluation?.provider === "jev"
+        ? "Legacy Jev"
+        : "Deterministic fallback";
+  const decisionSteps =
+    evaluation && recommendation?.status === "recommended"
+      ? [
+          {
+            label: "Candidate scores received",
+            detail: `${providerLabel} · ${evaluation.scores.length} validated ${evaluation.scores.length === 1 ? "score" : "scores"}`,
+          },
+          {
+            label: "Score leader identified",
+            detail: `${topRouteName ?? "Top candidate"} · ${Math.round((topScore?.suitability ?? 0) * 100)}% scored fit`,
+          },
+          {
+            label: "Application policy checked",
+            detail: `${recommendation.policyVersion} · ${recommendation.excludedRoutes.length} excluded`,
+          },
+          {
+            label: "Recommended route confirmed",
+            detail: `${focusedName ?? "Chosen route"} · ${Math.round(recommendation.suitability * 100)}% fit`,
+          },
+        ]
+      : [];
+  const activeDecisionStep = Math.min(
+    decisionSteps.length - 1,
+    Math.floor(playbackProgress * decisionSteps.length),
+  );
   return (
     <div className="terrain-map">
       <div
@@ -373,14 +738,170 @@ export function TerrainMap({
       </div>
       <div className="map-3d-controls">
         <button
+          className="map-fit-control"
           type="button"
           disabled={status === "starting"}
           onClick={showObliqueView}
         >
           Frame 3D terrain
         </button>
-        <span>Drag to orbit · wheel to zoom</span>
+        <div
+          className="map-navigation"
+          role="group"
+          aria-label="Map navigation controls"
+        >
+          <div className="map-zoom-controls">
+            <button
+              type="button"
+              aria-label="Zoom in"
+              title="Zoom in"
+              disabled={status === "starting"}
+              onClick={() => moveCamera("zoom-in")}
+            >
+              +
+            </button>
+            <button
+              type="button"
+              aria-label="Zoom out"
+              title="Zoom out"
+              disabled={status === "starting"}
+              onClick={() => moveCamera("zoom-out")}
+            >
+              −
+            </button>
+          </div>
+          <div className="map-pan-controls">
+            <button
+              type="button"
+              aria-label="Pan up"
+              title="Pan up"
+              disabled={status === "starting"}
+              onClick={() => moveCamera("up")}
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              aria-label="Pan left"
+              title="Pan left"
+              disabled={status === "starting"}
+              onClick={() => moveCamera("left")}
+            >
+              ←
+            </button>
+            <span aria-hidden="true">PAN</span>
+            <button
+              type="button"
+              aria-label="Pan right"
+              title="Pan right"
+              disabled={status === "starting"}
+              onClick={() => moveCamera("right")}
+            >
+              →
+            </button>
+            <button
+              type="button"
+              aria-label="Pan down"
+              title="Pan down"
+              disabled={status === "starting"}
+              onClick={() => moveCamera("down")}
+            >
+              ↓
+            </button>
+          </div>
+        </div>
+        <span>Drag to orbit · scroll to zoom · shift-drag to pan</span>
       </div>
+      {recommendedRouteId && focusedRoute ? (
+        <section
+          className="route-playback"
+          aria-label="Animated route preview"
+          data-state={playbackState}
+        >
+          <div className="route-playback-heading">
+            <div>
+              <span className="route-playback-kicker">Route preview</span>
+              <strong>
+                {playbackState === "playing"
+                  ? "Moving to trail end"
+                  : playbackState === "paused"
+                    ? "Preview paused"
+                    : playbackState === "complete"
+                      ? "Trail end reached"
+                      : "Ready to preview"}
+              </strong>
+            </div>
+            <span className="route-playback-percent">
+              {Math.round(playbackProgress * 100)
+                .toString()
+                .padStart(2, "0")}
+              %
+            </span>
+          </div>
+          <div
+            className="route-playback-track"
+            role="progressbar"
+            aria-label="Route preview progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(playbackProgress * 100)}
+          >
+            <span style={{ width: playbackProgress * 100 + "%" }} />
+          </div>
+          {decisionSteps.length > 0 ? (
+            <div className="decision-replay">
+              <div className="decision-replay-heading">
+                <span>Decision replay</span>
+                <strong>{providerLabel} → application policy</strong>
+              </div>
+              <ol aria-label="Model and policy decision replay">
+                {decisionSteps.map((step, index) => {
+                  const stepState =
+                    index < activeDecisionStep
+                      ? "complete"
+                      : index === activeDecisionStep
+                        ? "active"
+                        : "upcoming";
+                  return (
+                    <li key={step.label} data-state={stepState}>
+                      <span>{String(index + 1).padStart(2, "0")}</span>
+                      <div>
+                        <strong>{step.label}</strong>
+                        <small>{step.detail}</small>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+              <p className="decision-replay-live" aria-live="polite">
+                {decisionSteps[activeDecisionStep]?.label}
+              </p>
+            </div>
+          ) : null}
+          <div className="route-playback-actions">
+            <button type="button" onClick={toggleRoutePlayback}>
+              {playbackState === "playing"
+                ? "Pause preview"
+                : playbackState === "complete"
+                  ? "Play again"
+                  : "Resume preview"}
+            </button>
+            <button
+              type="button"
+              onClick={replayRoutePlayback}
+              disabled={playbackProgress === 0}
+            >
+              Replay from start
+            </button>
+            {onShowModelResponse ? (
+              <button type="button" onClick={onShowModelResponse}>
+                Full model response
+              </button>
+            ) : null}
+            <small>Animated guide · not live GPS</small>
+          </div>
+        </section>
+      ) : null}
       <div className="map-caption">
         <strong>
           {internetTrail

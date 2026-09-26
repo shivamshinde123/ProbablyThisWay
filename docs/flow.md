@@ -138,9 +138,17 @@ validated route scores
       -> recommendation banner and card marker
       -> TerrainMap receives recommendation ID + score
       -> Cesium renders signal-green route and recommendation label
+      -> reset animated route preview to the chosen route start
+      -> move directional pointer by cumulative line distance
+      -> update glowing completed segment + accessible percentage
+      -> advance provider score -> score leader -> policy -> selected route replay
+      -> pause/resume/replay locally without changing session state
+      -> keep full model scores mounted and reachable from the replay panel
 ```
 
 The user's pre-session choice remains orange when it differs from the recommendation. Other routes remain moss. Route selection stays locked after session start.
+
+The moving pointer is a finite visualization of the selected geometry, not measured hike progress. It starts automatically when a new recommendation arrives, finishes at the route endpoint, and is canceled when the recommendation or Cesium viewer changes. Reduced-motion preference suppresses automatic motion.
 
 ## Implemented Phase 7 Polish Flow
 

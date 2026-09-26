@@ -111,6 +111,18 @@ test("searches, starts, evaluates, frames, and ends a Newton Hill trail", async 
 
   const frameButton = page.getByRole("button", { name: "Frame 3D terrain" });
   await expect(frameButton).toBeEnabled();
+  for (const controlName of [
+    "Zoom in",
+    "Zoom out",
+    "Pan up",
+    "Pan left",
+    "Pan right",
+    "Pan down",
+  ]) {
+    await expect(page.getByRole("button", { name: controlName })).toBeEnabled();
+  }
+  await page.getByRole("button", { name: "Zoom in" }).click();
+  await page.getByRole("button", { name: "Pan right" }).click();
   await frameButton.click();
   await expect(page.locator(".cesium-widget canvas")).toBeVisible();
   const captionPosition = await page
@@ -149,6 +161,58 @@ test("searches, starts, evaluates, frames, and ends a Newton Hill trail", async 
   ).toBeVisible();
   await expect(
     page.getByLabel(/highlighting recommended route Trails at Newton Hill/),
+  ).toBeVisible();
+
+  const playback = page.getByRole("region", {
+    name: "Animated route preview",
+  });
+  const playbackProgress = page.getByRole("progressbar", {
+    name: "Route preview progress",
+  });
+  await expect(playback).toBeVisible();
+  await expect(playback).toContainText("Animated guide · not live GPS");
+  const decisionReplay = page.getByRole("list", {
+    name: "Model and policy decision replay",
+  });
+  await expect(decisionReplay.locator("li")).toHaveCount(4);
+  await expect(decisionReplay.locator('li[data-state="active"]')).toContainText(
+    "Candidate scores received",
+  );
+  await expect
+    .poll(async () => Number(await playbackProgress.getAttribute("aria-valuenow")))
+    .toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Pause preview" }).click();
+  await expect(playback).toContainText("Preview paused");
+  const pausedProgress = await playbackProgress.getAttribute("aria-valuenow");
+  await page.waitForTimeout(300);
+  await expect(playbackProgress).toHaveAttribute(
+    "aria-valuenow",
+    pausedProgress ?? "0",
+  );
+  await page.getByRole("button", { name: "Resume preview" }).click();
+  await expect(playback).toContainText("Moving to trail end");
+  await expect
+    .poll(async () => Number(await playbackProgress.getAttribute("aria-valuenow")))
+    .toBeGreaterThan(25);
+  await expect(decisionReplay.locator('li[data-state="active"]')).toContainText(
+    "Score leader identified",
+  );
+  await page.getByRole("button", { name: "Replay from start" }).click();
+  await expect
+    .poll(async () => Number(await playbackProgress.getAttribute("aria-valuenow")))
+    .toBeLessThan(10);
+  await expect(decisionReplay.locator('li[data-state="active"]')).toContainText(
+    "Candidate scores received",
+  );
+
+  await page.getByRole("button", { name: "Collapse trail panel" }).click();
+  await page.getByRole("button", { name: "Full model response" }).click();
+  await expect(page.getByRole("button", { name: "Collapse trail panel" })).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  await expect(
+    page.getByRole("heading", { name: "Deterministic fallback scores" }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "End field session" }).click();

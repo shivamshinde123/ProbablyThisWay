@@ -20,6 +20,8 @@ A hiker discovering a named trail anywhere OpenStreetMap has searchable line geo
 - Evaluate every candidate route through a defined, schema-constrained route-suitability request.
 - Apply deterministic application policy to the results, excluding official illegal/closed/restricted routes before ranking and returning no route when every candidate is ineligible.
 - Highlight the current recommendation and show suitability values.
+- Automatically preview the recommended geometry with a clearly labeled start-to-finish pointer animation, visible completion progress, synchronized model-to-policy decision replay, and pause/replay controls. Keep the complete model response available after evaluation. This is a route preview, not the hiker's live position.
+- Provide visible, keyboard-accessible zoom in/out, directional pan, and terrain framing controls in addition to direct mouse/touch Cesium navigation.
 - Explain the factors behind the recommendation without presenting it as a safety guarantee.
 - Re-evaluate automatically when supported live inputs materially change.
 - Do not expose a simulation button or simulated-condition workflow.
@@ -40,6 +42,6 @@ The product is decision support, not an emergency or navigation guarantee. UI co
 
 - Internet discovery coverage: direct line matches plus bounded nearby mapped paths when OpenStreetMap resolves a named hill, park, or trail area as a point/polygon. Selected results can be evaluated, but remain unreviewed geometry with unknown access, exposure, condition, and elevation.
 - Launch area: Wachusett Mountain State Reservation. The MVP uses the Massachusetts DCR Roads and Trails layer for Pine Hill, Mountain House, and Harrington summit corridors, plus the official DCR trail map for published metrics.
-- Live position data is post-MVP. Until it exists, route progress is omitted or marked unavailable rather than inferred from fabricated location data.
+- Live position data is post-MVP. Until it exists, actual hike progress is omitted or marked unavailable rather than inferred from fabricated location data. A clearly labeled animated route preview may demonstrate the recommended geometry but must never be presented as live GPS.
 - The repository is provider-neutral and supports one API replica behind the shipped Nginx proxy. Cloud, DNS, TLS, registry, secret-manager, backup, alerting, and metrics products are operator choices.
 - MVP sessions are anonymous capability URLs and contain no user account or live GPS history. Server-to-server state adapters use the implemented bearer credential. Account authentication and product analytics are outside the MVP.

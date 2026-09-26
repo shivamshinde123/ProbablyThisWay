@@ -49,3 +49,5 @@ The browser submits a search to the Fastify API; it never calls public OpenStree
 ## Terrain Provider Boundary
 
 Terrain rendering is a browser integration. Cesium World Terrain is selected only when a scoped ion token is configured; otherwise Cesium loads the public ArcGIS World Elevation Terrain3D ImageServer. The globe applies moderate vertical exaggeration and an oblique framing control so relief is visually explicit. Route evaluation does not consume rendered tile heights: reviewed ascent metrics remain the decision input. Provider credits are part of the map UI, and terrain failure degrades only visualization.
+
+Recommended-route playback is also browser-only visualization. The client interpolates along the already selected route, updates Cesium entities with animation frames, replays validated provider-score and application-policy stages, and exposes pause/replay state locally. Explicit zoom, pan, and frame controls invoke the Cesium camera directly while native pointer/touch camera input remains enabled. None of these browser controls write session state, call the API, or represent live GPS.
