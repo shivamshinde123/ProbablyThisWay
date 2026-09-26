@@ -143,7 +143,8 @@ validated route scores
       -> update glowing completed segment + accessible percentage
       -> advance provider score -> score leader -> policy -> selected route replay
       -> pause/resume/replay locally without changing session state
-      -> keep full model scores mounted and reachable from the replay panel
+      -> collapse/expand the instrument without stopping or resetting playback
+      -> keep full model scores and the auditable input -> score -> policy -> explanation trace mounted and reachable from the replay panel
 ```
 
 The user's pre-session choice remains orange when it differs from the recommendation. Other routes remain moss. Route selection stays locked after session start.

@@ -168,6 +168,7 @@ export function TerrainMap({
   const [playbackState, setPlaybackState] = useState<PlaybackState>("idle");
   const [playbackProgress, setPlaybackProgress] = useState(0);
   const [playbackRun, setPlaybackRun] = useState(0);
+  const [playbackCollapsed, setPlaybackCollapsed] = useState(false);
 
   const updatePlaybackVisual = useCallback((progress: number) => {
     const viewer = viewerRef.current;
@@ -817,6 +818,7 @@ export function TerrainMap({
           className="route-playback"
           aria-label="Animated route preview"
           data-state={playbackState}
+          data-collapsed={playbackCollapsed}
         >
           <div className="route-playback-heading">
             <div>
@@ -831,74 +833,97 @@ export function TerrainMap({
                       : "Ready to preview"}
               </strong>
             </div>
-            <span className="route-playback-percent">
-              {Math.round(playbackProgress * 100)
-                .toString()
-                .padStart(2, "0")}
-              %
-            </span>
+            <div className="route-playback-heading-actions">
+              <span className="route-playback-percent">
+                {Math.round(playbackProgress * 100)
+                  .toString()
+                  .padStart(2, "0")}
+                %
+              </span>
+              <button
+                className="route-playback-toggle"
+                type="button"
+                aria-expanded={!playbackCollapsed}
+                aria-controls="route-playback-details"
+                onClick={() => setPlaybackCollapsed((collapsed) => !collapsed)}
+              >
+                {playbackCollapsed ? "Expand" : "Collapse"}
+                <span aria-hidden="true">{playbackCollapsed ? "+" : "−"}</span>
+              </button>
+            </div>
           </div>
-          <div
-            className="route-playback-track"
-            role="progressbar"
-            aria-label="Route preview progress"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(playbackProgress * 100)}
-          >
-            <span style={{ width: playbackProgress * 100 + "%" }} />
-          </div>
-          {decisionSteps.length > 0 ? (
-            <div className="decision-replay">
-              <div className="decision-replay-heading">
-                <span>Decision replay</span>
-                <strong>{providerLabel} → application policy</strong>
-              </div>
-              <ol aria-label="Model and policy decision replay">
-                {decisionSteps.map((step, index) => {
-                  const stepState =
-                    index < activeDecisionStep
-                      ? "complete"
-                      : index === activeDecisionStep
-                        ? "active"
-                        : "upcoming";
-                  return (
-                    <li key={step.label} data-state={stepState}>
-                      <span>{String(index + 1).padStart(2, "0")}</span>
-                      <div>
-                        <strong>{step.label}</strong>
-                        <small>{step.detail}</small>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-              <p className="decision-replay-live" aria-live="polite">
-                {decisionSteps[activeDecisionStep]?.label}
-              </p>
+          {playbackCollapsed ? (
+            <div className="route-playback-mini-track" aria-hidden="true">
+              <span style={{ width: playbackProgress * 100 + "%" }} />
             </div>
           ) : null}
-          <div className="route-playback-actions">
-            <button type="button" onClick={toggleRoutePlayback}>
-              {playbackState === "playing"
-                ? "Pause preview"
-                : playbackState === "complete"
-                  ? "Play again"
-                  : "Resume preview"}
-            </button>
-            <button
-              type="button"
-              onClick={replayRoutePlayback}
-              disabled={playbackProgress === 0}
+          <div
+            id="route-playback-details"
+            className="route-playback-details"
+            hidden={playbackCollapsed}
+          >
+            <div
+              className="route-playback-track"
+              role="progressbar"
+              aria-label="Route preview progress"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(playbackProgress * 100)}
             >
-              Replay from start
-            </button>
-            {onShowModelResponse ? (
-              <button type="button" onClick={onShowModelResponse}>
-                Full model response
-              </button>
+              <span style={{ width: playbackProgress * 100 + "%" }} />
+            </div>
+            {decisionSteps.length > 0 ? (
+              <div className="decision-replay">
+                <div className="decision-replay-heading">
+                  <span>Decision replay</span>
+                  <strong>{providerLabel} → application policy</strong>
+                </div>
+                <ol aria-label="Model and policy decision replay">
+                  {decisionSteps.map((step, index) => {
+                    const stepState =
+                      index < activeDecisionStep
+                        ? "complete"
+                        : index === activeDecisionStep
+                          ? "active"
+                          : "upcoming";
+                    return (
+                      <li key={step.label} data-state={stepState}>
+                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        <div>
+                          <strong>{step.label}</strong>
+                          <small>{step.detail}</small>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+                <p className="decision-replay-live" aria-live="polite">
+                  {decisionSteps[activeDecisionStep]?.label}
+                </p>
+              </div>
             ) : null}
-            <small>Animated guide · not live GPS</small>
+            <div className="route-playback-actions">
+              <button type="button" onClick={toggleRoutePlayback}>
+                {playbackState === "playing"
+                  ? "Pause preview"
+                  : playbackState === "complete"
+                    ? "Play again"
+                    : "Resume preview"}
+              </button>
+              <button
+                type="button"
+                onClick={replayRoutePlayback}
+                disabled={playbackProgress === 0}
+              >
+                Replay from start
+              </button>
+              {onShowModelResponse ? (
+                <button type="button" onClick={onShowModelResponse}>
+                  Full model response
+                </button>
+              ) : null}
+              <small>Animated guide · not live GPS</small>
+            </div>
           </div>
         </section>
       ) : null}

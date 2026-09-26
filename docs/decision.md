@@ -427,3 +427,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** Explicit controls make spatial exploration discoverable across mouse, touch, and keyboard use. Replaying the actual evaluation boundary alongside route motion connects the visual recommendation to its evidence without suggesting that the LLM made the final policy decision.
 - **Consequences:** The compact replay may truncate long route names visually, but the persistent full response remains available. Camera controls and replay state stay browser-local and do not affect session decisions.
 - **Refines:** DEC-043, DEC-045, and DEC-046.
+
+## DEC-048 — Expose an auditable trace, not private chain-of-thought
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Users need to understand why one route was chosen and need to reclaim map space occupied by the expanded playback instrument.
+- **Decision:** Present the complete inspectable decision trace from validated product data: shared weather/daylight/user inputs, every provider score, provider identity, policy version, eligible and excluded routes with reasons, deterministic factors, and final explanation. Explicitly state that private model chain-of-thought is not requested or displayed. Add an accessible Collapse/Expand control to the route-preview instrument; its compact state retains status, percentage, and progress while animation continues unchanged.
+- **Reasoning:** Structured evidence is accurate, reviewable, and sufficient to reproduce the decision boundary. Hidden chain-of-thought is neither part of the OpenRouter score contract nor appropriate to present as product evidence. Visual collapse should change layout only, not playback semantics.
+- **Consequences:** The explanation may be longer than the previous score panel and remains scrollable in the mission panel. Collapsing does not pause, restart, or alter recommendation/session state.
+- **Refines:** DEC-019, DEC-043, DEC-046, and DEC-047.

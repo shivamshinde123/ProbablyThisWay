@@ -20,7 +20,7 @@ A hiker discovering a named trail anywhere OpenStreetMap has searchable line geo
 - Evaluate every candidate route through a defined, schema-constrained route-suitability request.
 - Apply deterministic application policy to the results, excluding official illegal/closed/restricted routes before ranking and returning no route when every candidate is ineligible.
 - Highlight the current recommendation and show suitability values.
-- Automatically preview the recommended geometry with a clearly labeled start-to-finish pointer animation, visible completion progress, synchronized model-to-policy decision replay, and pause/replay controls. Keep the complete model response available after evaluation. This is a route preview, not the hiker's live position.
+- Automatically preview the recommended geometry with a clearly labeled start-to-finish pointer animation, visible completion progress, synchronized model-to-policy decision replay, and pause/replay controls. Keep the complete scored response and auditable decision trace available after evaluation: normalized inputs, every provider score, policy version, exclusions with reasons, factors, and final explanation. Do not request or imply access to private model chain-of-thought. This is a route preview, not the hiker's live position.
 - Provide visible, keyboard-accessible zoom in/out, directional pan, and terrain framing controls in addition to direct mouse/touch Cesium navigation.
 - Explain the factors behind the recommendation without presenting it as a safety guarantee.
 - Re-evaluate automatically when supported live inputs materially change.
