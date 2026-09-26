@@ -100,6 +100,15 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** This establishes the production data boundary early and keeps Cesium focused on visualization rather than owning trail data.
 - **Consequences:** The current feature is explicitly labeled `preview` and cannot be used for navigation or route decisions until replaced by a licensed authoritative source.
 
+## DEC-015 — Model route alternatives as metric-bearing geospatial features
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** A single trail line cannot support comparison or later Jev evaluation across valid alternatives.
+- **Decision:** Require at least two route features per hike detail. Each feature owns geometry, provenance, distance, gain, estimated duration, and exposure; the selected route ID is UI state shared with the map.
+- **Reasoning:** Keeping metrics beside geometry makes every displayed alternative self-describing and provides a stable input shape for the next decision-evaluation stage.
+- **Consequences:** All current alternatives remain preview-only until authoritative route generation replaces the prototype seed.
+
 ## Entry Template
 
 ```text

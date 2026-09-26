@@ -11,7 +11,7 @@
 | `RouteLayer` | Render alternatives and recommendation styles | Route/evaluation data |
 | `MapLabels` | Route names and suitability labels | Route projections |
 | `ConditionsHud` | Current weather, time, pace, fatigue, and progress when available | Hiking state |
-| `RoutePanel` | Compare candidate routes | Route summaries |
+| `RoutePanel` | Compare and select candidate routes by distance, gain, time, and exposure | Typed route features |
 | `DecisionFeed` | Chronological evaluation events | Events API |
 | `ExplanationPanel` | Human-readable rationale and safety copy | Latest evaluation |
 
