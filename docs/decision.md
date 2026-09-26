@@ -319,7 +319,7 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Supersedes:** Unresolved MVP wording for an evaluation endpoint, LLM provider, PostGIS migration, end-user authentication, queue, distributed limiter/scheduler, streaming, breakpoints, and operational targets.
 ## DEC-037 — Search only reviewed supported trails
 
-- **Status:** Accepted
+- **Status:** Superseded by DEC-039
 - **Date:** 2026-09-26
 - **Context:** The catalog loaded a default route with no visible search affordance, which made the product appear fixed and made its actual coverage unclear.
 - **Decision:** Add a prominent search form over the loaded hike and route names/location, return accessible route results, and state the exact three-trail Wachusett boundary on no match. Lock search during an active session. Do not query arbitrary trails until a reviewed ingestion and alternative-route pipeline exists.
@@ -334,3 +334,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Add a visible end-session action backed by an idempotent API transition from active to ended, persist endedAt, and exclude ended sessions from state adapters and automatic weather refresh. Keep ended records under the existing retention policy.
 - **Reasoning:** A UI-only reset would leave server work running and create inconsistent state. A persisted lifecycle transition gives the user a reliable stop control and lets every writer enforce the same boundary.
 - **Consequences:** Ending clears the client’s live-session surfaces and unlocks search without deleting history. Restarting creates a new session ID. Concurrent writes resolve through the existing compare-and-swap sequence.
+
+## DEC-039 — Add internet trail discovery without implying evaluation coverage
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Searching only the three reviewed Wachusett routes did not meet the user’s need to find named trails beyond the launch catalog.
+- **Decision:** Query OpenStreetMap through a server-side Nominatim adapter on explicit form submission, return attributed line geometry, and preview selected results in Cesium. Enforce the public service policy with identification, visible attribution, a serialized rate above one second, duplicate-query caching, and a configurable provider URL. Keep arbitrary internet results outside session evaluation until reviewed alternatives, restrictions, metrics, and provenance exist.
+- **Reasoning:** Nominatim provides broad name/location discovery and real geometry without an API key. Separating preview from evaluated routes expands useful coverage without fabricating safety or recommendation data.
+- **Consequences:** Search coverage follows OpenStreetMap naming and Nominatim indexing and cannot guarantee every physical trail. Public-service capacity is suitable for the current single-instance prototype; production growth should use a contracted or self-hosted compatible provider. DEC-037’s reviewed-only search boundary is superseded, while its requirement not to misrepresent evaluation coverage remains.

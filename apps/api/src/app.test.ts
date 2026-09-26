@@ -4,6 +4,7 @@ import {
   decisionEventsResponseSchema,
   endSessionResponseSchema,
   hikeDetailSchema,
+  internetTrailSearchResponseSchema,
   latestDecisionSchema,
   routeEvaluationSchema,
   sessionStartResponseSchema,
@@ -533,5 +534,50 @@ test("POST session end is persistent, idempotent, and rejects later state update
   });
   assert.equal(update.statusCode, 409);
   assert.equal(update.json().error.code, "session_ended");
+  await app.close();
+});
+
+test("GET trail search returns provider-backed internet geometry", async () => {
+  const app = await buildApp({
+    trailSearchProvider: {
+      search: async (query) =>
+        internetTrailSearchResponseSchema.parse({
+          query,
+          attribution: "© OpenStreetMap contributors",
+          attributionUrl: "https://www.openstreetmap.org/copyright",
+          items: [
+            {
+              id: "osm-way-249315063",
+              name: "Appalachian Trail",
+              location: "Salisbury, Connecticut, United States",
+              distanceMiles: 0.68,
+              geometry: {
+                type: "LineString",
+                coordinates: [
+                  [-73.4009, 41.977],
+                  [-73.4082, 41.98],
+                ],
+              },
+              source: "OpenStreetMap via Nominatim",
+              sourceUrl: "https://www.openstreetmap.org/way/249315063",
+            },
+          ],
+        }),
+    },
+  });
+  const response = await app.inject({
+    method: "GET",
+    url: "/api/v1/trails/search?q=Appalachian%20Trail",
+  });
+  assert.equal(response.statusCode, 200);
+  const body = internetTrailSearchResponseSchema.parse(response.json());
+  assert.equal(body.items[0]?.name, "Appalachian Trail");
+
+  const invalid = await app.inject({
+    method: "GET",
+    url: "/api/v1/trails/search?q=a",
+  });
+  assert.equal(invalid.statusCode, 422);
+  assert.equal(invalid.json().error.code, "invalid_trail_query");
   await app.close();
 });

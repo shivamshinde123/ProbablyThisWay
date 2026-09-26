@@ -41,6 +41,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://probably_this_way:${POSTGRES_PASSWORD}@postgres:5432/probably_this_way}
       STATE_ADAPTER_TOKEN: ${STATE_ADAPTER_TOKEN:?Set STATE_ADAPTER_TOKEN}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080}
+      TRAIL_SEARCH_API_BASE_URL: ${TRAIL_SEARCH_API_BASE_URL:-https://nominatim.openstreetmap.org/search}
       WEATHER_API_BASE_URL: ${WEATHER_API_BASE_URL:-https://api.open-meteo.com/v1/forecast}
       WEATHER_API_KEY: ${WEATHER_API_KEY:-}
       JEV_API_URL: ${JEV_API_URL:-https://www.jevai.org/api/v1/decisions}

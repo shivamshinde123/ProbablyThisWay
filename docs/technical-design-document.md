@@ -46,7 +46,7 @@ The API applies a validated per-process/IP request budget to non-health routes, 
 
 ## Release Boundaries
 
-The supported topology is one API replica. Evaluation remains synchronous and bounded by provider timeouts; route geometry remains the reviewed source snapshot; sessions are anonymous capability URLs; and client updates use cursor polling. A queue, distributed scheduler/rate limiter, end-user accounts, PostGIS, and streaming transport are not incomplete MVP work—they are new designs required only before adding horizontal scale, personal data, broad spatial search, or real-time push. The deterministic baseline is a versioned prototype policy and must not be represented as safety-calibrated. Initial service objectives and operator alerts are defined in `deployment.md`.
+The supported topology is one API replica. Evaluation remains synchronous and bounded by provider timeouts; route geometry remains the reviewed source snapshot; sessions are anonymous capability URLs; and client updates use cursor polling. A queue, distributed scheduler/rate limiter, end-user accounts, PostGIS, and streaming transport are not incomplete MVP work—they are new designs required only before adding horizontal scale, personal data, arbitrary-trail evaluation, locally hosted spatial search, or real-time push. The deterministic baseline is a versioned prototype policy and must not be represented as safety-calibrated. Initial service objectives and operator alerts are defined in `deployment.md`.
 
 ## Production Packaging
 
@@ -92,3 +92,7 @@ The recommendation schema accepts stored v1 decisions by defaulting them to `sta
 ## End-Session Lifecycle
 
 Session is a discriminated union: active sessions have status active; ended sessions have status ended plus endedAt. Ending uses the existing session sequence as an optimistic concurrency boundary and writes the payload and relational status together. Repeated end requests are idempotent. Ended sessions remain readable until retention removes them, but state adapters and scheduled weather refresh cannot advance them.
+
+## Internet Trail Search Design
+
+Internet discovery uses a TrailSearchProvider boundary with a Nominatim implementation. Only form submissions issue requests; autocomplete is intentionally absent. A per-process promise queue and next-request timestamp serialize uncached calls above the public service’s one-request-per-second minimum interval, while a bounded 15-minute in-memory cache suppresses duplicates. Provider payloads are untrusted: Zod validates the collection and shared result contract, non-linear objects are dropped, and failures become a structured 502. Results remain presentation-only because a single discovered line lacks the reviewed alternatives, restrictions, and metrics required by evaluation policy.

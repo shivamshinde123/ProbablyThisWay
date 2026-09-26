@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   createSessionRequestSchema,
   decisionEventsResponseSchema,
@@ -8,6 +8,7 @@ import {
   sessionStartResponseSchema,
   type DecisionEvent,
   type HikeDetail,
+  type InternetTrailResult,
   type RouteEvaluation,
   type RouteFeature,
   type RouteRecommendation,
@@ -37,6 +38,8 @@ const isRouteBlocked = (route: RouteFeature) =>
 export function App() {
   const [hike, setHike] = useState<HikeDetail>();
   const [selectedRouteId, setSelectedRouteId] = useState<string>();
+  const [internetTrail, setInternetTrail] = useState<InternetTrailResult>();
+  const internetTrailSelectedRef = useRef(false);
   const [session, setSession] = useState<Session>();
   const [evaluation, setEvaluation] = useState<RouteEvaluation>();
   const [recommendation, setRecommendation] = useState<RouteRecommendation>();
@@ -70,9 +73,11 @@ export function App() {
           throw new Error("Hike detail returned " + detailResponse.status);
         const detail = hikeDetailSchema.parse(await detailResponse.json());
         setHike(detail);
-        setSelectedRouteId(
-          detail.routes.find((route) => !isRouteBlocked(route))?.properties.id,
-        );
+        if (!internetTrailSelectedRef.current)
+          setSelectedRouteId(
+            detail.routes.find((route) => !isRouteBlocked(route))?.properties
+              .id,
+          );
         setStatus("ready");
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError")
@@ -152,7 +157,7 @@ export function App() {
   }, [sessionId]);
 
   async function startSession() {
-    if (!hike || !selectedRouteId) return;
+    if (!hike || !selectedRouteId || internetTrail) return;
     setStatus("starting");
     try {
       const request = createSessionRequestSchema.parse({
@@ -249,6 +254,7 @@ export function App() {
                   ? recommendation.suitability
                   : undefined
               }
+              internetTrail={internetTrail}
             />
           </Suspense>
           {isEvaluating ? (
@@ -275,10 +281,21 @@ export function App() {
             guidance.
           </p>
           <TrailSearch
+            apiBaseUrl={apiBaseUrl}
             hike={hike}
             selectedRouteId={selectedRouteId}
+            selectedInternetTrailId={internetTrail?.id}
             disabled={Boolean(session) || isEvaluating}
-            onSelectRoute={setSelectedRouteId}
+            onSelectRoute={(routeId) => {
+              internetTrailSelectedRef.current = false;
+              setInternetTrail(undefined);
+              setSelectedRouteId(routeId);
+            }}
+            onSelectInternetTrail={(trail) => {
+              internetTrailSelectedRef.current = true;
+              setSelectedRouteId(undefined);
+              setInternetTrail(trail);
+            }}
           />
           <div className="trail-card" aria-live="polite">
             {status === "loading" ? (
@@ -289,7 +306,34 @@ export function App() {
                 The latest request failed. Check the local API and try again.
               </p>
             ) : null}
-            {hike ? (
+            {internetTrail ? (
+              <>
+                <div className="trail-heading">
+                  <div>
+                    <small>Internet trail preview</small>
+                    <h2>{internetTrail.name}</h2>
+                  </div>
+                  <span className="difficulty">OSM</span>
+                </div>
+                <p className="location">{internetTrail.location}</p>
+                <p className="route-source">
+                  <a
+                    href={internetTrail.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open trail in OpenStreetMap
+                  </a>
+                  <span>
+                    {internetTrail.distanceMiles.toFixed(2)} mapped mi
+                  </span>
+                </p>
+                <p className="internet-preview-note">
+                  Preview geometry only. Choose a reviewed route below to start
+                  an evaluated field session.
+                </p>
+              </>
+            ) : hike ? (
               <>
                 <div className="trail-heading">
                   <div>
@@ -339,7 +383,11 @@ export function App() {
                   data-excluded={isExcluded}
                   aria-pressed={active}
                   disabled={isExcluded || Boolean(session) || isEvaluating}
-                  onClick={() => setSelectedRouteId(route.properties.id)}
+                  onClick={() => {
+                    internetTrailSelectedRef.current = false;
+                    setInternetTrail(undefined);
+                    setSelectedRouteId(route.properties.id);
+                  }}
                 >
                   <span className="route-index">0{index + 1}</span>
                   <span className="route-copy">
@@ -410,7 +458,9 @@ export function App() {
             <button
               className="primary-action"
               type="button"
-              disabled={!selectedRouteId || isEvaluating}
+              disabled={
+                !selectedRouteId || isEvaluating || Boolean(internetTrail)
+              }
               onClick={() => void startSession()}
               aria-describedby="safety-note"
             >

@@ -38,3 +38,7 @@ Geometry continuity, route/trail proximity, elevation outliers, unit consistency
 ## Authoritative Wachusett Snapshot
 
 Run `npm run data:refresh:dcr` to query the explicit reviewed DCR feature IDs. Generation fails if a segment is missing, marked illegal, malformed, or separated from the next segment by more than 20 meters. The committed snapshot preserves source URL, April 2024 dataset timestamp, feature IDs, condition, legal status, access status, and typed restrictions. DCR linework contains no elevation or exposure field; coordinates use zero for terrain clamping, official trail-map metrics supply ascent and duration, and exposure remains explicitly unknown.
+
+## Runtime Internet Trail Search
+
+Submitted trail searches use the OpenStreetMap Nominatim search API with full GeoJSON geometry and a simplification tolerance. The adapter accepts only LineString and MultiLineString objects whose type or name is trail-like, computes mapped line length locally with the haversine formula, preserves a direct OpenStreetMap object URL, and emits mandatory attribution. Point-only trailheads and non-linear areas are excluded because they cannot be rendered as trail paths. Search results are discovery previews; they do not inherit the reviewed DCR legal, condition, restriction, elevation, or alternative-route guarantees.

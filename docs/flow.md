@@ -396,3 +396,9 @@ Active field session → user selects End field session → POST /api/v1/session
 - Client success: clear the session HUD, decision feed, and recommendation; make trail search and route selection available again.
 
 Adapter updates and racing weather transitions check lifecycle status and stop without mutating an ended session.
+
+## Implemented Internet Trail Search Flow
+
+Browser submit → GET /api/v1/trails/search → validate query → check 15-minute cache → serialize public Nominatim request at one-per-second maximum → request simplified full GeoJSON → validate provider response → retain named trail-like lines → compute mapped distance → return attributed results → select result → render and camera-frame preview in TerrainMap.
+
+The preview path stops before session creation. Choosing a reviewed route clears the internet preview and restores the evaluated-session path.

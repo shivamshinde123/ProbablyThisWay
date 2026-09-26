@@ -11,6 +11,7 @@ These are the implemented runtime and build-time variables. Provider and server 
 | `VITE_API_BASE_URL` | No | No | Browser API base URL; defaults to `http://localhost:3001/api/v1` |
 | `DATABASE_URL` | Yes in production | Yes | PostgreSQL connection used by the durable session/event store; omission selects the in-memory store only outside production |
 | `VITE_CESIUM_ION_ACCESS_TOKEN` | No | No | Scoped browser token enabling Cesium World Terrain; without it the map uses an ellipsoid preview |
+| TRAIL_SEARCH_API_BASE_URL | No | No | Nominatim-compatible search endpoint; defaults to the public OpenStreetMap Nominatim search service and allows an operator-required provider switch |
 | `WEATHER_API_BASE_URL` | Yes in production | No | HTTPS Open-Meteo Forecast endpoint; setting it enables live weather/daylight at session start |
 | `WEATHER_API_KEY` | No | Yes | Optional Open-Meteo commercial subscription key, sent only by the server |
 | `WEATHER_REFRESH_INTERVAL_MS` | No | No | Active-session weather refresh cadence; defaults to `300000` (five minutes) and must be at least `60000` |

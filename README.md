@@ -4,7 +4,7 @@ ProbablyThisWay is a map-first hiking decision-support prototype. It renders aut
 
 ## Status
 
-The prototype currently supports a Cesium terrain view, three typed route alternatives, session startup and automatic active-session refresh with optional live weather/daylight, visible current/stale/prototype condition status, typed state updates, cumulative threshold-driven re-evaluation, stale-update rejection, a cursor-based live decision feed, per-route suitability scores, hard-constraint filtering, deterministic recommendation highlighting, explicit no-route outcomes, evidence-backed explanations, and responsive recommendation-focused camera behavior. Route geometry is a reviewed snapshot of Massachusetts DCR data with source IDs and timestamps. It is not a live closure feed or a navigation guarantee. Product, architecture, API, data, and UI specifications are maintained in [`docs/`](docs/).
+The prototype currently supports submitted internet trail search and attributed geometry previews through OpenStreetMap Nominatim, a Cesium terrain view, three reviewed typed route alternatives, session startup and automatic active-session refresh with optional live weather/daylight, visible current/stale/prototype condition status, typed state updates, cumulative threshold-driven re-evaluation, stale-update rejection, a cursor-based live decision feed, per-route suitability scores, hard-constraint filtering, deterministic recommendation highlighting, explicit no-route outcomes, evidence-backed explanations, and responsive recommendation-focused camera behavior. Route geometry is a reviewed snapshot of Massachusetts DCR data with source IDs and timestamps. It is not a live closure feed or a navigation guarantee. Product, architecture, API, data, and UI specifications are maintained in [`docs/`](docs/).
 
 ## Core Principles
 
@@ -32,7 +32,7 @@ npm run dev
 
 The web client runs at `http://localhost:5173` and the API at `http://localhost:3001`.
 
-The app runs without provider credentials in local development. Without a Cesium token, the map uses an ellipsoid preview. Without a Jev key, route scores use the visibly labeled deterministic baseline. To exercise hosted Jev evaluation, set `JEV_API_KEY` in the API process environment; `JEV_API_URL` is optional. Set `STATE_ADAPTER_TOKEN` to a secret of at least 32 characters to protect state updates. Set `DATABASE_URL` to use durable PostgreSQL session/event storage, then run `npm run db:migrate -w @probably-this-way/api`; the command is version-tracked and safe to repeat. Both variables are mandatory when `NODE_ENV=production`; local development and tests use the in-memory store when `DATABASE_URL` is absent. Never commit credentials.
+The app runs without provider credentials in local development. Submitted trail searches use the public OpenStreetMap Nominatim service through the API, with one-request-per-second serialization, duplicate-query caching, and visible attribution. Set TRAIL_SEARCH_API_BASE_URL only to switch to another Nominatim-compatible provider; search does not require an API key. Without a Cesium token, the map uses an ellipsoid preview. Without a Jev key, route scores use the visibly labeled deterministic baseline. To exercise hosted Jev evaluation, set `JEV_API_KEY` in the API process environment; `JEV_API_URL` is optional. Set `STATE_ADAPTER_TOKEN` to a secret of at least 32 characters to protect state updates. Set `DATABASE_URL` to use durable PostgreSQL session/event storage, then run `npm run db:migrate -w @probably-this-way/api`; the command is version-tracked and safe to repeat. Both variables are mandatory when `NODE_ENV=production`; local development and tests use the in-memory store when `DATABASE_URL` is absent. Never commit credentials.
 
 Browser-only Vite settings can be placed in `apps/web/.env.local`:
 
@@ -65,4 +65,6 @@ Set `WEATHER_API_BASE_URL=https://api.open-meteo.com/v1/forecast` in the API env
 
 ## Trail Data
 
-The three supported summit corridors come from the Massachusetts DCR Roads and Trails public feature layer. Run `npm run data:refresh:dcr` to re-query the reviewed source segment IDs and regenerate the checked-in WGS84 snapshot. Generation rejects missing, non-legal, malformed, or materially disconnected segments. The DCR snapshot is not a live closure feed; always check current agency notices and posted signs.
+The search form can discover named line-mapped trails indexed by OpenStreetMap and preview their returned geometry. Internet results depend on OSM naming and Nominatim indexing, so not every physical trail is guaranteed to appear. These previews are not automatically treated as evaluated route alternatives.
+
+The three supported evaluated summit corridors come from the Massachusetts DCR Roads and Trails public feature layer. Run `npm run data:refresh:dcr` to re-query the reviewed source segment IDs and regenerate the checked-in WGS84 snapshot. Generation rejects missing, non-legal, malformed, or materially disconnected segments. The DCR snapshot is not a live closure feed; always check current agency notices and posted signs.

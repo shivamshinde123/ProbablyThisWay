@@ -50,3 +50,9 @@ The browser depends on shared contracts and public API responses. Provider and d
 - App owns start/end request state. While a session is active it replaces the start control with a visible End field session action; a successful end clears live-session presentation and unlocks TrailSearch.
 - POST /api/v1/sessions/:sessionId/end performs the lifecycle transition through SessionStore compare-and-swap persistence.
 - SessionStore persists both the typed JSON session and relational lifecycle status. WeatherRefresher queries only active session IDs and rechecks status after loading.
+
+## Internet Trail Discovery Components
+
+- NominatimTrailSearchProvider serializes outbound requests, enforces a delay above the public one-request-per-second ceiling, caches duplicate queries for 15 minutes, validates provider GeoJSON, and retains only named linear trail-like objects.
+- GET /api/v1/trails/search validates submitted queries and isolates provider failures behind a structured 502 response.
+- TerrainMap renders selected internet LineString or MultiLineString geometry as an orange preview and frames it with the camera.

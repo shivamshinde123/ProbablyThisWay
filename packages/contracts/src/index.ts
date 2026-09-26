@@ -60,6 +60,37 @@ export const routeFeatureSchema = z.object({
   }),
 });
 export type RouteFeature = z.infer<typeof routeFeatureSchema>;
+const internetTrailLineSchema = z
+  .array(z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)]))
+  .min(2);
+export const internetTrailResultSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  location: z.string().min(1),
+  distanceMiles: z.number().positive(),
+  geometry: z.union([
+    z.object({
+      type: z.literal("LineString"),
+      coordinates: internetTrailLineSchema,
+    }),
+    z.object({
+      type: z.literal("MultiLineString"),
+      coordinates: z.array(internetTrailLineSchema).min(1),
+    }),
+  ]),
+  source: z.literal("OpenStreetMap via Nominatim"),
+  sourceUrl: z.string().url(),
+});
+export type InternetTrailResult = z.infer<typeof internetTrailResultSchema>;
+export const internetTrailSearchResponseSchema = z.object({
+  query: z.string().min(2),
+  attribution: z.literal("© OpenStreetMap contributors"),
+  attributionUrl: z.literal("https://www.openstreetmap.org/copyright"),
+  items: z.array(internetTrailResultSchema).max(8),
+});
+export type InternetTrailSearchResponse = z.infer<
+  typeof internetTrailSearchResponseSchema
+>;
 export const hikeDetailSchema = hikeSummarySchema.extend({
   routes: z.array(routeFeatureSchema).min(2),
 });

@@ -1246,6 +1246,24 @@ h1 em {
   font-size: 8px;
   font-weight: 400;
 }
+.internet-preview-note {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-left: 2px solid var(--orange);
+  color: #c8d0c5;
+  background: rgba(255, 92, 53, 0.07);
+  font-family: sans-serif;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.trail-search-attribution {
+  border-top: 1px solid var(--line);
+}
+
+.trail-search-attribution a {
+  color: var(--signal);
+}
 .trail-search-results p {
   margin: 0;
   padding: 14px;
