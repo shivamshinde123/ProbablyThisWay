@@ -6,7 +6,7 @@ This is a living map of entry points, runtime paths, and dependencies. Update it
 
 The `ProbablyThisWay` repository is an npm-workspaces monorepo. The React/Vite client, Fastify API, and shared Zod contract package are implemented as the first runnable foundation.
 
-## Planned Entry Points
+## Runtime Entry Points
 
 | Entry point | Trigger | Responsibility |
 |---|---|---|
@@ -18,10 +18,10 @@ The `ProbablyThisWay` repository is an npm-workspaces monorepo. The React/Vite c
 | `packages/contracts/src/index.ts` | API or web import | Validate and type shared request/response data |
 | Session creation API | User starts a hike session | Load hike data, initialize questions/state, and run the first evaluation |
 | State update API | Authorized live input arrives | Normalize/persist state and invoke threshold detection |
-| Evaluation worker/service | Session start or threshold crossing | Score routes, apply policy, persist and publish the decision |
-| Events endpoint | Client requests updates | Return ordered decision-feed events |
+| Evaluation worker/service (planned) | Future queued threshold evaluation | Score routes, apply policy, persist and publish the decision |
+| Events endpoint (planned) | Future client update request | Return ordered decision-feed events |
 
-## Planned Primary Flow
+## Primary Flow
 
 ```text
 `apps/web/src/main.tsx`
@@ -41,23 +41,25 @@ The `ProbablyThisWay` repository is an npm-workspaces monorepo. The React/Vite c
       -> assemble state snapshot
       -> evaluate every route
       -> apply deterministic route policy
-      -> persist evaluation and event
-  -> render terrain, routes, HUD, recommendation, and feed
+      -> retain latest decision in process memory
+  -> render terrain, routes, HUD, and recommendation
 ```
 
-## Planned Update Flow
+## Implemented State Update Flow
 
 ```text
-live input adapter
-  -> validate and normalize observation
-  -> persist ordered state snapshot
-  -> threshold detector
-      -> no meaningful change: stop
-      -> threshold crossed: enqueue evaluation
-  -> Jev evaluation
-  -> deterministic route policy
-  -> persist decision event
-  -> client refresh/stream update
+PATCH /api/v1/sessions/{sessionId}/state
+  -> validate source, timestamp, and non-empty supported changes
+  -> reject stale observation
+  -> merge changes into the current in-memory session state
+  -> increment session sequence
+  -> compare accumulated state with lastEvaluatedState
+      -> below all thresholds: return 202 without evaluation
+      -> threshold crossed: evaluate all routes
+          -> apply deterministic route policy
+          -> replace latest decision only if request sequence is still current
+          -> advance lastEvaluatedState
+          -> return 202 with crossed fields and decision
 ```
 
 There is no simulation-button or simulated-condition runtime path.
@@ -115,7 +117,7 @@ POST /api/v1/sessions
   -> App renders every suitability score on its route card
 ```
 
-The map selection remains unchanged in this stage. Applying deterministic route policy and highlighting the highest-ranked route is the next flow.
+The map selection remains unchanged while the deterministic route policy controls recommendation highlighting.
 
 ## Implemented Recommendation and Highlight Flow
 

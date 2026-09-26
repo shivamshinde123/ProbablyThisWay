@@ -157,3 +157,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Build the first explanation deterministically from the winning route's estimated duration, daylight margin, exposure, and elevation. Return the copy and display facts in the typed recommendation contract. Frame the route once in Cesium and honor reduced-motion preferences.
 - **Reasoning:** Users receive immediate, auditable context from the exact evaluated inputs without introducing another model dependency or hidden reasoning.
 - **Consequences:** Explanations remain concise and factual. Future optional LLM wording may improve prose only if it preserves these facts and never delays the route update.
+
+## DEC-020 — Compare cumulative state against explicit re-evaluation thresholds
+
+- **Status:** Accepted
+- **Date:** 2026-09-25
+- **Context:** Automatic updates need deterministic trigger rules, and individually small observations must not prevent a material cumulative change from being evaluated.
+- **Decision:** Compare the current accumulated state with the last successfully evaluated snapshot. Trigger at 10 F temperature, 5 mph wind, 0.15 rain probability, 10 minutes remaining daylight, 15% relative pace, or any fatigue change. Increment a session sequence for every accepted update and publish a result only when its sequence is still current.
+- **Reasoning:** Explicit thresholds make evaluation frequency testable and auditable; the last-evaluated baseline allows small changes to accumulate without evaluating every observation.
+- **Consequences:** The current process-memory implementation evaluates synchronously and loses sessions on restart. Threshold calibration, durable persistence, adapter authentication, and a queued worker remain production work.

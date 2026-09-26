@@ -43,3 +43,7 @@ One hike has trails and routes. One session belongs to a hike and has ordered st
 ## Indexes and Retention
 
 Add GiST indexes to geometry/geography, B-tree indexes to foreign keys and chronological session queries, and retention rules for location/user-state data. Exact retention period is TBD.
+
+## Current Prototype Storage
+
+The implemented API uses a process-memory session record containing the current session snapshot, latest decision, accepted-update sequence, and last evaluated snapshot. It mirrors the ordering model above but is not durable and is cleared on restart. PostgreSQL/PostGIS migrations remain a production-stage requirement.

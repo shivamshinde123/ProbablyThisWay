@@ -35,3 +35,7 @@ Question configuration <──── optional LLM enhancement ──────
 ## Deployment
 
 Deployment topology, scaling targets, and cloud provider are TBD.
+
+## Current Prototype Runtime
+
+The API currently combines session orchestration, threshold detection, evaluation, policy, and an in-memory read model in one Fastify process. Sequence checks prevent an older concurrent evaluation from replacing a newer decision. Durable storage, authenticated live adapters, a queue, and event streaming remain future deployment boundaries.

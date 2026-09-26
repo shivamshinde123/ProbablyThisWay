@@ -4,7 +4,7 @@ ProbablyThisWay is a map-first hiking decision-support prototype. It renders pre
 
 ## Status
 
-The prototype currently supports a Cesium terrain view, three typed route alternatives, session startup, static hiking state, per-route suitability scores, deterministic recommendation highlighting, evidence-backed explanations, and responsive recommendation-focused camera behavior. Route geometry and conditions are prototype data and are not valid for navigation. Product, architecture, API, data, and UI specifications are maintained in [`docs/`](docs/).
+The prototype currently supports a Cesium terrain view, three typed route alternatives, session startup, typed state updates, cumulative threshold-driven re-evaluation, stale-update rejection, per-route suitability scores, deterministic recommendation highlighting, evidence-backed explanations, and responsive recommendation-focused camera behavior. Route geometry and conditions are prototype data and are not valid for navigation. Product, architecture, API, data, and UI specifications are maintained in [`docs/`](docs/).
 
 ## Core Principles
 

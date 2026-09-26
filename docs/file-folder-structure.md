@@ -53,3 +53,9 @@ npm workspaces manage the monorepo. Add planned domain, database, and test direc
 
 - `apps/web/public/favicon.svg` — field-instrument browser icon served by Vite.
 - `apps/web/vite.config.ts` — uses Vite's filesystem route for Cesium assets in development and copies the same assets under `cesiumStatic` for production builds.
+
+### Automatic Re-evaluation Files
+
+- `apps/api/src/thresholds.ts` — deterministic material-change detector.
+- `apps/api/src/thresholds.test.ts` — threshold boundary tests.
+- `apps/api/src/app.ts` — in-memory session state, ordered updates, and re-evaluation orchestration.

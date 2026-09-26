@@ -8,7 +8,7 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "test": "tsx --test src/app.test.ts"
+    "test": "tsx --test src/app.test.ts src/thresholds.test.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

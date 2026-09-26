@@ -24,7 +24,7 @@
 
 ## Freshness
 
-Each field carries `observedAt`, `receivedAt`, `source`, and a freshness status. Thresholds are TBD per source. Stale values remain visible and must not be labeled current.
+Production adapters must preserve `observedAt`, `receivedAt`, source, and freshness metadata; provider-specific freshness windows remain TBD. The current session contract stores snapshot-level `observedAt` and source, rejects out-of-order observations, and re-evaluates at the documented deterministic thresholds. Stale values must not be labeled current.
 
 Without a real position source, the MVP does not calculate route progress. The UI omits it or labels it unavailable.
 
