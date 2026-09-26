@@ -13,7 +13,9 @@
 
 ## Re-Evaluation
 
-Supported input adapters publish normalized state changes. A threshold detector compares the new snapshot with the last evaluated snapshot and queues a new evaluation only when a relevant threshold is crossed. Requests use a session-scoped sequence number so stale results cannot replace newer results. This process is automatic; the MVP has no user-facing evaluation control.
+`PATCH /api/v1/sessions/{sessionId}/state` validates supported source-specific changes and rejects observations whose timestamp is not newer than the session's current state. The detector compares the accumulated state with the last evaluated snapshot, not merely the preceding update. Thresholds are 10 F temperature, 5 mph wind, 0.15 rain probability, 10 minutes remaining daylight, 15% relative pace, and any fatigue-level change.
+
+Every accepted update increments a session-scoped sequence. A threshold crossing runs evaluation synchronously in the current process; the result replaces the latest decision only if its captured sequence is still current, preventing an older concurrent result from overwriting newer state. A future worker can preserve the same contract while making the operation asynchronous. This process is automatic and has no user-facing evaluation control.
 
 ## Reliability
 

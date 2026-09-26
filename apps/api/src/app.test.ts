@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { hikeDetailSchema, latestDecisionSchema, routeEvaluationSchema, sessionStartResponseSchema } from "@probably-this-way/contracts";
+import { hikeDetailSchema, latestDecisionSchema, routeEvaluationSchema, sessionStartResponseSchema, stateUpdateResponseSchema } from "@probably-this-way/contracts";
 import { buildApp } from "./app.js";
 import { selectRouteRecommendation } from "./policy.js";
 
@@ -79,5 +79,76 @@ test("route policy resolves equal scores by stable route order", async () => {
     user: { paceMph: 2.1, fatigue: "low" },
   });
   assert.equal(recommendation.routeId, hike.routes[0]?.properties.id);
+  await app.close();
+});
+
+test("PATCH state accumulates small changes and re-evaluates at the threshold", async () => {
+  const app = await buildApp();
+  const createdResponse = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" } });
+  const created = sessionStartResponseSchema.parse(createdResponse.json());
+  const firstObservedAt = new Date(Date.parse(created.session.state.observedAt) + 60_000).toISOString();
+  const firstResponse = await app.inject({
+    method: "PATCH",
+    url: `/api/v1/sessions/${created.session.id}/state`,
+    payload: { observedAt: firstObservedAt, source: "weather", changes: { windMph: 10 } },
+  });
+  assert.equal(firstResponse.statusCode, 202);
+  const first = stateUpdateResponseSchema.parse(firstResponse.json());
+  assert.equal(first.evaluationQueued, false);
+  assert.equal(first.sequence, 1);
+  assert.deepEqual(first.crossedThresholds, []);
+
+  const secondResponse = await app.inject({
+    method: "PATCH",
+    url: `/api/v1/sessions/${created.session.id}/state`,
+    payload: { observedAt: new Date(Date.parse(firstObservedAt) + 60_000).toISOString(), source: "weather", changes: { windMph: 13 } },
+  });
+  assert.equal(secondResponse.statusCode, 202);
+  const second = stateUpdateResponseSchema.parse(secondResponse.json());
+  assert.equal(second.evaluationQueued, true);
+  assert.equal(second.sequence, 2);
+  assert.deepEqual(second.crossedThresholds, ["windMph"]);
+  assert.notEqual(second.decision?.evaluation.id, created.evaluation.id);
+
+  const current = await app.inject({ method: "GET", url: `/api/v1/sessions/${created.session.id}` });
+  assert.equal(current.statusCode, 200);
+  assert.equal(current.json().session.state.weather.windMph, 13);
+  assert.equal(current.json().session.state.source, "weather");
+  assert.equal(current.json().sequence, 2);
+  await app.close();
+});
+
+test("PATCH state rejects stale and empty updates", async () => {
+  const app = await buildApp();
+  const createdResponse = await app.inject({ method: "POST", url: "/api/v1/sessions", payload: { hikeId: "wachusett-summit", selectedRouteId: "balanced-traverse" } });
+  const created = sessionStartResponseSchema.parse(createdResponse.json());
+
+  const stale = await app.inject({
+    method: "PATCH",
+    url: `/api/v1/sessions/${created.session.id}/state`,
+    payload: { observedAt: created.session.state.observedAt, source: "weather", changes: { windMph: 20 } },
+  });
+  assert.equal(stale.statusCode, 409);
+  assert.equal(stale.json().error.code, "stale_state_update");
+
+  const empty = await app.inject({
+    method: "PATCH",
+    url: `/api/v1/sessions/${created.session.id}/state`,
+    payload: { observedAt: new Date(Date.parse(created.session.state.observedAt) + 60_000).toISOString(), source: "weather", changes: {} },
+  });
+  assert.equal(empty.statusCode, 422);
+  assert.equal(empty.json().error.code, "invalid_state_update");
+  await app.close();
+});
+
+test("PATCH state returns a structured 404 for an unknown session", async () => {
+  const app = await buildApp();
+  const response = await app.inject({
+    method: "PATCH",
+    url: "/api/v1/sessions/00000000-0000-4000-8000-000000000000/state",
+    payload: { observedAt: new Date().toISOString(), source: "weather", changes: { windMph: 20 } },
+  });
+  assert.equal(response.statusCode, 404);
+  assert.equal(response.json().error.code, "session_not_found");
   await app.close();
 });

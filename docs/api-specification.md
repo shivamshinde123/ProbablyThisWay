@@ -31,21 +31,25 @@ Response `201` is `{ "session": Session, "evaluation": RouteEvaluation, "recomme
 
 ### `GET /sessions/{sessionId}`
 
-Returns the current state, candidate routes, latest recommendation, and decision-feed cursor.
+Returns `{ "session": Session, "hike": HikeDetail, "decision": LatestDecision, "sequence": 0 }` from the current process-memory read model. Unknown IDs return `404 session_not_found`.
 
 ### `PATCH /sessions/{sessionId}/state`
 
-Accepts state updates only from authorized live-input adapters or explicit user-entered facts. This endpoint does not support simulated-condition actions.
+Accepts normalized updates from supported adapter source types or explicit user-entered facts. Authentication is not implemented yet, so production callers are not authorized by the current prototype. This endpoint does not support simulated-condition actions.
 
 Request: `{ "observedAt": "...", "source": "weather", "changes": { "windMph": 18 } }`
 
-Response `202`: `{ "accepted": true, "evaluationQueued": false, "reason": "no_relevant_threshold_crossed" }`
+Supported sources are `weather`, `user-input`, and `system-time`. Supported changes are `temperatureF`, `windMph`, `rainProbability`, `remainingMinutes`, `paceMph`, and `fatigue`; at least one is required.
 
-`evaluationQueued` is `true` only when the normalized update crosses a configured evaluation threshold. Otherwise it is `false`, with a machine-readable `reason`.
+Response `202`: `{ "accepted": true, "evaluationQueued": false, "reason": "no_relevant_threshold_crossed", "sequence": 1, "crossedThresholds": [] }`
 
-### `POST /sessions/{sessionId}/evaluations`
+The detector compares the accumulated current state with the last evaluated snapshot. It triggers at temperature change >= 10 F, wind change >= 5 mph, rain-probability change >= 0.15, remaining-daylight change >= 10 minutes, relative pace change >= 15%, or any fatigue change. A triggering response sets `evaluationQueued: true`, lists the crossed fields, and includes `decision` when that request remains the newest sequence. Evaluation currently completes synchronously inside the request; the field name preserves the future queued-worker contract.
 
-Internal service endpoint that runs or queues an evaluation from the current persisted state. It is invoked at session creation or after a relevant threshold crossing and is not connected to a user-facing evaluation button. Request supports an idempotency key header. Response `202` includes `evaluationId` and `status`.
+Unknown sessions return `404 session_not_found`, invalid updates return `422 invalid_state_update`, and observations not newer than the current snapshot return `409 stale_state_update`. The endpoint currently has no authentication and must not be exposed as a trusted production adapter boundary until authentication is implemented.
+
+### Planned: `POST /sessions/{sessionId}/evaluations`
+
+A future internal service endpoint will run or queue an evaluation from durable current state. The prototype instead calls `evaluateRoutes` in process at session creation and after a relevant threshold crossing. No path is connected to a user-facing evaluation button. The future request will support an idempotency key header and return `202` with `evaluationId` and `status`.
 
 ### `GET /sessions/{sessionId}/evaluations/latest`
 
@@ -61,7 +65,7 @@ Use `400` invalid input, `404` unknown resource, `409` stale/conflicting state, 
 
 ## Pending Contracts
 
-Schemas for unimplemented endpoints, authentication, pagination limits, and real-time transport are TBD.
+Schemas for the internal evaluation and events endpoints, authentication, pagination limits, and real-time transport are TBD.
 
 ## Implemented Route Evaluation Contract
 

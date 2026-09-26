@@ -23,7 +23,7 @@ export const hikeDetailSchema = hikeSummarySchema.extend({ routes: z.array(route
 export type HikeDetail = z.infer<typeof hikeDetailSchema>;
 export const hikingStateSchema = z.object({
   observedAt: z.string().datetime(),
-  source: z.literal("prototype-static"),
+  source: z.enum(["prototype-static", "weather", "user-input", "system-time"]),
   weather: z.object({ temperatureF: z.number(), windMph: z.number().nonnegative(), rainProbability: z.number().min(0).max(1) }),
   daylight: z.object({ sunsetAt: z.string().datetime(), remainingMinutes: z.number().int().nonnegative() }),
   user: z.object({ paceMph: z.number().positive(), fatigue: z.enum(["low", "moderate", "high"]) }),
@@ -52,3 +52,27 @@ export const latestDecisionSchema = z.object({ evaluation: routeEvaluationSchema
 export type LatestDecision = z.infer<typeof latestDecisionSchema>;
 export const sessionStartResponseSchema = latestDecisionSchema.extend({ session: sessionSchema });
 export type SessionStartResponse = z.infer<typeof sessionStartResponseSchema>;
+export const stateUpdateSourceSchema = z.enum(["weather", "user-input", "system-time"]);
+export const stateChangesSchema = z.object({
+  temperatureF: z.number().optional(),
+  windMph: z.number().nonnegative().optional(),
+  rainProbability: z.number().min(0).max(1).optional(),
+  remainingMinutes: z.number().int().nonnegative().optional(),
+  paceMph: z.number().positive().optional(),
+  fatigue: z.enum(["low", "moderate", "high"]).optional(),
+}).refine((changes) => Object.keys(changes).length > 0, { message: "At least one state change is required" });
+export const updateSessionStateRequestSchema = z.object({
+  observedAt: z.string().datetime(),
+  source: stateUpdateSourceSchema,
+  changes: stateChangesSchema,
+});
+export type UpdateSessionStateRequest = z.infer<typeof updateSessionStateRequestSchema>;
+export const stateUpdateResponseSchema = z.object({
+  accepted: z.literal(true),
+  evaluationQueued: z.boolean(),
+  reason: z.enum(["no_relevant_threshold_crossed", "relevant_threshold_crossed"]),
+  sequence: z.number().int().positive(),
+  crossedThresholds: z.array(z.string()),
+  decision: latestDecisionSchema.optional(),
+});
+export type StateUpdateResponse = z.infer<typeof stateUpdateResponseSchema>;

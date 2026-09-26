@@ -55,3 +55,11 @@ UI and external adapters depend inward on application/domain interfaces. Domain 
 - `RecommendationBanner` renders the deterministic explanation and three evidence fields.
 - `TerrainMap` frames a new recommendation once using its coordinate-derived bounding sphere and honors reduced-motion preferences.
 - `App` exposes evaluation progress through `aria-busy` and a visible map status instrument.
+
+## Implemented State Update Components
+
+| Component | Responsibility | Depends on |
+|---|---|---|
+| `app.ts` session store | Retain current session, latest decision, sequence, and last evaluated snapshot for the process lifetime | Shared contracts |
+| `PATCH /sessions/:sessionId/state` | Validate ordering and merge supported observations | Session store, threshold detector |
+| `thresholds.ts` | Report material field changes against explicit deterministic thresholds | Two typed hiking-state snapshots |
