@@ -19,8 +19,11 @@ Implemented variables and planned integrations are listed below. Planned entries
 | `JEV_API_KEY` | No | Yes | Server-side Jev bearer credential; absence enables the labeled deterministic baseline |
 | `STATE_ADAPTER_TOKEN` | Yes in production | Yes | Bearer credential for `PATCH /sessions/{sessionId}/state`; minimum 32 characters when configured |
 | `LLM_API_KEY` | TBD | Yes | Optional question/explanation provider credential |
-| `LOG_LEVEL` | TBD | No | Planned logging verbosity control; not implemented |
-| `CORS_ALLOWED_ORIGINS` | TBD | No | Planned multi-origin CORS configuration; use `WEB_ORIGIN` currently |
+| `LOG_LEVEL` | No | No | Fastify/Pino verbosity; defaults to `info`; accepts `trace`, `debug`, `info`, `warn`, `error`, `fatal`, or `silent` |
+| `CORS_ALLOWED_ORIGINS` | Yes in production | No | Comma-separated browser origins; supersedes the single-origin `WEB_ORIGIN` fallback |
+| `RATE_LIMIT_MAX` | No | No | Maximum non-health requests per process and client IP during the configured window; defaults to `120`; integer 1-10000 |
+| `RATE_LIMIT_WINDOW_MS` | No | No | Rate-limit window in milliseconds; defaults to `60000`; integer 1000-3600000 |
+| `EVENT_PAGE_SIZE` | No | No | Default decision-event page size; defaults to `50`; integer 1-100 |
 
 ## Rules
 

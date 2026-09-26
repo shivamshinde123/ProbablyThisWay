@@ -69,7 +69,7 @@ Use `400` invalid input, `401` missing or invalid credentials, `404` unknown res
 
 ## Pending Contracts
 
-Schemas for the internal evaluation endpoint, end-user authentication, pagination limits, and real-time transport are TBD.
+Schemas for the internal evaluation endpoint, end-user authentication, and real-time transport are TBD. Decision-event polling accepts `after` and an optional `limit` from 1 to 100; the configured default is 50.
 
 ## Implemented Route Evaluation Contract
 
@@ -86,3 +86,11 @@ When `JEV_API_KEY` is configured, the server sends the shared hiking state and o
 ## Automatic Weather Refresh
 
 When live weather is configured, the API process scans active sessions at `WEATHER_REFRESH_INTERVAL_MS` (five minutes by default). It fetches one snapshot per supported hike per cycle, rejects duplicate or older provider observations, preserves user pace/fatigue, and applies the same cumulative thresholds and compare-and-swap persistence used by `PATCH /sessions/{sessionId}/state`. Threshold-crossing refreshes append `recommendation_updated` events; below-threshold refreshes update current state without publishing a decision. Provider failures retain the last valid state and decision, atomically mark environmental status `stale/refresh_failed`, and are logged without creating fabricated updates. Successful observations are `current` until `staleAfter`; expired reads resolve to `stale/observation_expired`. Static development data is always `prototype/prototype_static`.
+
+### Operational endpoints
+
+- `GET /api/v1/health` — backward-compatible liveness response.
+- `GET /api/v1/health/live` — process liveness; excluded from rate limiting.
+- `GET /api/v1/health/ready` — dependency readiness; verifies the configured session store and returns `503` when unavailable.
+
+All non-health endpoints share a per-process, per-client-IP request limit. Exceeded requests return `429` with standard rate-limit headers.

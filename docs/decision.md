@@ -263,3 +263,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** The tests cover the product story at the user boundary while keeping one required CI signal and reproducible local commands.
 - **Consequences:** CI takes longer and downloads a browser runtime. Failures retain diagnostic artifacts under `output/playwright/`; the suite uses local prototype weather and does not require secrets.
 - **Supersedes:** The missing-browser-coverage follow-up in the technical design.
+
+## DEC-031 — Add bounded API operational guardrails
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** The API used one development CORS origin, fixed logging, unbounded event responses, and no traffic or dependency-health controls.
+- **Decision:** Validate configurable structured-log levels and CORS allowlists; apply the security-fixed `@fastify/rate-limit` 11.2.0 plugin to non-health routes; cap event pages at 100; and expose separate process liveness and store-backed readiness routes.
+- **Reasoning:** These controls make a single API instance safer to deploy and give an orchestrator truthful probes without requiring a hosting provider or secrets.
+- **Consequences:** Rate counters remain process-local and must move to a shared store before horizontal scaling. Production must declare at least one browser origin. Existing `/api/v1/health` remains compatible.

@@ -8,11 +8,12 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "test": "tsx --test src/adapter-auth.test.ts src/app.test.ts src/environmental-status.test.ts src/policy.test.ts src/route-catalog.test.ts src/session-store.test.ts src/thresholds.test.ts src/weather-adapter.test.ts src/weather-refresh.test.ts src/weather-session.test.ts",
+    "test": "tsx --test src/adapter-auth.test.ts src/app.test.ts src/environmental-status.test.ts src/operational-config.test.ts src/policy.test.ts src/route-catalog.test.ts src/session-store.test.ts src/thresholds.test.ts src/weather-adapter.test.ts src/weather-refresh.test.ts src/weather-session.test.ts",
     "db:migrate": "tsx src/migrate.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",
+    "@fastify/rate-limit": "11.2.0",
     "@probably-this-way/contracts": "0.1.0",
     "fastify": "^5.6.1",
     "pg": "^8.23.0",

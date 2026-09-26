@@ -32,6 +32,8 @@ Every accepted update, including an automatic weather refresh, increments a sess
 - Define retention and deletion policy before collecting personal GPS history.
 - Rate-limit public endpoints and validate geometry/query bounds.
 
+The API applies a validated per-process/IP request budget to non-health routes, supports an explicit multi-origin CORS allowlist, and emits structured Fastify/Pino logs at the configured level. Liveness does not touch dependencies; readiness executes a store probe. Event polling is capped at 100 items per response. A distributed limiter is required before horizontally scaled deployment.
+
 ## Testing
 
 - Unit tests for thresholds, score normalization, and policy.
@@ -43,7 +45,7 @@ Every accepted update, including an automatic weather refresh, increments a sess
 
 ## TBD
 
-Queue mechanism, cache strategy, end-user authentication, PostGIS route persistence, calibrated scoring policy, retention, and operational SLOs.
+Queue mechanism, distributed cache/rate-limit strategy, end-user authentication, PostGIS route persistence, calibrated scoring policy, retention, and operational SLO targets.
 
 ## Implemented Jev Adapter
 

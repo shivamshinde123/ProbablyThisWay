@@ -34,6 +34,7 @@ export interface SessionStore {
   get(sessionId: string): Promise<SessionRecord | undefined>;
   listActiveSessionIds(): Promise<string[]>;
   save(record: SessionRecord, expectedSequence: number): Promise<boolean>;
+  readiness(): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -68,6 +69,8 @@ export class InMemorySessionStore implements SessionStore {
     this.#records.set(record.session.id, cloneRecord(record));
     return true;
   }
+
+  async readiness(): Promise<void> {}
 
   async close(): Promise<void> {}
 }
@@ -181,6 +184,10 @@ export class PostgresSessionStore implements SessionStore {
 
   async close(): Promise<void> {
     await this.#pool.end();
+  }
+
+  async readiness(): Promise<void> {
+    await this.#pool.query("SELECT 1");
   }
 
   async #insertEvents(client: PoolClient, events: DecisionEvent[]): Promise<void> {

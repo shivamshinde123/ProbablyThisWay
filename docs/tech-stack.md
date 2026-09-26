@@ -21,7 +21,9 @@
 - Database query layer: `node-postgres` with parameterized SQL and explicit transactions; no ORM.
 - Test framework: Node test runner through `tsx`, Playwright desktop/mobile Chromium flows, TypeScript checks, and production builds.
 - CI: GitHub Actions on Ubuntu with Node.js 22 and locked npm installs.
-- Hosting, deployment, logging, and metrics: TBD.
+- Logging: Fastify/Pino structured JSON with configurable severity.
+- API traffic guard: `@fastify/rate-limit` 11.2.0 with bounded environment configuration.
+- Hosting, deployment, and metrics backend: TBD.
 - LLM provider/model for question selection and explanations: TBD.
 
 ## Selection Principles
