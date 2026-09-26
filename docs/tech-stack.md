@@ -6,7 +6,7 @@
 |---|---|---|
 | Frontend | React | Application UI and state composition |
 | Language | TypeScript | Typed frontend and service code |
-| 3D map | CesiumJS with Vite static asset copying | Terrain, trails, route overlays, camera controls, and optional World Terrain |
+| 3D map | CesiumJS with Vite static asset copying | Keyless ArcGIS elevation terrain or optional Cesium World Terrain, trails, route overlays, camera controls, and attribution |
 | Backend | Node.js | API and orchestration layer |
 | Decision engine | Jev | Structured route suitability evaluation |
 | Database | PostgreSQL 17 | Durable session, evaluation, event, migration, and retention persistence |
@@ -37,4 +37,4 @@
 
 ## Authoritative Trail Data
 
-Massachusetts DCR Roads and Trails is the evaluated route-geometry source. OpenStreetMap via Nominatim supplies attributed internet discovery previews. The repository transforms reviewed ArcGIS feature IDs into a checked-in WGS84 snapshot, while the official DCR trail map supplies published distance, ascent, and duration values. Cesium World Terrain remains optional for rendered terrain.
+Massachusetts DCR Roads and Trails is the evaluated route-geometry source. OpenStreetMap via Nominatim supplies attributed internet discovery previews. The repository transforms reviewed ArcGIS feature IDs into a checked-in WGS84 snapshot, while the official DCR trail map supplies published distance, ascent, and duration values. Rendered elevation defaults to the public ArcGIS World Elevation Terrain3D service; Cesium World Terrain is the optional token-based alternative.

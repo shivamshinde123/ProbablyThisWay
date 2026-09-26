@@ -42,3 +42,7 @@ Run `npm run data:refresh:dcr` to query the explicit reviewed DCR feature IDs. G
 ## Runtime Internet Trail Search
 
 Submitted trail searches use the OpenStreetMap Nominatim search API with full GeoJSON geometry and a simplification tolerance. The adapter accepts only LineString and MultiLineString objects whose type or name is trail-like, computes mapped line length locally with the haversine formula, preserves a direct OpenStreetMap object URL, and emits mandatory attribution. Point-only trailheads and non-linear areas are excluded because they cannot be rendered as trail paths. Search results are discovery previews; they do not inherit the reviewed DCR legal, condition, restriction, elevation, or alternative-route guarantees.
+
+## Rendered Elevation Terrain
+
+The no-token browser path initializes Cesium ArcGISTiledElevationTerrainProvider from the public WorldElevation3D Terrain3D ImageServer. A configured Cesium ion token instead selects Cesium World Terrain with vertex normals. Both paths depth-test and clamp route lines, points, and labels against terrain; service-provided credits remain visible. Provider initialization failure is reported in the map status and falls back visibly to the ellipsoid rather than claiming terrain is online.

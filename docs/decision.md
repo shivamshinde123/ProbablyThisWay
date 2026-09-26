@@ -84,7 +84,7 @@ Record material product and engineering decisions chronologically. Do not rewrit
 
 ## DEC-013 — Integrate Cesium with a token-optional terrain mode
 
-- **Status:** Accepted
+- **Status:** Superseded by DEC-041
 - **Date:** 2026-09-25
 - **Context:** The map-first experience needs a real interactive 3D globe before authoritative trail datasets are connected.
 - **Decision:** Embed CesiumJS directly in a React lifecycle component, copy required Cesium assets during Vite builds, enable World Terrain when `VITE_CESIUM_ION_ACCESS_TOKEN` is configured, and otherwise render an ellipsoid preview.
@@ -352,3 +352,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Set an 11 px minimum for secondary labels, 13 px minimum for key interactive/search and route metadata, 14-17 px body copy, and larger supporting headings while retaining the established visual hierarchy.
 - **Reasoning:** Readability is a functional requirement. The design can preserve its technical character through spacing, capitalization, color, and typography choice without relying on tiny text.
 - **Consequences:** Panels and result rows may become taller, especially on mobile. Browser coverage asserts key computed font sizes so future styling does not silently regress.
+
+## DEC-041 — Use public global elevation terrain by default
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** The tokenless map rendered a flat ellipsoid, so users could not see the 3D terrain promised by the product.
+- **Decision:** Use Cesium’s ArcGISTiledElevationTerrainProvider with the public ArcGIS World Elevation Terrain3D ImageServer when no ion token is configured. Preserve Cesium World Terrain as the token-based option, clamp all route visuals to terrain, enable lighting/depth testing after readiness, and show provider credits.
+- **Reasoning:** The public elevation service supplies real global height tiles without requiring the user to add a secret, while the existing token path remains available for teams that prefer Cesium World Terrain.
+- **Consequences:** The browser requires network access to the public elevation service. Provider failure degrades visibly to an ellipsoid and does not affect route evaluation, whose ascent values still come from reviewed trail metrics. Attribution must remain visible.
+- **Supersedes:** DEC-013’s tokenless ellipsoid fallback.

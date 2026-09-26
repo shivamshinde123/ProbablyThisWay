@@ -402,3 +402,12 @@ Adapter updates and racing weather transitions check lifecycle status and stop w
 Browser submit → GET /api/v1/trails/search → validate query → check 15-minute cache → serialize public Nominatim request at one-per-second maximum → request simplified full GeoJSON → validate provider response → retain named trail-like lines → compute mapped distance → return attributed results → select result → render and camera-frame preview in TerrainMap.
 
 The preview path stops before session creation. Choosing a reviewed route clears the internet preview and restores the evaluated-session path.
+
+## Implemented Terrain Initialization Flow
+
+TerrainMap mount → read optional Cesium ion token.
+
+- Token present: initialize Cesium World Terrain with vertex normals.
+- Token absent: initialize the public ArcGIS World Elevation Terrain3D provider.
+- Provider ready: enable lighting and depth testing, mark the active source online, clamp routes/points/labels, and retain Cesium provider credits.
+- Provider creation failure: report elevation unavailable and leave the ellipsoid visibly identified as a fallback.

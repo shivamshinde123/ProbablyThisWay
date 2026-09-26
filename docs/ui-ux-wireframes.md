@@ -74,3 +74,7 @@ While a field session is active, the start action is replaced by a full-width ou
 ## Readable Typography Scale
 
 Operational labels and metadata use an 11 px minimum, compact controls use 12-15 px, body copy uses 14-17 px, and display headings retain the larger editorial scale. Search input text and route metadata are at least 13 px on desktop and mobile. Layouts may grow vertically rather than compressing essential text below this floor.
+
+## Terrain Status and Attribution
+
+The map status explicitly reads Global elevation terrain for the keyless default or Cesium World Terrain for the token-based source. Initialization and failure states remain visible. Elevation-provider credits stay on the map and cannot be hidden by the application chrome. Trail lines, endpoint markers, and labels follow the terrain surface.

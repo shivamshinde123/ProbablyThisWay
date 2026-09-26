@@ -49,6 +49,11 @@ test("loads authoritative routes and completes the recommendation flow", async (
   await expect(
     page.getByLabel("Interactive 3D route alternatives map"),
   ).toBeVisible();
+  await expect(page.getByText("Global elevation terrain")).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(page.getByText(/Ellipsoid preview/)).toHaveCount(0);
+  await expect(page.locator(".cesium-viewer-bottom")).toBeVisible();
 
   await page
     .getByRole("searchbox", { name: "Search trails from the internet" })

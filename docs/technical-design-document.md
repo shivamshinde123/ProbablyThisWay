@@ -100,3 +100,7 @@ Internet discovery uses a TrailSearchProvider boundary with a Nominatim implemen
 ## Typography Readability
 
 The field-instrument visual language uses weight, letter spacing, borders, and color for hierarchy rather than extremely small text. CSS raises the former 7-12 px metadata scale to 11-16 px, increases body copy, and enlarges Cesium route labels. Responsive layouts preserve these sizes and accept additional vertical space.
+
+## Keyless Elevation Terrain
+
+TerrainMap constructs one Cesium Terrain wrapper around either ArcGISTiledElevationTerrainProvider.fromUrl for the public global default or Terrain.fromWorldTerrain when an ion token exists. Ready/error events drive explicit map status. Lighting and depth testing activate only after provider readiness. Every route polyline clamps to ground; endpoint labels and points use CLAMP_TO_GROUND. The Cesium credit container remains visible because attribution is a data-source requirement.

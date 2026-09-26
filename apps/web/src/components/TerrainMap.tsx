@@ -4,11 +4,13 @@ import type {
   RouteFeature,
 } from "@probably-this-way/contracts";
 import {
+  ArcGISTiledElevationTerrainProvider,
   BoundingSphere,
   Cartesian2,
   Cartesian3,
   Color,
   HeadingPitchRange,
+  HeightReference,
   Ion,
   LabelStyle,
   Math as CesiumMath,
@@ -18,7 +20,7 @@ import {
 } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 
-type MapStatus = "starting" | "ready" | "fallback" | "error";
+type MapStatus = "starting" | "cesium" | "global" | "error";
 type TerrainMapProps = {
   routes: RouteFeature[];
   selectedRouteId?: string;
@@ -37,7 +39,7 @@ export function TerrainMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
   const routeEntityIdsRef = useRef<string[]>([]);
-  const usesWorldTerrainRef = useRef(false);
+  const usesElevationTerrainRef = useRef(false);
   const focusedRecommendationRef = useRef<string | undefined>(undefined);
   const focusedInternetTrailRef = useRef<string | undefined>(undefined);
   const [status, setStatus] = useState<MapStatus>("starting");
@@ -45,13 +47,24 @@ export function TerrainMap({
   useEffect(() => {
     if (!containerRef.current || viewerRef.current) return;
     let statusTimer: number | undefined;
+    let removeTerrainReady: (() => void) | undefined;
+    let removeTerrainError: (() => void) | undefined;
+    let removeProviderError: (() => void) | undefined;
     const updateStatus = (nextStatus: MapStatus) => {
+      if (statusTimer !== undefined) window.clearTimeout(statusTimer);
       statusTimer = window.setTimeout(() => setStatus(nextStatus), 0);
     };
     const token = import.meta.env.VITE_CESIUM_ION_ACCESS_TOKEN?.trim();
-    usesWorldTerrainRef.current = Boolean(token);
+    usesElevationTerrainRef.current = true;
     if (token) Ion.defaultAccessToken = token;
     try {
+      const terrain = token
+        ? Terrain.fromWorldTerrain({ requestVertexNormals: true })
+        : new Terrain(
+            ArcGISTiledElevationTerrainProvider.fromUrl(
+              "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer",
+            ),
+          );
       const viewer = new Viewer(containerRef.current, {
         animation: false,
         baseLayer: false,
@@ -64,16 +77,14 @@ export function TerrainMap({
         sceneModePicker: false,
         selectionIndicator: false,
         timeline: false,
-        terrain: token
-          ? Terrain.fromWorldTerrain({ requestVertexNormals: true })
-          : undefined,
+        terrain,
         requestRenderMode: true,
         maximumRenderTimeChange: Number.POSITIVE_INFINITY,
       });
       viewerRef.current = viewer;
       viewer.scene.globe.baseColor = Color.fromCssColorString("#10241c");
-      viewer.scene.globe.enableLighting = Boolean(token);
-      viewer.scene.globe.depthTestAgainstTerrain = Boolean(token);
+      viewer.scene.globe.enableLighting = false;
+      viewer.scene.globe.depthTestAgainstTerrain = true;
       viewer.scene.backgroundColor = Color.fromCssColorString("#07110e");
       if (viewer.scene.skyAtmosphere) viewer.scene.skyAtmosphere.show = false;
       viewer.camera.flyTo({
@@ -85,13 +96,34 @@ export function TerrainMap({
         },
         duration: 0,
       });
-      updateStatus(token ? "ready" : "fallback");
+      const handleTerrainReady = () => {
+        viewer.scene.globe.enableLighting = true;
+        viewer.scene.globe.depthTestAgainstTerrain = true;
+        removeProviderError = terrain.provider.errorEvent.addEventListener(
+          (error) => {
+            console.warn("Terrain tile request failed", error);
+          },
+        );
+        updateStatus(token ? "cesium" : "global");
+        viewer.scene.requestRender();
+      };
+      removeTerrainReady =
+        terrain.readyEvent.addEventListener(handleTerrainReady);
+      removeTerrainError = terrain.errorEvent.addEventListener((error) => {
+        console.error("Unable to load elevation terrain", error);
+        usesElevationTerrainRef.current = false;
+        updateStatus("error");
+      });
+      if (terrain.ready) handleTerrainReady();
     } catch (error) {
       console.error("Unable to initialize Cesium", error);
       updateStatus("error");
     }
     return () => {
       if (statusTimer !== undefined) window.clearTimeout(statusTimer);
+      removeTerrainReady?.();
+      removeTerrainError?.();
+      removeProviderError?.();
       if (viewerRef.current && !viewerRef.current.isDestroyed())
         viewerRef.current.destroy();
       viewerRef.current = null;
@@ -128,7 +160,7 @@ export function TerrainMap({
             material: Color.fromCssColorString(color).withAlpha(
               recommended || active ? 1 : 0.62,
             ),
-            clampToGround: usesWorldTerrainRef.current,
+            clampToGround: true,
           },
         });
       });
@@ -148,7 +180,7 @@ export function TerrainMap({
           positions: Cartesian3.fromDegreesArray(line.flat()),
           width: 6,
           material: Color.fromCssColorString("#ff5c35"),
-          clampToGround: usesWorldTerrainRef.current,
+          clampToGround: true,
         },
       });
     });
@@ -170,7 +202,7 @@ export function TerrainMap({
         position: Cartesian3.fromDegrees(
           endpoint[0],
           endpoint[1],
-          usesWorldTerrainRef.current ? 0 : endpoint[2],
+          usesElevationTerrainRef.current ? 0 : endpoint[2],
         ),
         label: {
           text: `${recommended ? "RECOMMENDED  ·  " : ""}${focusRoute.properties.name.toUpperCase()}${scoreText}`,
@@ -180,6 +212,7 @@ export function TerrainMap({
           outlineWidth: 4,
           style: LabelStyle.FILL_AND_OUTLINE,
           verticalOrigin: VerticalOrigin.BOTTOM,
+          heightReference: HeightReference.CLAMP_TO_GROUND,
           pixelOffset: new Cartesian2(0, -14),
         },
         point: {
@@ -187,6 +220,7 @@ export function TerrainMap({
           outlineColor: Color.fromCssColorString("#e7eadf"),
           outlineWidth: 2,
           pixelSize: recommended ? 13 : 11,
+          heightReference: HeightReference.CLAMP_TO_GROUND,
         },
       });
     }
@@ -210,6 +244,7 @@ export function TerrainMap({
           outlineWidth: 4,
           style: LabelStyle.FILL_AND_OUTLINE,
           verticalOrigin: VerticalOrigin.BOTTOM,
+          heightReference: HeightReference.CLAMP_TO_GROUND,
           pixelOffset: new Cartesian2(0, -14),
         },
         point: {
@@ -217,6 +252,7 @@ export function TerrainMap({
           outlineColor: Color.fromCssColorString("#e7eadf"),
           outlineWidth: 2,
           pixelSize: 11,
+          heightReference: HeightReference.CLAMP_TO_GROUND,
         },
       });
       if (focusedInternetTrailRef.current !== internetTrail.id) {
@@ -316,11 +352,9 @@ export function TerrainMap({
       <div className="map-mode" data-status={status}>
         <span />
         {status === "starting" ? "Initializing terrain" : null}
-        {status === "ready" ? "World Terrain online" : null}
-        {status === "fallback"
-          ? "Ellipsoid preview · add ion token for terrain"
-          : null}
-        {status === "error" ? "Map unavailable" : null}
+        {status === "cesium" ? "Cesium World Terrain" : null}
+        {status === "global" ? "Global elevation terrain" : null}
+        {status === "error" ? "Elevation unavailable · ellipsoid shown" : null}
       </div>
       <div className="map-caption">
         {focusedName ?? "Loading route alternatives"}
