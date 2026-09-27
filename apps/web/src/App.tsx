@@ -25,8 +25,7 @@ const TerrainMap = lazy(() =>
     default: module.TerrainMap,
   })),
 );
-const apiBaseUrl =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001/api/v1";
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 
 const isRouteBlocked = (route: RouteFeature) =>
   route.properties.legalStatus === "illegal" ||
@@ -88,7 +87,7 @@ export function App() {
           operation: "catalog",
           message: describeApiFailure(
             error,
-            "The route catalog did not load after automatic retries.",
+            "The route catalog did not load after automatic retries. Reconnecting automatically.",
           ),
         });
         setStatus("error");
@@ -98,6 +97,16 @@ export function App() {
     void loadHike();
     return () => controller.abort();
   }, [catalogLoadAttempt]);
+
+  useEffect(() => {
+    if (requestFailure?.operation !== "catalog") return;
+    const timer = window.setTimeout(() => {
+      setRequestFailure(undefined);
+      setStatus("loading");
+      setCatalogLoadAttempt((attempt) => attempt + 1);
+    }, 3_000);
+    return () => window.clearTimeout(timer);
+  }, [requestFailure]);
 
   useEffect(() => {
     if (!sessionId) return;

@@ -455,3 +455,13 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Decision:** Retry idempotent browser GET/HEAD requests up to three times with bounded exponential backoff for network errors and retryable HTTP statuses. Never automatically repeat session-changing POST requests. Preserve the selected trail after action failures, show the failed operation and HTTP/reachability category, and provide a targeted retry control. Clear stale error state whenever recovery or a new selection succeeds.
 - **Reasoning:** Brief development-server restarts and intermittent upstream failures are expected and safe reads can recover automatically. Mutating requests require user-controlled retry to avoid accidental duplicate operations, even though session end is currently idempotent.
 - **Consequences:** Catalog and trail-search interruptions usually recover invisibly. Persistent failures remain actionable and no longer require a page refresh. Detailed server internals and secrets are never exposed in browser messages.
+
+## DEC-051 — Keep browser API traffic same-origin and continuously reconnect the catalog
+
+- **Status:** Accepted
+- **Date:** 2026-09-27
+- **Context:** Development embedded port 3001 while an isolated browser build embedded test-only port 3012. A preview of that artifact could never reach the normal API. Short API watcher restarts could also outlast the initial retry window and leave a stale catalog error after the server recovered.
+- **Decision:** Default browser requests to relative `/api/v1`. Proxy `/api` through Vite in development and preview and through Nginx in production; configure Playwright's preview proxy to its isolated API origin rather than rebuilding browser code with a test port. Expand safe-read retries to five attempts and continue catalog reconnection every three seconds after the initial window. Keep mutation retries explicitly user-controlled.
+- **Reasoning:** One browser origin eliminates CORS/port drift and makes local, test, and production request topology consistent. Continuous catalog recovery handles process restarts without pretending the UI can serve API-backed data while Fastify is actually offline.
+- **Consequences:** Normal builds no longer contain a localhost API port, test builds cannot contaminate preview routing, and an open page self-recovers when the API returns. `VITE_API_PROXY_TARGET` controls only the local Vite proxy and is not shipped to browser code; a deliberate cross-origin deployment may still override `VITE_API_BASE_URL`.
+- **Refines:** DEC-027 and DEC-050.

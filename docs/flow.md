@@ -350,6 +350,8 @@ npm run test:e2e
   -> build production API and web artifacts
   -> Playwright starts the compiled Fastify server on 127.0.0.1:3001
   -> Playwright starts Vite preview on 127.0.0.1:5173
+       -> browser requests same-origin /api/v1
+       -> Vite preview proxies /api to the isolated Fastify origin
   -> desktop Chromium + Pixel 7 projects
        -> load DCR route catalog
        -> verify no simulation control
@@ -428,6 +430,8 @@ TerrainMap mount → read optional Cesium ion token.
 
 ## Browser Request Recovery Flow
 
-Idempotent catalog or trail-search request → retry network failures and HTTP 408/425/429/5xx responses up to three total attempts with bounded exponential backoff → parse and render the successful response → clear any stale request error.
+Browser request → same-origin `/api/v1` → Vite development/preview proxy or production Nginx proxy → Fastify API. No API port is embedded in the default browser bundle.
 
-If all attempts fail, the UI identifies the failed operation and exposes a targeted retry button. Session start and end POST requests are attempted once; failure preserves the current trail/session state and waits for an explicit user retry so a mutation is never duplicated silently.
+Idempotent catalog or trail-search request → retry network failures and HTTP 408/425/429/5xx responses up to five total attempts with bounded exponential backoff → parse and render the successful response → clear any stale request error. If the initial catalog window still fails, show the targeted retry control and continue reconnecting in the background every three seconds until the API returns.
+
+Session start and end POST requests are attempted once; failure preserves the current trail/session state and waits for an explicit user retry so a mutation is never duplicated silently.

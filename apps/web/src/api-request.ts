@@ -36,7 +36,7 @@ function waitForRetry(delayMs: number, signal?: AbortSignal | null) {
 export async function fetchWithRetry(
   input: RequestInfo | URL,
   init: RequestInit = {},
-  { attempts = 3, baseDelayMs = 250 }: RetryOptions = {},
+  { attempts = 5, baseDelayMs = 250 }: RetryOptions = {},
 ) {
   const method = (init.method ?? "GET").toUpperCase();
   const canRetry = method === "GET" || method === "HEAD";

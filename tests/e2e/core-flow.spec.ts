@@ -273,8 +273,10 @@ test("recovers automatically from a transient route catalog failure", async ({
   page,
 }) => {
   let catalogRequests = 0;
+  let catalogRequestUrl = "";
   await page.route("**/api/v1/hikes", async (route) => {
     catalogRequests += 1;
+    catalogRequestUrl = route.request().url();
     if (catalogRequests === 1) {
       await route.fulfill({
         status: 503,
@@ -294,6 +296,36 @@ test("recovers automatically from a transient route catalog failure", async ({
   await expect(page.getByText("Search for your trail")).toBeVisible();
   await expect(page.getByText(/route catalog did not load/i)).toHaveCount(0);
   expect(catalogRequests).toBeGreaterThanOrEqual(2);
+  expect(new URL(catalogRequestUrl).origin).toBe(new URL(page.url()).origin);
+});
+
+test("keeps reconnecting after the initial catalog retry window", async ({
+  page,
+}) => {
+  let catalogRequests = 0;
+  await page.route("**/api/v1/hikes", async (route) => {
+    catalogRequests += 1;
+    if (catalogRequests <= 6) {
+      await route.fulfill({ status: 503, body: "temporarily unavailable" });
+      return;
+    }
+    await route.continue();
+  });
+  await page.route("https://elevation3d.arcgis.com/**", (route) =>
+    route.abort(),
+  );
+
+  await page.goto("/");
+
+  await expect(page.getByRole("alert")).toContainText(
+    "route catalog did not load",
+    { timeout: 8_000 },
+  );
+  await expect(page.getByText("Search for your trail")).toBeVisible({
+    timeout: 12_000,
+  });
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  expect(catalogRequests).toBeGreaterThanOrEqual(7);
 });
 
 test("preserves the selected trail and retries a failed analysis", async ({

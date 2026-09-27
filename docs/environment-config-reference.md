@@ -9,7 +9,8 @@ These are the implemented runtime and build-time variables. Provider and server 
 | `HOST` | No | No | API bind host; defaults to `127.0.0.1` |
 | `WEB_ORIGIN` | No | No | Browser origin allowed by API CORS; defaults to `http://localhost:5173` |
 | `LOAD_ENV_FILE` | No | No | Set to `false` only for isolated test processes; otherwise the API entry point loads the repository-root `.env` when present |
-| `VITE_API_BASE_URL` | No | No | Browser API base URL; defaults to `http://localhost:3001/api/v1` |
+| `VITE_API_BASE_URL` | No | No | Browser API base URL; defaults to same-origin `/api/v1` |
+| `VITE_API_PROXY_TARGET` | No | No | Vite development/preview proxy target; defaults to `http://127.0.0.1:3001` and is not exposed to browser code |
 | `DATABASE_URL` | Yes in production | Yes | PostgreSQL connection used by the durable session/event store; omission selects the in-memory store only outside production |
 | `VITE_CESIUM_ION_ACCESS_TOKEN` | No | No | Optional scoped browser token selecting Cesium World Terrain; without it the map uses the public ArcGIS World Elevation terrain service |
 | TRAIL_SEARCH_API_BASE_URL | No | No | Nominatim-compatible geocoding/search endpoint; defaults to the public OpenStreetMap Nominatim search service |
