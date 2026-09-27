@@ -2,14 +2,14 @@
 
 ## Implemented Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| Frontend | React | Application UI and state composition |
-| Language | TypeScript | Typed frontend and service code |
-| 3D map | CesiumJS with Vite static asset copying | Keyless ArcGIS elevation terrain or optional Cesium World Terrain, trails, route overlays, camera controls, and attribution |
-| Backend | Node.js | API and orchestration layer |
-| Decision engine | OpenRouter Chat Completions | Configurable model routing with strict structured route-suitability output |
-| Database | PostgreSQL 17 | Durable session, evaluation, event, migration, and retention persistence |
+| Layer           | Technology                                       | Purpose                                                                                                                     |
+| --------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Frontend        | React                                            | Application UI and state composition                                                                                        |
+| Language        | TypeScript                                       | Typed frontend and service code                                                                                             |
+| 3D map          | CesiumJS with Vite static asset copying          | Keyless ArcGIS elevation terrain or optional Cesium World Terrain, trails, route overlays, camera controls, and attribution |
+| Backend         | Node.js                                          | API and orchestration layer                                                                                                 |
+| Decision engine | TypeSafe AI Jev through OpenRouter Decisions API | Typed route-suitability scoring with validated probabilities and confidence                                                 |
+| Database        | PostgreSQL 17                                    | Durable session, evaluation, event, migration, and retention persistence                                                    |
 
 ## Supporting Choices
 
@@ -26,7 +26,7 @@
 - API traffic guard: `@fastify/rate-limit` 11.2.0 with bounded environment configuration.
 - Deployment packaging: Docker images for Fastify and Nginx plus a provider-neutral Compose topology with PostgreSQL 17.
 - Hosting and metrics: provider-neutral; the operator selects products while preserving documented probes, logs, backups, and alerts.
-- Question/explanation strategy: versioned deterministic question catalog and deterministic evidence copy; no LLM dependency in this release.
+- Question/explanation strategy: versioned typed Jev score questions when OpenRouter is configured, an explicitly labeled deterministic development fallback, and deterministic application-policy evidence copy.
 
 ## Selection Principles
 
