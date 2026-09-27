@@ -30,16 +30,19 @@ npm install
 npm run dev
 ```
 
-The web client runs at `http://localhost:5173` and the API at `http://localhost:3001`.
+The web client runs at `http://localhost:5173` and proxies same-origin `/api/*` requests to the API at `http://localhost:3001`. Use `npm run dev` so both processes start together.
 
 The API automatically loads an untracked repository-root `.env` during local startup; existing process/deployment variables take precedence. The app runs without provider credentials in local development. Submitted trail searches use public OpenStreetMap Nominatim geocoding and, for point/area matches, a bounded OSM map extract for nearby paths. Requests are serialized, duplicate queries are cached, and attribution stays visible. TRAIL_SEARCH_API_BASE_URL selects the Nominatim-compatible endpoint and TRAIL_MAP_API_BASE_URL selects the map-extract endpoint; neither requires an API key for the default local setup. Without a Cesium token, the map uses the public ArcGIS World Elevation terrain service and displays its provider credits. A scoped token upgrades the source to Cesium World Terrain. Without an OpenRouter key, route scores use the visibly labeled deterministic baseline. To enable Jev scoring, create a server-side key at `https://openrouter.ai/settings/keys` and set `OPENROUTER_API_KEY`. The API calls OpenRouter's Decisions endpoint with the Jev-only `~typesafe/jev-latest` alias; there is no generic model selector and no chat-model fallback. `OPENROUTER_DECISIONS_API_URL`, `OPENROUTER_SITE_URL`, and `OPENROUTER_APP_NAME` are optional provider settings. Legacy `OPENROUTER_API_URL` and `OPENROUTER_MODEL` values are ignored. Set `STATE_ADAPTER_TOKEN` to a secret of at least 32 characters to protect state updates. Set `DATABASE_URL` to use durable PostgreSQL session/event storage, then run `npm run db:migrate -w @probably-this-way/api`; the command is version-tracked and safe to repeat. Both variables are mandatory when `NODE_ENV=production`; local development and tests use the in-memory store when `DATABASE_URL` is absent. Never commit credentials.
 
 Browser-only Vite settings can be placed in `apps/web/.env.local`:
 
 ```dotenv
-VITE_API_BASE_URL=http://localhost:3001/api/v1
+VITE_API_BASE_URL=/api/v1
+VITE_API_PROXY_TARGET=http://127.0.0.1:3001
 VITE_CESIUM_ION_ACCESS_TOKEN=
 ```
+
+Keep `VITE_API_BASE_URL` relative unless the browser must call a deliberately separate origin. `VITE_API_PROXY_TARGET` is read only by the Vite development/preview server and is not exposed to browser code.
 
 See [`docs/environment-config-reference.md`](docs/environment-config-reference.md) for the complete reference.
 

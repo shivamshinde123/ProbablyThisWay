@@ -50,6 +50,10 @@ export default defineConfig({
       url: webOrigin,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
+      env: {
+        ...process.env,
+        VITE_API_PROXY_TARGET: apiOrigin,
+      },
     },
   ],
   projects: [
