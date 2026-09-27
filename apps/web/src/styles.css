@@ -345,6 +345,24 @@ h1 em {
 .system-message.error {
   color: #ff9b84;
 }
+.system-message.error p {
+  margin: 0 0 12px;
+}
+.system-message.error button,
+.trail-search-error button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  font: 700 13px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.trail-search-error {
+  color: #ff9b84;
+}
 .primary-action {
   display: flex;
   justify-content: space-between;

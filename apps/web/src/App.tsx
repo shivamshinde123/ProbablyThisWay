@@ -18,6 +18,7 @@ import { DecisionFeed } from "./components/DecisionFeed";
 import { RecommendationBanner } from "./components/RecommendationBanner";
 import { SessionHud } from "./components/SessionHud";
 import { TrailSearch } from "./components/TrailSearch";
+import { describeApiFailure, fetchJson } from "./api-request";
 
 const TerrainMap = lazy(() =>
   import("./components/TerrainMap").then((module) => ({
@@ -52,40 +53,51 @@ export function App() {
   const [status, setStatus] = useState<
     "loading" | "ready" | "starting" | "ending" | "error"
   >("loading");
+  const [catalogLoadAttempt, setCatalogLoadAttempt] = useState(0);
+  const [requestFailure, setRequestFailure] = useState<{
+    operation: "catalog" | "start" | "end";
+    message: string;
+  }>();
   const sessionId = session?.id;
 
   useEffect(() => {
     const controller = new AbortController();
     async function loadHike() {
       try {
-        const listResponse = await fetch(apiBaseUrl + "/hikes", {
-          signal: controller.signal,
-        });
-        if (!listResponse.ok)
-          throw new Error("Catalog returned " + listResponse.status);
-        const selected = hikesResponseSchema.parse(await listResponse.json())
-          .items[0];
+        const selected = (
+          await fetchJson(
+            apiBaseUrl + "/hikes",
+            (value) => hikesResponseSchema.parse(value),
+            { signal: controller.signal },
+          )
+        ).items[0];
         if (!selected) throw new Error("Hike catalog is empty");
 
-        const detailResponse = await fetch(
+        const detail = await fetchJson(
           apiBaseUrl + "/hikes/" + selected.id,
+          (value) => hikeDetailSchema.parse(value),
           { signal: controller.signal },
         );
-        if (!detailResponse.ok)
-          throw new Error("Hike detail returned " + detailResponse.status);
-        const detail = hikeDetailSchema.parse(await detailResponse.json());
         setCatalogHike(detail);
+        setRequestFailure(undefined);
         setStatus("ready");
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError")
           return;
+        setRequestFailure({
+          operation: "catalog",
+          message: describeApiFailure(
+            error,
+            "The route catalog did not load after automatic retries.",
+          ),
+        });
         setStatus("error");
       }
     }
 
     void loadHike();
     return () => controller.abort();
-  }, []);
+  }, [catalogLoadAttempt]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -155,6 +167,7 @@ export function App() {
 
   async function startSession() {
     if ((!hike || !selectedRouteId) && !internetTrail) return;
+    setRequestFailure(undefined);
     setStatus("starting");
     try {
       const request = createSessionRequestSchema.parse(
@@ -162,13 +175,15 @@ export function App() {
           ? { internetTrail }
           : { hikeId: hike?.id, selectedRouteId },
       );
-      const response = await fetch(apiBaseUrl + "/sessions", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(request),
-      });
-      if (!response.ok) throw new Error("Session returned " + response.status);
-      const started = sessionStartResponseSchema.parse(await response.json());
+      const started = await fetchJson(
+        apiBaseUrl + "/sessions",
+        (value) => sessionStartResponseSchema.parse(value),
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(request),
+        },
+      );
       setEvents([]);
       setFeedStatus("syncing");
       setSession(started.session);
@@ -177,23 +192,30 @@ export function App() {
       setInternetTrail(undefined);
       setEvaluation(started.evaluation);
       setRecommendation(started.recommendation);
+      setRequestFailure(undefined);
       setStatus("ready");
-    } catch {
+    } catch (error) {
+      setRequestFailure({
+        operation: "start",
+        message: describeApiFailure(
+          error,
+          "Trail analysis could not start. Your selection is preserved.",
+        ),
+      });
       setStatus("error");
     }
   }
 
   async function endSession() {
     if (!session) return;
+    setRequestFailure(undefined);
     setStatus("ending");
     try {
-      const response = await fetch(
+      await fetchJson(
         apiBaseUrl + "/sessions/" + session.id + "/end",
+        (value) => endSessionResponseSchema.parse(value),
         { method: "POST" },
       );
-      if (!response.ok)
-        throw new Error("End session returned " + response.status);
-      endSessionResponseSchema.parse(await response.json());
       setSession(undefined);
       setEvaluation(undefined);
       setRecommendation(undefined);
@@ -202,11 +224,38 @@ export function App() {
       setInternetTrail(undefined);
       setEvents([]);
       setFeedStatus("idle");
+      setRequestFailure(undefined);
       setStatus("ready");
-    } catch {
+    } catch (error) {
+      setRequestFailure({
+        operation: "end",
+        message: describeApiFailure(
+          error,
+          "The field session could not be ended yet.",
+        ),
+      });
       setStatus("error");
     }
   }
+
+  function retryLatestRequest() {
+    if (requestFailure?.operation === "catalog") {
+      setRequestFailure(undefined);
+      setStatus("loading");
+      setCatalogLoadAttempt((attempt) => attempt + 1);
+    } else if (requestFailure?.operation === "start") {
+      void startSession();
+    } else if (requestFailure?.operation === "end") {
+      void endSession();
+    }
+  }
+
+  const retryLabel =
+    requestFailure?.operation === "catalog"
+      ? "Retry route catalog"
+      : requestFailure?.operation === "start"
+        ? "Retry trail analysis"
+        : "Retry ending session";
   const routes = hike?.routes ?? [];
   const scoresByRoute = new Map(
     evaluation?.scores.map((score) => [score.routeId, score]),
@@ -330,11 +379,15 @@ export function App() {
             selectedInternetTrailId={internetTrail?.id}
             disabled={isEvaluating}
             onSelectRoute={(routeId) => {
+              setRequestFailure(undefined);
+              setStatus("ready");
               setInternetTrail(undefined);
               setHike(catalogHike);
               setSelectedRouteId(routeId);
             }}
             onSelectInternetTrail={(trail) => {
+              setRequestFailure(undefined);
+              setStatus("ready");
               setHike(undefined);
               setSelectedRouteId(undefined);
               setInternetTrail(trail);
@@ -345,9 +398,14 @@ export function App() {
               <p className="system-message">Reading route catalog…</p>
             ) : null}
             {status === "error" ? (
-              <p className="system-message error">
-                The latest request failed. Check the local API and try again.
-              </p>
+              <div className="system-message error" role="alert">
+                <p>{requestFailure?.message ?? "The request failed."}</p>
+                {requestFailure ? (
+                  <button type="button" onClick={retryLatestRequest}>
+                    {retryLabel}
+                  </button>
+                ) : null}
+              </div>
             ) : null}
             {internetTrail ? (
               <>

@@ -446,3 +446,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** The latest alias may advance only within the Jev family, so hosted semantic scoring remains true to the product while exact-model persistence preserves auditability. Typed Decisions output is native to Jev and avoids asking a generative model to imitate a decision model.
 - **Consequences:** `OPENROUTER_API_KEY` is still the only hosted-evaluation credential. `OPENROUTER_MODEL` and legacy `OPENROUTER_API_URL` are ignored; `OPENROUTER_DECISIONS_API_URL` is the only endpoint override, preventing stale chat-completions configuration from intercepting scoring. Missing credentials or invalid Jev output remain visibly labeled deterministic fallback results. Historical `openrouter` and direct `jev` evaluation records remain readable.
 - **Supersedes:** DEC-043's generic Chat Completions adapter and model-selection decision. DEC-043 remains in the log as historical context.
+
+## DEC-050 — Recover from transient API interruptions without losing user state
+
+- **Status:** Accepted
+- **Date:** 2026-09-27
+- **Context:** Local API restarts and short provider or network interruptions could set one generic persistent error even when a subsequent request would succeed. The message did not identify which operation failed and offered no direct recovery action.
+- **Decision:** Retry idempotent browser GET/HEAD requests up to three times with bounded exponential backoff for network errors and retryable HTTP statuses. Never automatically repeat session-changing POST requests. Preserve the selected trail after action failures, show the failed operation and HTTP/reachability category, and provide a targeted retry control. Clear stale error state whenever recovery or a new selection succeeds.
+- **Reasoning:** Brief development-server restarts and intermittent upstream failures are expected and safe reads can recover automatically. Mutating requests require user-controlled retry to avoid accidental duplicate operations, even though session end is currently idempotent.
+- **Consequences:** Catalog and trail-search interruptions usually recover invisibly. Persistent failures remain actionable and no longer require a page refresh. Detailed server internals and secrets are never exposed in browser messages.
