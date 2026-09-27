@@ -551,6 +551,23 @@ h1 em {
   color: var(--moss);
   font-size: 13px;
 }
+
+.jev-evidence {
+  color: var(--signal);
+  font: 13px/1.5 var(--mono);
+  letter-spacing: 0.02em;
+}
+
+.jev-evidence summary {
+  width: fit-content;
+  cursor: pointer;
+}
+
+.jev-evidence span {
+  display: block;
+  margin-top: 4px;
+  color: var(--moss);
+}
 .exposure {
   padding: 4px 6px;
   border: 1px solid var(--line);

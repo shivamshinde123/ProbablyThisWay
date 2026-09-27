@@ -26,13 +26,18 @@ const input = {
   } satisfies HikingState,
 };
 
-test("OpenRouter evaluation requests structured scores and preserves route order", async () => {
+function scoreAnswer(score: number, confidence = 0.84) {
+  return {
+    type: "score",
+    score,
+    probabilities: { "0": 0, "1": 0.05, "2": 0.1, "3": 0.65, "4": 0.2 },
+    confidence,
+  };
+}
+
+test("OpenRouter evaluation uses only Jev Decisions API and preserves route order", async () => {
   let capturedUrl = "";
   let capturedInit: RequestInit | undefined;
-  const responseScores = [...routes].reverse().map((route, index) => ({
-    routeId: route.properties.id,
-    suitability: 0.5 + index / 10,
-  }));
   const fetchMock = (async (
     url: string | URL | Request,
     init?: RequestInit,
@@ -41,9 +46,15 @@ test("OpenRouter evaluation requests structured scores and preserves route order
     capturedInit = init;
     return new Response(
       JSON.stringify({
-        choices: [
-          { message: { content: JSON.stringify({ scores: responseScores }) } },
-        ],
+        id: "gen-dec-test",
+        model: "typesafe/jev-1.13-20260917",
+        provider: "TypeSafe",
+        answers: Object.fromEntries(
+          routes.map((_, index) => [
+            `route_${index + 1}`,
+            scoreAnswer(2 + index * 0.5, 0.8 + index * 0.05),
+          ]),
+        ),
       }),
       { status: 200, headers: { "content-type": "application/json" } },
     );
@@ -51,47 +62,56 @@ test("OpenRouter evaluation requests structured scores and preserves route order
 
   const result = await evaluateWithOpenRouter(input, {
     apiKey: "openrouter-test-key",
-    model: "openai/test-model",
     siteUrl: "https://probablythisway.example",
     fetchImpl: fetchMock,
   });
 
-  assert.equal(capturedUrl, "https://openrouter.ai/api/v1/chat/completions");
+  assert.equal(capturedUrl, "https://openrouter.ai/api/alpha/decisions");
   const headers = new Headers(capturedInit?.headers);
   assert.equal(headers.get("authorization"), "Bearer openrouter-test-key");
   assert.equal(headers.get("HTTP-Referer"), "https://probablythisway.example");
-  assert.equal(headers.get("X-OpenRouter-Title"), "ProbablyThisWay");
+  assert.equal(headers.get("X-Title"), "ProbablyThisWay");
   const requestBody = JSON.parse(String(capturedInit?.body));
-  assert.equal(requestBody.model, "openai/test-model");
-  assert.ok(requestBody.max_completion_tokens >= 1_200);
-  assert.equal(requestBody.reasoning.effort, "minimal");
-  assert.equal(requestBody.response_format.type, "json_schema");
-  assert.equal(requestBody.response_format.json_schema.strict, true);
+  assert.equal(requestBody.model, "~typesafe/jev-latest");
+  assert.equal(requestBody.messages, undefined);
+  assert.equal(requestBody.response_format, undefined);
   assert.deepEqual(
-    requestBody.response_format.json_schema.schema.properties.scores.items
-      .properties.routeId.enum,
+    requestBody.state.candidateRoutes.map((route: { id: string }) => route.id),
     routes.map((route) => route.properties.id),
   );
-  assert.equal(result.provider, "openrouter");
+  assert.deepEqual(Object.keys(requestBody.questions), [
+    "route_1",
+    "route_2",
+    "route_3",
+  ]);
+  assert.equal(requestBody.questions.route_1.type, "score");
+  assert.equal(requestBody.questions.route_1.criteria.length, 5);
+  assert.match(
+    requestBody.questions.route_1.instructions,
+    /candidateRoutes\[0\]/,
+  );
+  assert.equal(result.provider, "openrouter-jev");
+  assert.equal(result.questionSetVersion, "route-suitability-jev-v1");
+  assert.equal(result.model, "typesafe/jev-1.13-20260917");
   assert.deepEqual(
     result.scores.map((score) => score.routeId),
     routes.map((route) => route.properties.id),
   );
+  assert.deepEqual(
+    result.scores.map((score) => score.suitability),
+    [0.5, 0.625, 0.75],
+  );
+  assert.equal(result.scores[0]?.rawScore, 2);
+  assert.equal(result.scores[0]?.confidence, 0.8);
+  assert.equal(result.scores[0]?.probabilities?.["3"], 0.65);
 });
 
-test("OpenRouter evaluation rejects incomplete route scores", async () => {
+test("OpenRouter Jev evaluation rejects incomplete route answers", async () => {
   const fetchMock = (async () =>
     new Response(
       JSON.stringify({
-        choices: [
-          {
-            message: {
-              content: JSON.stringify({
-                scores: responseScoresForFirstTwoRoutes(),
-              }),
-            },
-          },
-        ],
+        model: "typesafe/jev-1.13-20260917",
+        answers: { route_1: scoreAnswer(3) },
       }),
       { status: 200, headers: { "content-type": "application/json" } },
     )) as typeof fetch;
@@ -101,20 +121,42 @@ test("OpenRouter evaluation rejects incomplete route scores", async () => {
       apiKey: "openrouter-test-key",
       fetchImpl: fetchMock,
     }),
-    /incomplete or unknown route scores/,
+    /incomplete or unknown route answers/,
   );
 });
 
-test("OpenRouter evaluation refuses insecure credential endpoints", async () => {
+test("OpenRouter Jev evaluation rejects any non-Jev model response", async () => {
+  const fetchMock = (async () =>
+    new Response(
+      JSON.stringify({
+        model: "openai/generic-chat-model",
+        answers: Object.fromEntries(
+          routes.map((_, index) => [`route_${index + 1}`, scoreAnswer(3)]),
+        ),
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    )) as typeof fetch;
+
   await assert.rejects(
     evaluateWithOpenRouter(input, {
       apiKey: "openrouter-test-key",
-      apiUrl: "http://openrouter.example.test/chat/completions",
+      fetchImpl: fetchMock,
     }),
-    /OPENROUTER_API_URL must use HTTPS/,
+    /non-Jev model/,
   );
 });
-test("missing credentials and provider failures use the labeled baseline", async () => {
+
+test("OpenRouter Jev evaluation refuses insecure credential endpoints", async () => {
+  await assert.rejects(
+    evaluateWithOpenRouter(input, {
+      apiKey: "openrouter-test-key",
+      apiUrl: "http://openrouter.example.test/decisions",
+    }),
+    /OPENROUTER_DECISIONS_API_URL must use HTTPS/,
+  );
+});
+
+test("missing credentials and Jev provider failures use the labeled baseline", async () => {
   const withoutKey = await evaluateRoutes(input, {});
   assert.equal(withoutKey.provider, "deterministic-baseline");
 
@@ -133,10 +175,3 @@ test("missing credentials and provider failures use the labeled baseline", async
     console.error = originalError;
   }
 });
-
-function responseScoresForFirstTwoRoutes() {
-  return routes.slice(0, 2).map((route) => ({
-    routeId: route.properties.id,
-    suitability: 0.5,
-  }));
-}

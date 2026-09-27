@@ -37,7 +37,7 @@ Browser mounts App
       -> POST /api/v1/sessions with reviewed IDs or InternetTrailResult
       -> internet-hike converts a LineString or up to eight longest MultiLineString branches to candidates
       -> obtain weather at the trail coordinate when configured
-      -> OpenRouter or the labeled deterministic baseline scores every candidate
+      -> Jev through OpenRouter, or the labeled deterministic baseline, scores every candidate
       -> deterministic policy chooses the highest eligible route
       -> persist session, generated/reviewed hike, latest decision, and first event
   -> browser renders the structured model response, policy explanation, HUD, feed,
@@ -72,7 +72,7 @@ There is no simulation-button or simulated-condition runtime path.
 web client -> CesiumJS and API contracts
 API contracts -> application use cases -> domain policy
                                     -> integration interfaces
-server integration adapters -> weather / OpenRouter / PostgreSQL
+server integration adapters -> weather / OpenRouter Jev Decisions / PostgreSQL
 ```
 
 Domain logic must remain independent of React, Cesium, HTTP frameworks, database drivers, and provider SDKs.
@@ -111,10 +111,13 @@ POST /api/v1/sessions
   -> initialize attributed weather state or explicit prototype-static fallback
   -> evaluateRoutes
       -> OPENROUTER_API_KEY configured
-          -> send shared state + reviewed route metadata with a strict JSON schema
-          -> validate complete, unique, bounded route scores
-          -> provider = openrouter
-      -> credentials absent or OpenRouter request/output fails
+          -> POST state + one typed score question per route to OpenRouter Decisions
+          -> force the Jev-only ~typesafe/jev-latest alias
+          -> validate complete, unique, bounded Jev answers
+          -> normalize each probability-weighted 0..4 score to 0..1
+          -> persist raw score, confidence, probabilities, and exact Jev snapshot
+          -> provider = openrouter-jev
+      -> credentials absent or OpenRouter/Jev request or output fails
           -> calculate documented deterministic baseline
           -> provider = deterministic-baseline
   -> persist latest evaluation through SessionStore

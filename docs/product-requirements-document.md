@@ -2,7 +2,7 @@
 
 ## Product
 
-ProbablyThisWay is a map-first hiking decision-support prototype. It displays a real trail and valid route alternatives on 3D terrain, evaluates those alternatives against current conditions through a bounded OpenRouter model call, and highlights the most suitable route.
+ProbablyThisWay is a map-first hiking decision-support prototype. It displays a real trail and valid route alternatives on 3D terrain, evaluates those alternatives against current conditions through Jev on OpenRouter's typed Decisions API, and highlights the most suitable route.
 
 ## Goal
 

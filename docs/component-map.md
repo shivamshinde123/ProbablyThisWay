@@ -21,7 +21,7 @@
 | `weather-adapter.ts`      | Fetch, validate, normalize, and attribute Open-Meteo observations                                               | HTTPS provider                              |
 | `weather-refresh.ts`      | Serialize periodic active-session refreshes and deduplicate reads per hike                                      | Weather adapter and `SessionStore`          |
 | `session-state.ts`        | Merge ordered observations, detect thresholds, evaluate, apply policy, and persist compare-and-swap transitions | Store, evaluator, policy                    |
-| `evaluation.ts`           | Invoke OpenRouter with a strict route-score schema when configured or return the labeled deterministic baseline | Hiking state and candidate routes           |
+| `evaluation.ts`           | Invoke Jev through OpenRouter's Decisions API with one typed score question per route, persist Jev evidence, or return the labeled deterministic baseline | Hiking state and candidate routes           |
 | `policy.ts`               | Hard-exclude ineligible routes and deterministically rank the rest                                              | Typed evaluation and route metadata         |
 | `environmental-status.ts` | Derive current, stale, failed, or prototype state                                                               | Observation times and freshness config      |
 | `session-store.ts`        | Persist sessions, decisions, cursors, events, readiness, and retention                                          | PostgreSQL or in-memory development adapter |

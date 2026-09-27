@@ -18,9 +18,8 @@ These are the implemented runtime and build-time variables. Provider and server 
 | `WEATHER_API_KEY` | No | Yes | Open-Meteo Customer API key from `https://dashboard.open-meteo.com/`; leave empty for the public endpoint. Keys from OpenWeatherMap or WeatherAPI are incompatible |
 | `WEATHER_REFRESH_INTERVAL_MS` | No | No | Active-session weather refresh cadence; defaults to `300000` (five minutes) and must be at least `60000` |
 | `WEATHER_FRESHNESS_MAX_AGE_MS` | No | No | Maximum weather observation age; defaults to `1800000` (30 minutes), must be at least `900000`, and cannot be shorter than the refresh interval |
-| `OPENROUTER_API_URL` | No | No | OpenRouter chat-completions endpoint; defaults to `https://openrouter.ai/api/v1/chat/completions` and must use HTTPS |
-| `OPENROUTER_API_KEY` | No | Yes | Server-side OpenRouter key from `https://openrouter.ai/settings/keys`; absence enables the labeled deterministic baseline |
-| `OPENROUTER_MODEL` | No | No | OpenRouter model ID; defaults to `openrouter/auto`. Pin a specific compatible model for predictable cost and behavior |
+| `OPENROUTER_DECISIONS_API_URL` | No | No | Optional OpenRouter Decisions API override; defaults to `https://openrouter.ai/api/alpha/decisions` and must use HTTPS. Legacy `OPENROUTER_API_URL` is ignored so an old chat-completions URL cannot intercept Jev scoring |
+| `OPENROUTER_API_KEY` | No | Yes | Server-side OpenRouter key used only for Jev Decisions API scoring; absence enables the labeled deterministic baseline |
 | `OPENROUTER_SITE_URL` | No | No | Optional site URL sent as OpenRouter `HTTP-Referer` attribution |
 | `OPENROUTER_APP_NAME` | No | No | Optional OpenRouter application title; defaults to `ProbablyThisWay` |
 | `STATE_ADAPTER_TOKEN` | Yes in production | Yes | Bearer credential for `PATCH /sessions/{sessionId}/state`; minimum 32 characters when configured |
