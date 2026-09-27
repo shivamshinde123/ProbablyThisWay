@@ -59,7 +59,7 @@ The map automatically previews the recommended geometry from start to finish. Th
 - Recommendation evidence uses three columns on wide screens and one column below `560px`.
 - Below `900px`, the map occupies approximately 58% of the small viewport height before the decision panel.
 - The camera frames a recommendation over 1.6 seconds unless reduced motion is requested.
-- Error text provides a retry path through the unchanged session-start action.
+- Transient catalog and search failures retry automatically. Persistent errors identify the failed operation, preserve the current selection/session, and provide a keyboard-accessible targeted retry control.
 
 ## Decision Signal Feed
 

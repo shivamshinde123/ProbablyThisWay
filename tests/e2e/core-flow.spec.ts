@@ -269,6 +269,76 @@ test("searches, starts, evaluates, frames, and ends a Newton Hill trail", async 
   ).toBeVisible();
 });
 
+test("recovers automatically from a transient route catalog failure", async ({
+  page,
+}) => {
+  let catalogRequests = 0;
+  await page.route("**/api/v1/hikes", async (route) => {
+    catalogRequests += 1;
+    if (catalogRequests === 1) {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "temporary restart" }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+  await page.route("https://elevation3d.arcgis.com/**", (route) =>
+    route.abort(),
+  );
+
+  await page.goto("/");
+
+  await expect(page.getByText("Search for your trail")).toBeVisible();
+  await expect(page.getByText(/route catalog did not load/i)).toHaveCount(0);
+  expect(catalogRequests).toBeGreaterThanOrEqual(2);
+});
+
+test("preserves the selected trail and retries a failed analysis", async ({
+  page,
+}) => {
+  await mockTrailSearch(page);
+  await page.route("https://elevation3d.arcgis.com/**", (route) =>
+    route.abort(),
+  );
+  let sessionRequests = 0;
+  await page.route("**/api/v1/sessions", async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.continue();
+      return;
+    }
+    sessionRequests += 1;
+    if (sessionRequests === 1) {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "temporary restart" }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto("/");
+  await selectNewtonHill(page);
+  await page
+    .getByRole("button", { name: "Analyze & start this trail" })
+    .click();
+
+  await expect(page.getByRole("alert")).toContainText(
+    "Trail analysis could not start. Your selection is preserved.",
+  );
+  await expect(page.getByRole("alert")).toContainText("HTTP 503");
+  await expect(
+    page.getByRole("heading", { name: "Trails at Newton Hill" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Retry trail analysis" }).click();
+  await expect(page.getByText("Recommendation ready")).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
 test("surfaces stale environmental state for a searched trail", async ({
   page,
 }) => {

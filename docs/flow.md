@@ -425,3 +425,9 @@ TerrainMap mount → read optional Cesium ion token.
 - Token absent: initialize the public ArcGIS World Elevation Terrain3D provider.
 - Provider ready: enable lighting and depth testing, mark the active source online, clamp routes/points/labels, and retain Cesium provider credits.
 - Provider creation failure: report elevation unavailable and leave the ellipsoid visibly identified as a fallback.
+
+## Browser Request Recovery Flow
+
+Idempotent catalog or trail-search request → retry network failures and HTTP 408/425/429/5xx responses up to three total attempts with bounded exponential backoff → parse and render the successful response → clear any stale request error.
+
+If all attempts fail, the UI identifies the failed operation and exposes a targeted retry button. Session start and end POST requests are attempted once; failure preserves the current trail/session state and waits for an explicit user retry so a mutation is never duplicated silently.

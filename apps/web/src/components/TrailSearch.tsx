@@ -4,6 +4,7 @@ import {
   type HikeDetail,
   type InternetTrailResult,
 } from "@probably-this-way/contracts";
+import { describeApiFailure, fetchJson } from "../api-request";
 
 type TrailSearchProps = {
   apiBaseUrl: string;
@@ -34,6 +35,7 @@ export function TrailSearch({
   const [searchStatus, setSearchStatus] = useState<
     "idle" | "searching" | "ready" | "error"
   >("idle");
+  const [searchError, setSearchError] = useState<string>();
   const normalizedQuery = submittedQuery?.trim().toLocaleLowerCase() ?? "";
   const reviewedMatches =
     hike?.routes.filter((route) => {
@@ -49,21 +51,24 @@ export function TrailSearch({
     const sequence = ++requestSequence.current;
     setSubmittedQuery(normalized);
     setInternetTrails([]);
+    setSearchError(undefined);
     setSearchStatus("searching");
     try {
-      const response = await fetch(
+      const result = await fetchJson(
         apiBaseUrl + "/trails/search?q=" + encodeURIComponent(normalized),
-      );
-      if (!response.ok)
-        throw new Error("Trail search returned " + response.status);
-      const result = internetTrailSearchResponseSchema.parse(
-        await response.json(),
+        (value) => internetTrailSearchResponseSchema.parse(value),
       );
       if (sequence !== requestSequence.current) return;
       setInternetTrails(result.items);
       setSearchStatus("ready");
-    } catch {
+    } catch (error) {
       if (sequence !== requestSequence.current) return;
+      setSearchError(
+        describeApiFailure(
+          error,
+          "Internet trail search is temporarily unavailable after automatic retries.",
+        ),
+      );
       setSearchStatus("error");
     }
   }
@@ -152,10 +157,12 @@ export function TrailSearch({
             </p>
           ) : null}
           {searchStatus === "error" ? (
-            <p>
-              Internet trail search is temporarily unavailable. The reviewed
-              Wachusett routes remain available.
-            </p>
+            <div className="trail-search-error" role="alert">
+              <p>{searchError}</p>
+              <button type="button" onClick={() => void searchInternet()}>
+                Retry search
+              </button>
+            </div>
           ) : null}
           {searchStatus === "ready" ? (
             <p className="trail-search-attribution">
