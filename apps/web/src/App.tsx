@@ -222,11 +222,13 @@ export function App() {
     recommendation?.excludedRoutes.map((route) => route.routeId) ?? [],
   );
   const evaluationProviderName =
-    evaluation?.provider === "openrouter"
-      ? "OpenRouter"
-      : evaluation?.provider === "jev"
-        ? "Legacy Jev"
-        : "Deterministic fallback";
+    evaluation?.provider === "openrouter-jev"
+      ? "Jev via OpenRouter"
+      : evaluation?.provider === "openrouter"
+        ? "Legacy OpenRouter chat model"
+        : evaluation?.provider === "jev"
+          ? "Legacy direct Jev"
+          : "Deterministic fallback";
   const eligibleRouteCount = Math.max(0, routes.length - excludedRouteIds.size);
   const isEvaluating = status === "starting";
   const isEnding = status === "ending";
@@ -431,11 +433,13 @@ export function App() {
                 <div>
                   <span>Model response</span>
                   <h2 id="model-response-title">
-                    {evaluation.provider === "openrouter"
-                      ? "OpenRouter structured scores"
-                      : evaluation.provider === "jev"
-                        ? "Legacy Jev structured scores"
-                        : "Deterministic fallback scores"}
+                    {evaluation.provider === "openrouter-jev"
+                      ? "Jev decision scores"
+                      : evaluation.provider === "openrouter"
+                        ? "Legacy OpenRouter chat scores"
+                        : evaluation.provider === "jev"
+                          ? "Legacy direct Jev scores"
+                          : "Deterministic fallback scores"}
                   </h2>
                 </div>
                 <strong>
@@ -444,9 +448,11 @@ export function App() {
                 </strong>
               </div>
               <p className="model-response-note">
-                {evaluation.provider === "openrouter"
-                  ? "OpenRouter scored every mapped candidate. Application policy selected the highest eligible route."
-                  : "OpenRouter was not configured or did not return a valid response, so the local auditable baseline scored these routes."}
+                {evaluation.provider === "openrouter-jev"
+                  ? "Jev scored every mapped candidate through OpenRouter's typed Decisions API. Application policy selected the highest eligible route."
+                  : evaluation.provider === "deterministic-baseline"
+                    ? "Jev was not configured or did not return a valid response, so the local auditable baseline scored these routes."
+                    : "This stored evaluation predates the current Jev-only OpenRouter integration."}
               </p>
               {recommendation && session ? (
                 <section
@@ -614,6 +620,29 @@ export function App() {
                           {route.properties.estimatedMinutes} min · access{" "}
                           {route.properties.accessStatus}
                         </small>
+                        {score?.rawScore !== undefined &&
+                        score.confidence !== undefined &&
+                        score.probabilities ? (
+                          <details className="jev-evidence">
+                            <summary>
+                              Jev {score.rawScore.toFixed(2)}/4 ·{" "}
+                              {Math.round(score.confidence * 100)}% confidence
+                            </summary>
+                            <span>
+                              Level probabilities ·{" "}
+                              {Object.entries(score.probabilities)
+                                .sort(
+                                  ([left], [right]) =>
+                                    Number(left) - Number(right),
+                                )
+                                .map(
+                                  ([level, probability]) =>
+                                    `${level}: ${Math.round(probability * 100)}%`,
+                                )
+                                .join(" · ")}
+                            </span>
+                          </details>
+                        ) : null}
                       </span>
                       {isExcluded ? (
                         <span className="route-excluded">Excluded</span>
@@ -636,6 +665,7 @@ export function App() {
               <p className="evaluation-source">
                 Question set {evaluation.questionSetVersion} · provider{" "}
                 {evaluation.provider}
+                {evaluation.model ? ` · model ${evaluation.model}` : ""}
               </p>
             </section>
           ) : internetTrail || selectedRouteId ? (

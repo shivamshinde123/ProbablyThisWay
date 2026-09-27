@@ -437,3 +437,12 @@ Record material product and engineering decisions chronologically. Do not rewrit
 - **Reasoning:** Structured evidence is accurate, reviewable, and sufficient to reproduce the decision boundary. Hidden chain-of-thought is neither part of the OpenRouter score contract nor appropriate to present as product evidence. Visual collapse should change layout only, not playback semantics.
 - **Consequences:** The explanation may be longer than the previous score panel and remains scrollable in the mission panel. Collapsing does not pause, restart, or alter recommendation/session state.
 - **Refines:** DEC-019, DEC-043, DEC-046, and DEC-047.
+## DEC-049 — Make Jev the sole hosted route scorer through OpenRouter
+
+- **Status:** Accepted
+- **Date:** 2026-09-26
+- **Context:** Generic OpenRouter chat completion scoring violated the product's core requirement that Jev make the bounded route-suitability judgments. OpenRouter now exposes Jev through a dedicated Decisions API.
+- **Decision:** Replace chat completions with `POST https://openrouter.ai/api/alpha/decisions`, force the Jev-only `~typesafe/jev-latest` alias, and remove the generic model selector. Send one typed five-level `score` question per route, normalize Jev's probability-weighted `0..4` score to `[0, 1]`, and persist the raw score, confidence, probability distribution, and exact returned Jev snapshot. Continue to apply legal/access exclusions and final highest-eligible selection in deterministic application policy.
+- **Reasoning:** The latest alias may advance only within the Jev family, so hosted semantic scoring remains true to the product while exact-model persistence preserves auditability. Typed Decisions output is native to Jev and avoids asking a generative model to imitate a decision model.
+- **Consequences:** `OPENROUTER_API_KEY` is still the only hosted-evaluation credential. `OPENROUTER_MODEL` and legacy `OPENROUTER_API_URL` are ignored; `OPENROUTER_DECISIONS_API_URL` is the only endpoint override, preventing stale chat-completions configuration from intercepting scoring. Missing credentials or invalid Jev output remain visibly labeled deterministic fallback results. Historical `openrouter` and direct `jev` evaluation records remain readable.
+- **Supersedes:** DEC-043's generic Chat Completions adapter and model-selection decision. DEC-043 remains in the log as historical context.

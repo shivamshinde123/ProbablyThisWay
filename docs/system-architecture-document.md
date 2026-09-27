@@ -6,8 +6,8 @@ The system separates geospatial truth, changing hike state, decision evaluation,
 
 ```text
 reviewed route snapshot -----> candidate routes ----+
-live weather + user state ---> session state -------+--> OpenRouter/baseline scores
-versioned score schema --------------------------+          |
+live weather + user state ---> session state -------+--> Jev/baseline scores
+versioned Jev questions ------------------------+          |
                                                                v
                                                 deterministic policy
                                                                |
@@ -20,15 +20,15 @@ versioned score schema --------------------------+          |
 - **Web client:** selection, 3D visualization, HUD, route cards, and decision feed.
 - **Application API:** session orchestration, validation, state updates, and read models.
 - **GIS/routing:** reviewed Massachusetts DCR trail snapshot, official route metrics, terrain clamping, and valid alternatives.
-- **Decision service:** prepares a bounded scoring request and invokes OpenRouter.
+- **Decision service:** prepares typed per-route score questions and invokes Jev through OpenRouter's Decisions API.
 - **Policy service:** chooses the recommendation from structured scores and hard constraints.
-- **Integration adapters:** weather, trail data, OpenRouter, and PostgreSQL.
+- **Integration adapters:** weather, trail data, OpenRouter Jev Decisions, and PostgreSQL.
 - **Database:** durable session, state, evaluation, migration, and event persistence; route geometry remains a versioned source snapshot.
 
 ## Key Rules
 
-- OpenRouter produces schema-validated suitability scores; deterministic application policy alone selects the final route.
-- The versioned prompt and JSON schema bound hosted evaluation. No model credential is required because missing or failed OpenRouter calls use the visibly labeled deterministic baseline.
+- Jev is the sole hosted suitability scorer through OpenRouter; deterministic application policy alone selects the final route.
+- Versioned typed Jev score questions bound hosted evaluation. The Jev-only latest alias cannot route to a generic chat model, and the exact returned Jev snapshot is persisted. No credential is required locally because missing or failed Jev calls use the visibly labeled deterministic baseline.
 - Route geometry comes from trusted geospatial data, not generated text.
 - Re-evaluation is event/threshold driven and automatic; there is no simulation control.
 - Legal status, closures, restrictions, and prohibitive advisories override suitability before route selection; return no route when all candidates are excluded.
@@ -44,7 +44,7 @@ The API combines session orchestration, live weather initialization and periodic
 
 ## Internet Discovery Boundary
 
-The browser submits a search to the Fastify API; it never calls public OpenStreetMap services directly. The API serializes and caches searches, validates Nominatim GeoJSON, returns direct line matches, or uses a bounded OSM map extract to find nearby trail-like ways for point/area matches. Search itself is stateless. On explicit session start, the API converts the selected geometry into a session-scoped `HikeDetail`, persists that exact route set, obtains weather for its first coordinate when configured, and sends up to the eight longest candidate branches through the same OpenRouter/baseline and deterministic-policy pipeline. Unknown source facts stay unknown and do not become safety claims.
+The browser submits a search to the Fastify API; it never calls public OpenStreetMap services directly. The API serializes and caches searches, validates Nominatim GeoJSON, returns direct line matches, or uses a bounded OSM map extract to find nearby trail-like ways for point/area matches. Search itself is stateless. On explicit session start, the API converts the selected geometry into a session-scoped `HikeDetail`, persists that exact route set, obtains weather for its first coordinate when configured, and sends up to the eight longest candidate branches through the same OpenRouter Jev/baseline and deterministic-policy pipeline. Unknown source facts stay unknown and do not become safety claims.
 
 ## Terrain Provider Boundary
 

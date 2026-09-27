@@ -162,6 +162,9 @@ export type EndSessionResponse = z.infer<typeof endSessionResponseSchema>;
 export const routeSuitabilitySchema = z.object({
   routeId: z.string().min(1),
   suitability: z.number().min(0).max(1),
+  rawScore: z.number().min(0).max(4).optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  probabilities: z.record(z.string(), z.number().min(0).max(1)).optional(),
 });
 export type RouteSuitability = z.infer<typeof routeSuitabilitySchema>;
 export const routeEvaluationSchema = z.object({
@@ -169,8 +172,17 @@ export const routeEvaluationSchema = z.object({
   sessionId: z.string().uuid(),
   status: z.literal("completed"),
   createdAt: z.string().datetime(),
-  questionSetVersion: z.literal("route-suitability-v1"),
-  provider: z.enum(["openrouter", "jev", "deterministic-baseline"]),
+  questionSetVersion: z.enum([
+    "route-suitability-v1",
+    "route-suitability-jev-v1",
+  ]),
+  provider: z.enum([
+    "openrouter-jev",
+    "openrouter",
+    "jev",
+    "deterministic-baseline",
+  ]),
+  model: z.string().min(1).optional(),
   scores: z.array(routeSuitabilitySchema).min(1),
 });
 export type RouteEvaluation = z.infer<typeof routeEvaluationSchema>;

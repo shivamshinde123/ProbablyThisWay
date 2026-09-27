@@ -669,11 +669,13 @@ export function TerrainMap({
     (route) => route.properties.id === topScore?.routeId,
   )?.properties.name;
   const providerLabel =
-    evaluation?.provider === "openrouter"
-      ? "OpenRouter"
-      : evaluation?.provider === "jev"
-        ? "Legacy Jev"
-        : "Deterministic fallback";
+    evaluation?.provider === "openrouter-jev"
+      ? "Jev via OpenRouter"
+      : evaluation?.provider === "openrouter"
+        ? "Legacy OpenRouter chat"
+        : evaluation?.provider === "jev"
+          ? "Legacy direct Jev"
+          : "Deterministic fallback";
   const decisionSteps =
     evaluation && recommendation?.status === "recommended"
       ? [
