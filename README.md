@@ -7,6 +7,12 @@ ProbablyThisWay is a map-first hiking decision-support experiment built to explo
 > [!IMPORTANT]
 > ProbablyThisWay is an experimental decision-support tool, not a navigation system or safety guarantee. Always check official trail guidance, closures, weather alerts, and posted signs before hiking.
 
+## Demo
+
+This 13-second walkthrough searches for Newton Hill in Worcester, Massachusetts, starts the trail analysis, and previews the result on the interactive terrain view.
+
+https://github.com/user-attachments/assets/b71e4233-194e-4f19-bf4c-5411a760fb05
+
 ## How it works
 
 1. **Search for a trail or place.** The API searches OpenStreetMap by name and location. A query such as `Newton Hill, Worcester, MA, USA` can resolve directly to mapped trail lines or to nearby paths around a named place.
