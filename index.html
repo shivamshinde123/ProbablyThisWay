@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProbablyThisWay — which way up the trail, given today</title>
+<meta name="description" content="A map-first hiking decision-support experiment: search a trail, score its route alternatives against live conditions with TypeSafe AI's Jev, and replay the pick on 3D terrain.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Inter:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Design reference: Felt via Refero Styles — a topographic atlas at dusk. Deep moss canvas stepped
+   Moss → Fern → Lichen, thin editorial serif headlines, grotesque utility text with slight tracking,
+   one amber compass accent, product UI embedded on light parchment panels. */
+:root{--moss:#314218;--fern:#3d521e;--lichen:#64754b;--floor:#212f0c;--bog:#18210c;--amber:#dc8c46;--white:#fff;--parch:#eee;--char:#333;--lime:#d8dcd2;--ink:#000;
+  --serif:Fraunces,"Tiempos Headline",Georgia,serif;--sans:Inter,"Helvetica Neue",sans-serif;--mono:"DM Mono",ui-monospace,monospace}
+*{box-sizing:border-box;margin:0}
+html{color-scheme:dark}
+body{background:var(--moss);color:var(--white);font:400 16px/1.6 var(--sans);letter-spacing:.033em;-webkit-font-smoothing:antialiased}
+a{color:var(--amber)}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+.label{font:500 12px var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--lime)}
+
+nav.top .wrap{height:68px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.18)}
+.mark{display:flex;align-items:center;gap:12px;color:var(--white);text-decoration:none;font:500 14px var(--mono);text-transform:uppercase;letter-spacing:.08em}
+.waymark{width:30px;height:30px;display:grid;place-items:center;background:var(--amber);color:var(--bog);clip-path:polygon(50% 0,100% 22%,88% 84%,50% 100%,12% 84%,0 22%);font:500 13px var(--mono)}
+nav.top ul{display:flex;gap:28px;list-style:none;padding:0;font-size:14px}
+nav.top ul a{color:var(--lime);text-decoration:none}nav.top ul a:hover{color:var(--white)}
+
+.btn{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 22px;border-radius:999px;font:500 15px var(--sans);letter-spacing:.02em;text-decoration:none}
+.btn.amber{background:var(--amber);color:var(--white)}.btn.amber:hover{filter:brightness(1.07)}
+.btn.ghost{color:var(--white);box-shadow:inset 0 0 0 1px var(--white)}.btn.ghost:hover{background:var(--fern)}
+
+header.hero{position:relative;text-align:center;padding:110px 0 0;overflow:hidden}
+.contours{position:absolute;inset:0;width:100%;height:100%;opacity:.5;pointer-events:none}
+.hero .wrap{position:relative}
+h1{font:300 clamp(56px,9vw,104px)/.9 var(--serif);letter-spacing:-.04em;max-width:12ch;margin:22px auto 26px}
+h1 em{font-style:italic;color:var(--amber)}
+.lede{max-width:600px;margin:0 auto 34px;color:var(--lime);font-size:18px;letter-spacing:.01em}
+.row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+/* product spread */
+.spread{margin:72px auto 0;max-width:1100px;background:var(--floor);border-radius:12px 12px 0 0;padding:14px 14px 0;box-shadow:0 0 0 1px var(--lichen)}
+.app{display:grid;grid-template-columns:1.5fr 1fr;border-radius:8px 8px 0 0;overflow:hidden}
+.map{position:relative;background:#10241c;min-height:420px;overflow:hidden}
+.map svg{position:absolute;inset:0;width:100%;height:100%}
+.map .meta{position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;font:400 11px var(--mono);letter-spacing:.12em;color:#8c9b75;text-transform:uppercase}
+.map .hint{position:absolute;bottom:12px;right:16px;font:400 11px var(--mono);color:#8c9b75}
+.panel{background:var(--parch);color:var(--char);padding:20px;text-align:left;display:grid;gap:14px;align-content:start;letter-spacing:0}
+.panel h4{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.12em;color:#5c6650}
+.rec{background:#fff;border-radius:6px;padding:14px;border-left:3px solid var(--amber)}
+.rec b{font:400 22px/1.2 var(--serif);color:#1d2510;display:block}
+.rec p{font-size:13px;color:#555;margin-top:4px}
+.conds{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.conds div{background:#fff;border-radius:6px;padding:8px 10px;font:400 11px var(--mono);color:#666;text-transform:uppercase}
+.conds b{display:block;font:500 15px var(--sans);color:#222;text-transform:none}
+.routes{display:grid;gap:6px;font-size:13px}
+.r{display:grid;grid-template-columns:1fr 90px 40px;gap:10px;align-items:center}
+.r .bar{height:6px;background:#d8dcd2;border-radius:3px;overflow:hidden}
+.r .bar i{display:block;height:100%;background:#64754b}
+.r.win .bar i{background:var(--amber)}
+.r.out{color:#999;text-decoration:line-through}
+.r span:last-child{font:500 12px var(--mono);text-align:right}
+
+section{padding:100px 0}
+h2{font:300 clamp(40px,5.6vw,66px)/.95 var(--serif);letter-spacing:-.035em;max-width:15ch;margin:16px 0 20px}
+.sub{max-width:620px;color:var(--lime);letter-spacing:.01em}
+.fern{background:var(--fern)}
+.trail{list-style:none;padding:0;margin-top:56px;display:grid;grid-template-columns:repeat(3,1fr);gap:40px 32px;counter-reset:t}
+.trail li{counter-increment:t;position:relative;padding-top:22px;border-top:1px solid var(--lichen)}
+.trail li::before{content:counter(t);position:absolute;top:-15px;left:0;width:30px;height:30px;border-radius:50%;background:var(--moss);box-shadow:inset 0 0 0 1px var(--amber);color:var(--amber);display:grid;place-items:center;font:500 13px var(--mono)}
+.fern .trail li::before{background:var(--fern)}
+.trail h3{font:400 24px/1.15 var(--serif);letter-spacing:-.01em;margin-bottom:8px}
+.trail p{color:var(--lime);font-size:15px;letter-spacing:.01em}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
+.checks{display:grid;gap:10px;margin-top:8px}
+.check{background:var(--floor);border-radius:8px;padding:16px 18px;display:grid;grid-template-columns:24px 1fr;gap:12px;box-shadow:0 0 0 1px var(--lichen)}
+.check i{font-style:normal;color:var(--amber)}
+.check p{color:var(--lime);font-size:14px}
+.thr{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:40px}
+.thr div{background:var(--bog);border-radius:8px;padding:16px}
+.thr b{display:block;font:300 30px/1.1 var(--serif);margin-top:6px}
+
+.tech{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:44px;border-top:1px solid var(--white)}
+.tech div{padding:18px 16px 0 0}
+.tech div + div{padding-left:16px;border-left:1px solid var(--lichen)}
+.tech p{color:var(--lime);font-size:14px;margin-top:6px}
+pre{background:var(--bog);border-radius:8px;padding:22px;font:400 14px/1.85 var(--mono);color:var(--parch);overflow-x:auto;letter-spacing:0}
+pre .c{color:#8c9b75}
+
+.warn{margin-top:64px;padding:22px 24px;border-radius:8px;background:var(--parch);color:var(--char);display:grid;grid-template-columns:auto 1fr;gap:16px;letter-spacing:0}
+.warn b{font:400 22px var(--serif);color:#1d2510}
+footer{border-top:1px solid rgba(255,255,255,.18);padding:26px 0;font-size:13px;color:var(--lime)}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+@media(max-width:920px){.app,.split{grid-template-columns:1fr}.trail{grid-template-columns:1fr 1fr}.thr{grid-template-columns:repeat(3,1fr)}.tech{grid-template-columns:1fr 1fr}.tech div:nth-child(3){padding-left:0;border-left:0}nav.top ul li:not(:last-child){display:none}}
+@media(max-width:560px){.trail,.tech{grid-template-columns:1fr}.tech div{padding-left:0!important;border-left:0!important}.thr{grid-template-columns:1fr 1fr}.map{min-height:300px}section{padding:76px 0}}
+</style>
+</head>
+<body>
+<nav class="top" aria-label="Primary"><div class="wrap">
+  <a class="mark" href="#"><span class="waymark" aria-hidden="true">P</span>ProbablyThisWay</a>
+  <ul><li><a href="#how">How it works</a></li><li><a href="#policy">Policy</a></li><li><a href="#run">Run it</a></li><li><a href="https://github.com/shivamshinde123/ProbablyThisWay">GitHub</a></li></ul>
+</div></nav>
+
+<main>
+<header class="hero">
+  <svg class="contours" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g fill="none" stroke="#8c9b75" stroke-width="1">
+      <path d="M-50 620 C 200 520 380 680 620 560 S 1000 420 1260 520"/><path d="M-50 660 C 200 570 380 720 620 610 S 1000 480 1260 570"/><path d="M-50 700 C 220 620 400 760 640 660 S 1000 540 1260 620"/>
+      <ellipse cx="900" cy="230" rx="260" ry="140" transform="rotate(-14 900 230)"/><ellipse cx="900" cy="230" rx="200" ry="104" transform="rotate(-14 900 230)"/><ellipse cx="900" cy="230" rx="140" ry="70" transform="rotate(-14 900 230)"/><ellipse cx="900" cy="230" rx="78" ry="36" transform="rotate(-14 900 230)"/>
+      <ellipse cx="220" cy="260" rx="220" ry="120" transform="rotate(12 220 260)"/><ellipse cx="220" cy="260" rx="150" ry="78" transform="rotate(12 220 260)"/><ellipse cx="220" cy="260" rx="84" ry="40" transform="rotate(12 220 260)"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <span class="label">A hiking decision-support experiment</span>
+    <h1>Which way up, <em>given today?</em></h1>
+    <p class="lede">Search a trail, and ProbablyThisWay scores every mapped route against today's weather, daylight, distance and climb with TypeSafe AI's Jev model. Then it replays the best eligible route on 3D terrain and shows you why.</p>
+    <div class="row"><a class="btn amber" href="#run">Run it locally</a><a class="btn ghost" href="https://github.com/shivamshinde123/ProbablyThisWay#demo">Watch the 13-second demo</a></div>
+
+    <figure class="spread" aria-label="Illustration of the ProbablyThisWay interface">
+      <div class="app">
+        <div class="map">
+          <div class="meta"><span>Newton Hill · Worcester, MA</span><span>Route preview · not live GPS</span></div>
+          <svg viewBox="0 0 600 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g fill="none" stroke="rgba(179,194,154,.28)"><ellipse cx="330" cy="200" rx="230" ry="150"/><ellipse cx="330" cy="200" rx="170" ry="108"/><ellipse cx="330" cy="200" rx="112" ry="70"/><ellipse cx="330" cy="200" rx="56" ry="34"/></g>
+            <path d="M90 360 C 150 300 200 290 250 250 S 310 200 330 200" fill="none" stroke="#e7eadf" stroke-width="2" stroke-dasharray="5 6" opacity=".55"/>
+            <path d="M120 380 C 200 340 240 300 300 270 S 330 220 330 200" fill="none" stroke="#dc8c46" stroke-width="3.5"/>
+            <path d="M540 360 C 480 320 420 290 380 250 S 340 210 330 200" fill="none" stroke="#e7eadf" stroke-width="2" stroke-dasharray="5 6" opacity=".35"/>
+            <circle cx="330" cy="200" r="6" fill="#dc8c46"/><circle cx="244" cy="300" r="7" fill="#b7ff6a" stroke="#07110e" stroke-width="2"/>
+            <g font-family="DM Mono, monospace" font-size="11" fill="#e7eadf"><text x="342" y="196">summit</text><text x="124" y="400">Summit Loop</text><text x="60" y="350" opacity=".6">Ridge Path</text><text x="470" y="340" opacity=".45">North Spur</text></g>
+          </svg>
+          <span class="hint">drag to orbit · scroll to zoom · shift-drag to pan</span>
+        </div>
+        <div class="panel">
+          <div class="rec"><h4>Recommended route</h4><b>Summit Loop</b><p>Ranks highest among eligible routes. Its 48-minute estimate leaves daylight to spare.</p></div>
+          <div><h4>Live session</h4><div class="conds" style="margin-top:8px"><div>Temp<b>58°F</b></div><div>Wind<b>7 mph</b></div><div>Rain<b>10%</b></div><div>Daylight<b>2h 40m</b></div><div>Pace<b>2.4 mph</b></div><div>Fatigue<b>low</b></div></div></div>
+          <div><h4>Route signal</h4><div class="routes" style="margin-top:8px">
+            <div class="r win"><span>Summit Loop</span><span class="bar"><i style="width:82%"></i></span><span>82</span></div>
+            <div class="r"><span>Ridge Path</span><span class="bar"><i style="width:55%"></i></span><span>55</span></div>
+            <div class="r out"><span>North Spur</span><span class="bar"><i style="width:0"></i></span><span>closed</span></div>
+          </div></div>
+        </div>
+      </div>
+    </figure>
+  </div>
+</header>
+
+<section id="how" class="fern"><div class="wrap">
+  <span class="label">How it works</span>
+  <h2>From a place name to a reasoned route.</h2>
+  <p class="sub">Unknown facts stay unknown. The model scores; a deterministic policy decides; the interface shows every step.</p>
+  <ol class="trail">
+    <li><h3>Search a trail</h3><p>OpenStreetMap is searched by name and location. A place can resolve to its trail lines or up to eight named branches nearby.</p></li>
+    <li><h3>Take a snapshot</h3><p>Route geometry and known facts are stored, with current conditions from Open-Meteo at the trailhead, refreshed every five minutes.</p></li>
+    <li><h3>Score every candidate</h3><p>Jev weighs weather, daylight, distance, duration, climb, exposure, pace, fatigue and data quality, returning a score, confidence and probabilities.</p></li>
+    <li><h3>Apply the policy</h3><p>Ineligible routes are removed by rule. The highest scoring eligible route wins. Jev never makes the final pick on its own.</p></li>
+    <li><h3>Show the evidence</h3><p>Shared inputs, every score, policy checks and exclusions stay on screen. Structured evidence, not hidden reasoning.</p></li>
+    <li><h3>Replay the route</h3><p>A marker walks the route across Cesium 3D terrain while the model-to-policy stages replay beside it.</p></li>
+  </ol>
+</div></section>
+
+<section id="policy"><div class="wrap split">
+  <div>
+    <span class="label">Eligibility policy</span>
+    <h2>Some routes are never an option.</h2>
+    <p class="sub">Before any score counts, the policy excludes routes the data says you shouldn't take. If nothing is eligible, the app says so plainly and tells you to check official guidance.</p>
+  </div>
+  <div class="checks">
+    <div class="check"><i aria-hidden="true">✕</i><div><b>Illegal trail</b><p>Routes marked as illegal trails are excluded.</p></div></div>
+    <div class="check"><i aria-hidden="true">✕</i><div><b>Officially closed</b><p>Closed routes never reach scoring.</p></div></div>
+    <div class="check"><i aria-hidden="true">✕</i><div><b>Active access restrictions</b><p>Restricted access, or any prohibitive restriction, removes a route.</p></div></div>
+    <div class="check"><i aria-hidden="true">◎</i><div><b>No key? Still works.</b><p>Without an OpenRouter key, or if Jev returns something invalid, a clearly labelled deterministic baseline takes over.</p></div></div>
+  </div>
+</div>
+<div class="wrap">
+  <span class="label" style="display:block;margin-top:72px">Re-evaluation triggers · a new decision when conditions move this much</span>
+  <div class="thr">
+    <div><span class="label">Temperature</span><b>±10°F</b></div><div><span class="label">Wind</span><b>±5 mph</b></div><div><span class="label">Rain chance</span><b>±15%</b></div><div><span class="label">Daylight</span><b>±10 min</b></div><div><span class="label">Pace</span><b>±15%</b></div>
+  </div>
+</div></section>
+
+<section id="run" class="fern"><div class="wrap split">
+  <div>
+    <span class="label">Run it</span>
+    <h2>No database, no Docker, no keys needed to start.</h2>
+    <p class="sub">Node 22 and a WebGL browser are enough. Add an OpenRouter key to switch from the baseline to Jev. For production, Docker Compose adds PostgreSQL and Nginx.</p>
+  </div>
+<pre><span class="c"># clone and install</span>
+git clone https://github.com/shivamshinde123/ProbablyThisWay.git
+cd ProbablyThisWay && npm install
+
+<span class="c"># optional: enable Jev (~typesafe/jev-latest)</span>
+cp .env.example .env
+<span class="c"># OPENROUTER_API_KEY=…</span>
+
+npm run dev
+<span class="c"># open http://localhost:5173 and try
+# "Newton Hill, Worcester, MA, USA"</span></pre>
+</div>
+<div class="wrap">
+  <div class="tech">
+    <div><span class="label">Web</span><p>React 19, TypeScript, Vite, CesiumJS</p></div>
+    <div><span class="label">API</span><p>Node.js 22, Fastify, Zod</p></div>
+    <div><span class="label">Decisions</span><p>TypeSafe AI Jev via OpenRouter's Decisions API</p></div>
+    <div><span class="label">Data</span><p>OpenStreetMap, Open-Meteo, PostgreSQL 17</p></div>
+  </div>
+  <div class="warn"><b>⚠</b><p><strong>Decision support, not a safety guarantee.</strong> ProbablyThisWay is an experiment, not a navigation system. Always check official trail guidance, closures, weather alerts and posted signs before you hike.</p></div>
+</div></section>
+</main>
+
+<footer><div class="wrap"><span>Built by <a href="https://github.com/shivamshinde123">Shivam Shinde</a></span><span>Map data © OpenStreetMap contributors · Weather by Open-Meteo</span></div></footer>
+</body>
+</html>
